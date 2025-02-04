@@ -385,8 +385,9 @@ const OrderActions = ({
                   volume === "0" ||
                   (tradeType === TradeType.LIMIT && !limitPrice) ||
                   (orderType === OrderType.BUY &&
-                    totalPrice > counterBalance) ||
-                  (orderType === OrderType.SELL && totalPrice > baseBalance)
+                    totalPrice > Number(counterBalance)) ||
+                  (orderType === OrderType.SELL &&
+                    totalPrice > Number(baseBalance))
                 }
               />
             </>
