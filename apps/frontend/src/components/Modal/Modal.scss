@@ -1,0 +1,69 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  // overflow: hidden;
+  animation: fadeIn 0.3s ease-in-out;
+  display: flex;
+  padding: 32px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 32px;
+  border-radius: 16px;
+  background: var(--Shades-Dark-1, #101216);
+  backdrop-filter: blur(5px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  color: var(--Primary-Off-white, #eee);
+  font-family: "Space Grotesk";
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 27px; /* 150% */
+  letter-spacing: -0.27px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+.modal-content {
+  // padding: 16px;
+  width: 100%;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

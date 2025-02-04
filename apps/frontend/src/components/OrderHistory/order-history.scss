@@ -1,0 +1,185 @@
+.order-history-container {
+  $active-color: #25d695;
+  $text-muted: #5e6773;
+  $sell-color: #ff4d4f;
+  $buy-color: #25d695;
+  $background: #101216;
+
+  background: $background;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  height: 320px;
+  flex: 1 0 0;
+
+  %grid-layout {
+    display: grid;
+    width: 100%;
+    padding: 12px 16px;
+
+    > div:last-child {
+      text-align: right;
+    }
+  }
+
+  .order-label {
+    color: $text-muted;
+    font: 400 12px/18px "Noto Sans";
+    text-overflow: ellipsis;
+  }
+
+  .no-orders {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: #c3c3c3;
+  }
+
+  .order-history-tabs {
+    padding: 16px 16px 0;
+
+    .options {
+      display: flex;
+      gap: 20px;
+
+      .tab {
+        cursor: pointer;
+        position: relative;
+        color: $text-muted;
+        font: 500 14px/20px "Space Grotesk";
+        white-space: nowrap;
+        transition: all 0.15s ease-in-out;
+
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: $active-color;
+          transition: width 0.1s ease-in-out;
+        }
+
+        &:hover::after,
+        &.active::after {
+          width: 100%;
+        }
+
+        &.active {
+          background: linear-gradient(180deg, #fff 0%, $text-muted 100%);
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+      }
+    }
+  }
+
+  .order-history-labels {
+    @extend %grid-layout;
+    grid-template-columns: 0.4fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
+  }
+
+  .open-orders-labels {
+    @extend %grid-layout;
+    grid-template-columns: 0.3fr 0.3fr 0.5fr 0.8fr 0.5fr 0.15fr;
+  }
+
+  .order-label {
+    text-align: right;
+    &:nth-child(1),
+    &:nth-child(2) {
+      text-align: left;
+    }
+  }
+
+  .order-history-body {
+    flex: 1;
+    padding: 0 16px;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .history-row,
+    .open-row {
+      display: grid;
+      justify-content: space-between;
+
+      .price,
+      .order-id,
+      .volume,
+      .total,
+      .buy,
+      .status,
+      .sell,
+      .date {
+        font: 400 12px/18px "Noto Sans";
+        text-overflow: ellipsis;
+        text-align: right;
+        text-decoration: none;
+        color: #fff;
+      }
+
+      .buy,
+      .sell,
+      .order-id {
+        text-align: left;
+      }
+
+      .buy {
+        color: $buy-color;
+      }
+      .sell {
+        color: $sell-color;
+      }
+
+      .external-link {
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+
+      .cancel-order-container {
+        display: flex;
+        justify-content: right;
+        padding: 0 8px;
+        .cancel-order {
+          height: 20px;
+          width: 20px;
+          cursor: pointer;
+          transition: all 0.15s ease-in-out;
+          &:hover {
+            opacity: 0.8;
+          }
+        }
+      }
+    }
+
+    .history-row {
+      grid-template-columns: 0.4fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
+
+      .date {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-right: 8px;
+      }
+    }
+
+    .open-row {
+      grid-template-columns: 0.3fr 0.3fr 0.5fr 0.8fr 0.5fr 0.15fr;
+    }
+  }
+
+  .date.order-label {
+    color: $text-muted;
+  }
+}

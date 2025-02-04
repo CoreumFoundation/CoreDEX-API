@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package trade;
+
+import "domain/denom/denom.proto";
+import "domain/decimal/decimal.proto";
+import "domain/metadata/metadata.proto";
+import "google/protobuf/timestamp.proto";
+import "domain/order-properties/order-properties.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/trade;trade";
+
+// Key in store is TXID-Sequence-Metadata.Network
+message Trade {
+    string Account = 1;
+    string OrderID = 2; // User assigned order reference
+    int64 Sequence = 3; // The sequence number of the order, assigned by the DEX (guaranteed unique value for the order)
+    decimal.Decimal Amount = 4;
+    double Price = 5;
+    denom.Denom Denom1 = 6;
+    denom.Denom Denom2 = 7;
+    // The buy/sell (e.g. did the user place a buy or sell order)
+    orderproperties.Side Side = 8;
+    google.protobuf.Timestamp BlockTime = 9; // The time the trade was executed in UTC
+
+    // Standard storage related fields
+    metadata.MetaData MetaData = 30;
+    optional string TXID = 31;
+    int64 BlockHeight = 32;
+    bool Enriched = 33; // If the trade has been enriched with precision data
+
+    // USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc)
+    optional float USD = 40; // The USD value of the trade, calculated from the USD value of the currencies and the trading fee.
+}
+
+message Trades {
+    repeated Trade Trades = 1;
+    optional int32 Offset = 2;
+}
+
+message TradePair {
+    denom.Denom Denom1 = 1;
+    denom.Denom Denom2 = 2;
+    metadata.MetaData MetaData = 3;
+}
+
+message TradePairs {
+    repeated TradePair TradePairs = 1;
+    optional int32 Offset = 2;
+}

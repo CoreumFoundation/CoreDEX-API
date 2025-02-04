@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package order;
+
+import "domain/denom/denom.proto";
+import "domain/decimal/decimal.proto";
+import "domain/metadata/metadata.proto";
+import "google/protobuf/timestamp.proto";
+import "domain/order-properties/order-properties.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/order;order";
+
+message Order { // Unique key is Sequence-Network
+  string Account = 1; // account is order creator address.
+  OrderType Type = 2;
+  string OrderID = 3;
+  int64 Sequence = 4; // Sequence ID
+  denom.Denom BaseDenom = 5;
+  denom.Denom QuoteDenom = 6;
+  // price is value of one unit of the BaseDenom expressed in terms of the QuoteDenom.
+  double Price = 7;
+  // quantity is amount of the base BaseDenom being traded.
+  decimal.Decimal Quantity = 8;
+  decimal.Decimal RemainingQuantity = 9;
+  orderproperties.Side Side = 10; // Buy or sell
+  GoodTil GoodTil = 11;
+  TimeInForce TimeInForce = 12;
+  // Time the order was created on chain. This can differ from metadata.CreatedAt which signifies when the record was created in the database
+  google.protobuf.Timestamp BlockTime = 13;
+  // Maintain the status of the order (tracked for user intent clarification)
+  OrderStatus OrderStatus = 14;
+  int64 OrderFee = 15;
+
+  metadata.MetaData MetaData = 20;
+  optional string TXID = 21;
+  int64 BlockHeight = 22;
+  bool Enriched = 23; // If the order has been enriched with precision data
+}
+
+// GoodTil is a good til order settings.
+message GoodTil {
+  // good_til_block_height means that order remains active until a specific blockchain block height is reached.
+  int64 BlockHeight = 1;
+  // good_til_block_time means that order remains active until a specific blockchain block time is reached.
+  google.protobuf.Timestamp BlockTime = 2;
+}
+
+message Orders {
+  repeated Order Orders = 1;
+  optional int32 Offset = 2;
+}
+
+// Type is order type.
+enum OrderType {
+  // order_type_unspecified reserves the default value, to protect against unexpected settings.
+  ORDER_TYPE_UNSPECIFIED = 0;
+  // order_type_limit means that the order is limit order.
+  ORDER_TYPE_LIMIT = 1;
+  // limit order_type_market that the order is market order.
+  ORDER_TYPE_MARKET = 2;
+}
+
+// TimeInForce is order time in force.
+enum TimeInForce {
+  // time_in_force_unspecified reserves the default value, to protect against unexpected settings.
+  TIME_IN_FORCE_UNSPECIFIED = 0;
+  // time_in_force_gtc means that the order remains active until it is fully executed or manually canceled.
+  TIME_IN_FORCE_GTC = 1;
+  // time_in_force_ioc  means that order must be executed immediately, either in full or partially. Any portion of the
+  //  order that cannot be filled immediately is canceled.
+  TIME_IN_FORCE_IOC = 2;
+  // time_in_force_fok means that order must be fully executed or canceled.
+  TIME_IN_FORCE_FOK = 3;
+}
+
+enum OrderStatus {
+  // order_status_unspecified reserves the default value, to protect against unexpected settings.
+  ORDER_STATUS_UNSPECIFIED = 0;
+  // order_status_open means that the order is open with any remaining quantity
+  ORDER_STATUS_OPEN = 1;
+  // order_status_cancelled means the user has canceled the order.
+  ORDER_STATUS_CANCELED = 2;
+  // order_status_filled means that the order is filled (quantity remaining is 0)
+  ORDER_STATUS_FILLED = 3;
+  // order_status_expired means that the order is expired (e.g. a block event has passed the good til block height/time).
+  ORDER_STATUS_EXPIRED = 4;
+}

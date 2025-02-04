@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package update;
+
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/update;update";
+
+message Subscribe {
+    Action Action = 1;
+    Subscription Subscription = 2;
+}
+
+message Subscription {
+    Method Method = 1;
+    string ID = 2;
+    metadata.Network Network = 3;
+    string Content = 4;
+}
+
+enum Action {
+    SUBSCRIBE = 0;
+    UNSUBSCRIBE = 1;
+    CLOSE = 2;
+    RESPONSE = 3;
+}
+
+enum Method {
+    METHOD_DO_NOT_USE = 0;
+    TRADES_FOR_SYMBOL = 1; // ID: {denom1}_{denom2}
+    TRADES_FOR_ACCOUNT = 2; // ID: {account}
+    TRADES_FOR_ACCOUNT_AND_SYMBOL = 3; // ID: {account}_{denom1}_{denom2}
+    OHLC = 4; // ID: {denom1}_{denom2}_{interval}
+    TICKER = 5; // ID: {denom1}_{denom2}
+    ORDERBOOK = 6; // ID: {denom1}_{denom2}
+    ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT = 7; // ID: {account}_{denom1}_{denom2}
+}

@@ -1,0 +1,10 @@
+tmp
+test
+go.work
+go.work.sum
+log.txt
+node_modules
+__debug_bin*
+
+!apps/api-server/test
+!apps/api-server/test/**

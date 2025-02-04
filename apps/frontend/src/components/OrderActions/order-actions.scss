@@ -1,0 +1,389 @@
+.order-actions-container {
+  background: var(--Shades-Dark-1, #101216);
+  display: flex;
+  max-width: 320px;
+  flex-direction: column;
+  // justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 1 0 0;
+  align-self: stretch;
+  height: 648px;
+
+  &::before {
+    content: "";
+    display: block;
+    height: 1px;
+    width: 100%;
+    top: -0.8px;
+    position: relative;
+  }
+
+  .order-actions-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    .order-balances {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.1fr;
+      column-gap: 20px;
+      .balance-item {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        .balance-item-header {
+          font-size: 12px;
+          line-height: 18px; /* 150% */
+        }
+        .balance-item-number {
+          font-size: 14px;
+          font-weight: 500;
+          line-height: 21px; /* 150% */
+        }
+      }
+    }
+
+    .order-switch {
+      border-radius: 10px;
+      background: var(--Shades-Dark-2, #17191e);
+      backdrop-filter: blur(5px);
+      width: 100%;
+      padding: 4px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .order-trade {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      .order-trade-types {
+        display: flex;
+        gap: 24px;
+
+        .type-item {
+          color: #5e6773;
+          cursor: pointer;
+          transition: all 0.3s ease-in-out;
+          text-align: center;
+          font-family: "Space Grotesk";
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: 20px; /* 142.857% */
+          letter-spacing: -0.28px;
+          position: relative;
+        }
+
+        .type-item::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: #25d695;
+          transition: width 0.1s ease-in-out;
+        }
+
+        .type-item:hover::after,
+        .type-item.active::after {
+          width: 100%;
+        }
+
+        .type-item.active {
+          background: linear-gradient(180deg, #fff 0%, #5e6773 100%);
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          position: relative;
+        }
+      }
+      .market-type-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        .input-currency {
+          font-size: 14px;
+          line-height: 21px; /* 150% */
+        }
+      }
+      .limit-type-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .advanced-settings-header {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          cursor: pointer;
+          padding: 8px 0;
+          & > p {
+            font-size: 14px;
+            line-height: 21px; /* 150% */
+            letter-spacing: -0.21px;
+          }
+          .advanced-settings-header-arrow {
+            width: 18px;
+            height: 18px;
+            transition: all 0.3s ease-in-out;
+            &.open {
+              transform: rotate(-180deg);
+            }
+          }
+        }
+        .advanced-settings-content {
+          width: 100%;
+          max-height: 0;
+          overflow: hidden;
+          transition: all 0.3s ease-in-out;
+          -webkit-transition: all 0.3s ease-in-out;
+          -moz-transition: all 0.3s ease-in-out;
+          -ms-transition: all 0.3s ease-in-out;
+          -o-transition: all 0.3s ease-in-out;
+          opacity: 0;
+          &.open {
+            max-height: 500px; /* Adjust this value to fit your content */
+            opacity: 1;
+            overflow: visible;
+          }
+
+          .execution-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 8px;
+            .excution-item {
+              display: flex;
+              height: 37px;
+              padding: 8px 12px;
+              justify-content: center;
+              align-items: center;
+              border-radius: 6px;
+              transition: all 0.3s ease-in-out;
+              cursor: pointer;
+              .excution-item-text {
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 21px; /* 150% */
+                letter-spacing: -0.21px;
+              }
+              &.active {
+                .excution-item-text {
+                }
+              }
+            }
+          }
+
+          .advanced-settings-content-label {
+            font-size: 12px;
+            line-height: 18px; /* 150% */
+            letter-spacing: -0.18px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+          }
+
+          .advanced-selector {
+            margin-bottom: 8px;
+          }
+        }
+      }
+
+      .percentage-options-wrapper {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        column-gap: 4px;
+        padding: 7px 0 15px 0;
+        .button {
+          backdrop-filter: none;
+          border-radius: 4px;
+        }
+      }
+
+      .order-input {
+        .input-currency {
+          font-size: 14px;
+          line-height: 21px; /* 150% */
+        }
+      }
+    }
+
+    .order-bottom {
+      margin-top: 8px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      .order-total {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: space-between;
+        gap: 6px;
+        .order-total-label {
+          font-size: 12px;
+          line-height: 18px; /* 150% */
+        }
+        .right {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .order-total-currency {
+          font-size: 12px;
+          font-weight: 500;
+          line-height: 24px;
+          margin-top: 2px;
+        }
+      }
+    }
+  }
+
+  .available-balances {
+    width: 100%;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    .title {
+      text-align: left;
+    }
+    .balance-row {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+    }
+    .balance-label {
+      color: var(--Shades-Carbon, #5e6773);
+      font-family: "Noto Sans";
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 18px; /* 150% */
+    }
+  }
+
+  .horizontal-wrapper {
+    .balance-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      align-items: baseline;
+      .balance-symbol {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .error-message {
+    font-size: 12px;
+    color: red;
+  }
+}
+
+.confirm-order-modal {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  .confirm-order-modal-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    .header-text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 21px; /* 150% */
+      margin-top: 4px;
+      &.buy {
+      }
+      &.sell {
+      }
+    }
+  }
+  .confirm-order-modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 40px;
+    .content-item {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .content-item-label {
+        font-size: 14px;
+        line-height: 21px; /* 150% */
+      }
+      .content-item-text {
+        margin-left: auto;
+      }
+      .content-item-currency {
+        font-size: 12px;
+        line-height: 24px;
+        margin-top: 2px;
+        margin-left: 4px;
+      }
+    }
+  }
+}
+
+.layout-mode {
+  width: 18px;
+  height: 18px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 50%;
+}
+
+.switch {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+  & > p {
+    color: var(--Shades-Carbon, #5e6773);
+    text-align: center;
+    font-family: "Space Grotesk";
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 21px; /* 150% */
+    letter-spacing: -0.28px;
+    transition: all 0.3s ease-in-out;
+  }
+  &.active {
+    &.switch {
+    }
+    &.switch-buy {
+      background: rgba(37, 214, 149, 0.1);
+      & > p {
+        color: #25d695;
+      }
+    }
+    &.switch-sell {
+      background: rgba(222, 15, 62, 0.1);
+      & > p {
+        color: #de0f3e;
+      }
+    }
+  }
+}

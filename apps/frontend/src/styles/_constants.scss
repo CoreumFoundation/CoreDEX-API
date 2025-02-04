@@ -1,0 +1,95 @@
+$solid: #0e0e0e;
+$primaryRed: #d81d3c;
+$red1: #e31537;
+$gradientRed: linear-gradient(270deg, #d81d3c 0%, #981329 49.52%, #d81d3c 100%);
+$gradientGreen: linear-gradient(
+  270deg,
+  #08c184 0%,
+  #007e59 49.87%,
+  #08c184 100%
+);
+$gradientLight: linear-gradient(180deg, #fff 0%, #878787 100%);
+$gradientDark: linear-gradient(
+  180deg,
+  #121212 0%,
+  #1a1a1a 25.15%,
+  #121212 100%
+);
+$green: #25d695;
+$green1: #03b47a;
+$green2: #08c184;
+$yellow: #ffbb29;
+$primaryWhite: #ffffff;
+$secondaryWhite: #fdfdfd;
+$offWhite: #eeeeee;
+
+$primaryBlack: #2d2d2d;
+$secondaryBlack: #262626;
+$solid: #0d0d0d;
+$night: #121212;
+$pitch: #141414;
+
+$carbon: #c3c3c3;
+$dim: #ddd;
+// Dark Colors
+$transRed: rgba(216, 29, 60, 0.15);
+$transGreen: rgba(8, 193, 132, 0.15);
+$transYellow: rgba(255, 174, 0, 0.15);
+
+$grey1: #1a1a1a;
+$grey2: #222222;
+$grey3: #333333;
+$grey4: #454545;
+$grey5: #666666;
+$grey6: #878787;
+$grey7: #aaaaaa;
+
+$lightBg: #f6f6f6;
+$light1: #f3f3f3;
+$light2: #e4e4e4;
+$light3: #fafafa;
+$light4: #f8f8f8;
+$light5: #f9f9f9;
+$light6: #fdfdfd;
+
+#overlay {
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  z-index: -1;
+
+  &.active {
+    z-index: 10;
+    background: #00000075;
+  }
+}
+
+@mixin tablet-sm {
+  @media (min-width: 480px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: 768px) {
+    @content;
+  }
+}
+
+@mixin desktop-sm {
+  @media (min-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1440px) {
+    @content;
+  }
+}
+
+@mixin desktop-lg {
+  @media (min-width: 1920px) {
+    @content;
+  }
+}

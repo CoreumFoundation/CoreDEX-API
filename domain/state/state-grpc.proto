@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package state;
+
+import "google/protobuf/empty.proto";
+import "domain/state/state.proto";
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/state;state";
+
+service StateService {
+    rpc Upsert(state.State) returns (google.protobuf.Empty);
+    rpc Get(StateQuery) returns (state.State);
+}
+
+message StateQuery {
+    metadata.Network Network = 1;
+    state.StateType StateType = 2;
+}

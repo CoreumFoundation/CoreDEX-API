@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package currency;
+
+import "google/protobuf/empty.proto";
+import "domain/currency/currency.proto";
+import "domain/metadata/metadata.proto";
+import "domain/denom/denom.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/currency;currency";
+
+service CurrencyService {
+    // Get a single currency
+    rpc Get(ID) returns (Currency) {}
+    rpc Upsert(Currency) returns (google.protobuf.Empty) {}
+    rpc BatchUpsert(Currencies) returns (google.protobuf.Empty) {}
+
+    rpc GetAll(Filter) returns (Currencies) {}
+}
+
+message ID {
+    metadata.Network Network = 1;
+    string Denom = 2;
+}
+
+message Filter {
+    metadata.Network Network = 1;
+    optional denom.Denom Denom = 2;
+}

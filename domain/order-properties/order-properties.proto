@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package orderproperties;
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties;orderproperties";
+
+// Side is order side.
+enum Side {
+  // SIDE_UNSPECIFIED reserves the default value, to protect against unexpected settings.
+  SIDE_UNSPECIFIED = 0;
+  // SIDE_BUY means that the order is to buy base_denom quantity with the price.
+  SIDE_BUY = 1;
+  // SIDE_SELL means that the order is to sell base_denom quantity with the price.
+  SIDE_SELL = 2;
+}

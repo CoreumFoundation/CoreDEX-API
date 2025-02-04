@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package metadata;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/metadata;metadata";
+
+message MetaData {
+    // mainnet, testnet, devnet, can also be some virtually defined network (extra devnet for testing, extra mainnnet node for scanning historical blocks, etc)
+    Network Network = 1; 
+    google.protobuf.Timestamp UpdatedAt = 2;
+    google.protobuf.Timestamp CreatedAt = 3;
+}
+
+enum Network {
+    // Avoid a default value since a default and a bug are not distinguishable
+    NETWORK_DO_NOT_USE = 0;
+    MAINNET = 1;
+    TESTNET = 2;
+    DEVNET = 3;
+}

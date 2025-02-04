@@ -1,0 +1,94 @@
+html {
+  font-size: 12px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1200px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  line-height: 1.5;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+#root {
+  overflow-y: auto;
+  /* background-color: #f3f3f3; */
+}
+
+.market_active {
+  z-index: 9999999;
+  border: none !important;
+  position: relative;
+}
+
+::-webkit-scrollbar {
+  /* display: none; */
+  width: 3px;
+  background: transparent;
+  margin: 0 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #454545;
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #454545;
+  cursor: "pointer";
+}
+
+.dark-body {
+  background: #1f1f1f;
+}
+
+.light-body {
+  background: #fafafa;
+}
+
+a {
+  text-decoration: none;
+}
+
+.decimals-span {
+  font-size: 90% !important;
+  color: #878787;
+}
+
+/* ---------------------------------------- keyframe animations ---------------------------------------- */
+
+@keyframes hourglass {
+  0% {
+    transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  }
+
+  10% {
+    transform: translateX(-50%) translateY(-50%) rotate(180deg);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-50%) rotate(180deg);
+  }
+
+  60% {
+    transform: translateX(-50%) translateY(-50%) rotate(360deg);
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(-50%) rotate(360deg);
+  }
+}

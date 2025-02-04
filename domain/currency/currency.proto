@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package currency;
+
+import "domain/denom/denom.proto";
+import "domain/decimal/decimal.proto";
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/currency;currency";
+
+message Currencies {
+    repeated Currency Currencies = 1;
+    optional int32 Offset = 2;
+}
+
+message Currency {
+    denom.Denom Denom = 1;
+    decimal.Decimal SendCommission = 2;
+    decimal.Decimal BurnRate = 3;
+    decimal.Decimal InitialAmount = 4;
+
+    string Chain = 10; // The chain the currency is on (used for IBC tokens, else you can not distinguish between currencies with the same name)
+    string OriginChain = 11; // The chain the currency is on (The actual chain which the currency originates from, used for IBC tokens)
+    string ChainSupply = 12; // The total supply of the currency on the chain (used for IBC tokens)
+    string Description = 13; // The description of the currency (used for IBC tokens)
+
+    bool SkipDisplay = 20; // Indicates if the currency should be skipped in the display (mainly used to disable 13k+ IBC tokens from being loaded)
+
+    metadata.MetaData MetaData = 30;
+}

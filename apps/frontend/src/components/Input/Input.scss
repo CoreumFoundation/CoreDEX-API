@@ -1,0 +1,122 @@
+@import "../../styles/constants.scss";
+
+.input__wrapper {
+  height: auto;
+  width: 100%;
+  transition: all 0.3s ease-in-out;
+
+  .input__label {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    padding-left: 2px;
+    gap: 4px;
+    &__label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      & > p {
+        color: var(--Shades-Light, #868991);
+        font-family: "Noto Sans";
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 21px; /* 150% */
+      }
+    }
+    &__sublabel {
+      font-size: 12px;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 18px; /* 150% */
+      letter-spacing: -0.18px;
+    }
+  }
+  .input__container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    transition: all 0.3s ease-in-out;
+    border: 1px solid #1b1d23;
+    border-radius: 10px;
+    max-height: 40px;
+    &:focus,
+    &:focus-within,
+    &:active {
+      border: 1px solid var(--Primary-Green, #25d695);
+    }
+    &--large {
+      padding: 12px 16px;
+      gap: 8px;
+      border-radius: 8px;
+      .input {
+        letter-spacing: -0.3px;
+        font-size: 20px;
+      }
+    }
+    &--small {
+      padding: 8px 12px;
+      gap: 6px;
+      border-radius: 6px;
+      .input {
+        font-size: 1px;
+        letter-spacing: -0.21px;
+      }
+    }
+    &--medium {
+      padding: 10px;
+      gap: 8px;
+      border-radius: 8px;
+
+      .input {
+        font-size: 16px;
+        letter-spacing: -0.24px;
+      }
+    }
+    .input__adornment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .input {
+      font-weight: 300;
+      width: 100%;
+      background: none;
+      border: none;
+      background-color: transparent;
+      line-height: 1.5;
+      color: #eee;
+
+      &:focus,
+      &:active {
+        background-color: none;
+        outline: none;
+        caret-color: #009be5;
+      }
+      &::placeholder {
+        color: var(--Shades-Carbon, #5e6773);
+        font-family: "Noto Sans";
+        font-size: 14px;
+      }
+    }
+    .input-error {
+      border-bottom: 1px solid $primaryRed;
+    }
+  }
+
+  .input__error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    .error-icon {
+      width: 16px;
+    }
+    &__txt {
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: -0.18px;
+      color: $primaryRed;
+    }
+  }
+}

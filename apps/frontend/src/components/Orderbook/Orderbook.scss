@@ -1,0 +1,194 @@
+.orderbook-container {
+  display: flex;
+  height: 428px;
+  width: 320px;
+  max-width: 320px;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #101216;
+  @media (max-width: 768px) {
+    flex: 1 1 0;
+    max-width: 438px;
+  }
+
+  .orderbook-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    position: relative;
+
+    .orderbook-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 21px; /* 150% */
+    }
+  }
+
+  .orderbook-body {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    height: 100%;
+    .orderbook-header-wrapper {
+      width: 100%;
+      padding: 0px 16px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      & > div:last-child {
+        text-align: right;
+      }
+      .orderbook-header-cell {
+        position: relative;
+        cursor: pointer;
+        color: #5e6773;
+        text-overflow: ellipsis;
+        font-family: "Noto Sans";
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 18px; /* 150% */
+        &:nth-child(2) {
+          text-align: right;
+        }
+        .tooltip-total {
+          visibility: hidden;
+          width: 120px;
+          background-color: #17191e;
+          color: #868991;
+          text-align: center;
+          border-radius: 4px;
+          padding: 5px;
+          position: absolute;
+          z-index: 1;
+          bottom: 125%;
+          left: 50%;
+          margin-left: -60px;
+          opacity: 0;
+          transition: opacity 0.3s;
+          z-index: 10;
+        }
+      }
+      .orderbook-header-cell:hover .tooltip-total {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+    .orderbook-sections {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      max-height: 346px;
+    }
+    .orderbook-wrapper {
+      flex: 1;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+
+      &::-webkit-scrollbar {
+        width: 2px;
+      }
+
+      .orderbook-row {
+        width: 100%;
+        position: relative;
+        padding-bottom: 4px;
+        padding-top: 4px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        &.hovered-buy {
+          opacity: 1;
+          background-color: #222222;
+          &:hover {
+            border-top: #666666 1px dashed;
+          }
+        }
+        &.hovered-sell {
+          opacity: 1;
+          background-color: #222222;
+          &:hover {
+            border-bottom: #666666 1px dashed;
+          }
+        }
+        .orderbook-numbers-wrapper {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          padding: 0 16px;
+          & > p {
+            text-align: right;
+          }
+          .orderbook-number {
+            overflow: hidden;
+            color: #eee;
+            text-overflow: ellipsis;
+            font-family: "Noto Sans";
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 18px; /* 150% */
+            letter-spacing: 0.4px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            &.price-buys {
+              color: #de0f3e;
+            }
+            &.price-sells {
+              color: #25d695;
+            }
+          }
+        }
+        .volume-bar {
+          position: absolute;
+          height: 100%;
+
+          &.buys {
+            background: rgba(222, 15, 62, 0.15);
+          }
+          &.sells {
+            background: rgba(37, 214, 149, 0.15);
+          }
+        }
+      }
+    }
+
+    .orderbook-spread {
+      width: 100%;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #17191e;
+
+      .spread-label {
+        font-size: 12px;
+        line-height: 18px;
+        color: grey;
+        font-weight: 400;
+      }
+
+      & > p {
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 24px; /* 150% */
+      }
+      .format__number,
+      .decimal {
+        color: #fff;
+        text-align: right;
+        font-family: "Noto Sans";
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 24px;
+        letter-spacing: -0.32px;
+      }
+    }
+  }
+}

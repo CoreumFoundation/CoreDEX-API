@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package state;
+
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/state;state";
+
+message State {
+    StateType StateType = 1;
+    string Content = 2;
+    metadata.MetaData MetaData = 3;
+}
+
+enum StateType {
+    NOT_USED = 0;
+    BLOCK_HEIGHT = 1;
+}

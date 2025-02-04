@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package trade;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "domain/trade/trade.proto";
+import "domain/metadata/metadata.proto";
+import "domain/denom/denom.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/trade;trade";
+
+service TradeService {
+    // Get a single trade
+    rpc Get(ID) returns (Trade) {}
+    rpc Upsert(Trade) returns (google.protobuf.Empty) {}
+    rpc BatchUpsert(Trades) returns (google.protobuf.Empty) {}
+
+    rpc GetAll(Filter) returns (Trades) {}
+
+    rpc GetTradePairs(TradePairFilter) returns (TradePairs) {}
+}
+
+message ID {
+    metadata.Network Network = 1;
+    string TXID = 2;
+    int64 Sequence = 3;
+}
+
+// Ability to get all trade history views using the filter options
+message Filter {
+    metadata.Network Network = 1;
+    optional google.protobuf.Timestamp From = 2;
+    optional google.protobuf.Timestamp To = 3;
+    optional string Account = 4;
+    optional int64 Sequence = 5;
+    optional string OrderID = 6;
+    optional string TXID = 7;
+    optional denom.Denom Denom1 = 8;
+    optional denom.Denom Denom2 = 9;
+    optional int64 Offset = 10;
+}
+
+message TradePairFilter {
+    metadata.Network Network = 1;
+    optional denom.Denom Denom1 = 2;
+    optional denom.Denom Denom2 = 3;
+    optional int64 Offset = 4;
+}

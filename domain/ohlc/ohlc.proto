@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package ohlc;
+
+import "google/protobuf/timestamp.proto";
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc;ohlc";
+
+message OHLCs {
+    repeated OHLC OHLCs = 1;
+}
+
+message OHLC {
+    string Symbol = 1;
+    google.protobuf.Timestamp Timestamp = 2;
+    double Open = 3;
+    double High = 4;
+    double Low = 5;
+    double Close =6;
+    double Volume = 7;
+    int64 NumberOfTrades = 8;
+    Period Period = 9;
+    optional double USDValue = 10;
+    metadata.MetaData MetaData = 20;
+    google.protobuf.Timestamp OpenTime = 21; // When was the open time record created: Used for out of order trade processing
+    google.protobuf.Timestamp CloseTime = 22; // When was the close time record created: Used for out of order trade processing
+}
+
+message Period {
+    PeriodType PeriodType = 1;
+    int32 Duration = 2; // The duration of the indicated period (e.g 1 minute, 3 minutes, etc)
+}
+
+enum PeriodType {
+    PERIOD_TYPE_DO_NOT_USE = 0;
+    PERIOD_TYPE_MINUTE = 1;
+    PERIOD_TYPE_HOUR = 2;
+    PERIOD_TYPE_DAY = 3;
+    PERIOD_TYPE_WEEK = 4;
+}

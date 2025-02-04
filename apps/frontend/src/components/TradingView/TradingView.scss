@@ -1,0 +1,42 @@
+.chart-wrapper {
+  display: flex;
+  height: 648px;
+  padding-top: 12px;
+  align-items: flex-start;
+  flex: 1 0 0;
+  background: #101216;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  .top-toolbar {
+    width: 100%;
+    display: flex;
+    justify-content: end;
+    padding: 0 16px;
+    font-family: "Noto Sans";
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 18px; /* 150% */
+    .intervals {
+      display: flex;
+      gap: 8px;
+      .interval {
+        color: #5e6773;
+        cursor: pointer;
+        & .active,
+        &:hover {
+          color: #ffffff;
+        }
+      }
+    }
+  }
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  position: relative;
+  display: flex;
+}

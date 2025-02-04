@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package decimal;
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/decimal;decimal";
+
+message Decimal {
+    int64 Value = 1;
+    int32 Exp = 2;
+}

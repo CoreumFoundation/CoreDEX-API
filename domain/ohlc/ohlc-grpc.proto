@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package ohlc;
+
+import "google/protobuf/empty.proto";
+import "domain/ohlc/ohlc.proto";
+import "google/protobuf/timestamp.proto";
+import "domain/metadata/metadata.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc;ohlc";
+
+service OHLCService {
+    // Store a single ohlc
+    rpc Upsert(OHLC) returns (google.protobuf.Empty) {}
+    
+    // Store multiple ohlcs
+    rpc BatchUpsert(OHLCs) returns (google.protobuf.Empty) {}
+
+    // Get a list of ohlc by from/to, token pair, period and network
+    rpc Get(OHLCFilter) returns (OHLCs) {}
+    
+    // Get ohlcs for all the given periods
+    rpc GetOHLCsForPeriods(PeriodsFilter) returns (OHLCs) {}
+}
+
+message OHLCFilter {
+    string Symbol = 1;
+    google.protobuf.Timestamp From = 2;
+    optional bool SingleBucket = 3; // Apply from as equal to retrieve only this one bucket for the given time
+    google.protobuf.Timestamp To = 4; 
+    metadata.Network Network = 5;
+    Period Period = 6;
+    // Indicate if the data should be backfilled with the previous period if no data is found
+    bool Backfill = 7;
+    // Indicates if the data is allowed to be retrieved from the cache (default: false - no cache)
+    bool AllowCache = 8;
+}
+
+message PeriodsFilter {
+    string Symbol = 1;
+    repeated PeriodBucket Periods = 2;
+}
+
+message PeriodBucket {
+    Period Period = 1;
+    google.protobuf.Timestamp Timestamp = 2;
+}

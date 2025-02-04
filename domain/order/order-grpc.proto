@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+import "domain/order-properties/order-properties.proto";
+import "domain/metadata/metadata.proto";
+import "domain/order/order.proto";
+import "domain/denom/denom.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/order;order";
+
+service OrderService {
+    // Clones records into a historical table to track order updates
+    rpc Upsert(Order) returns (google.protobuf.Empty);
+    rpc Get(ID) returns (Order);
+    rpc GetAll(Filter) returns (Orders);
+    rpc BatchUpsert(Orders) returns (google.protobuf.Empty) {}
+}
+
+message ID {
+    metadata.Network Network = 1;
+    int64 Sequence = 2;
+}
+
+// Ability to get all trade history views using the filter options
+message Filter {
+    metadata.Network Network = 1;
+    optional google.protobuf.Timestamp From = 2;
+    optional google.protobuf.Timestamp To = 3;
+    optional string Account = 4;
+    optional int64 Sequence = 5;
+    optional string OrderID = 6;
+    optional denom.Denom Denom1 = 7;
+    optional denom.Denom Denom2 = 8;
+    optional orderproperties.Side Side = 9;
+    optional int64 Offset = 10;
+}

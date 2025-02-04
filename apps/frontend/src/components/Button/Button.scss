@@ -1,0 +1,76 @@
+/* Base Button Styling */
+.button {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  padding: 8px 24px 8px 24px;
+  gap: 4px;
+  transition: all 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 10px;
+  background: linear-gradient(225deg, #25d695 0%, #179b69 100%);
+  cursor: pointer;
+
+  &:disabled {
+    background: #17191e;
+    color: #2b3138;
+    cursor: not-allowed;
+    &:hover {
+      opacity: 1;
+      background: #17191e;
+      color: #2b3138;
+    }
+  }
+
+  .button-image {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+  }
+
+  .button-label {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
+
+.button-primary {
+  background: var(
+    --Gradient-Light-Green-Gradient,
+    linear-gradient(225deg, #25d695 0%, #179b69 100%)
+  );
+  color: white;
+  border: none;
+  transition: all 0.3s ease, box-shadow 0.3s ease;
+  .button-label {
+    color: #21262e;
+  }
+
+  &:hover {
+    opacity: 0.5;
+    background: linear-gradient(225deg, #25d695 0%, #179b69 100%);
+    .button-label {
+      color: #21262e;
+    }
+  }
+
+  &:active {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.button-secondary {
+  background: var(--Shades-Green-10, rgba(37, 214, 149, 0.1));
+  border: none;
+
+  .button-label {
+    color: #25d695;
+  }
+
+  &:hover {
+    opacity: 0.5;
+  }
+
+  &:active {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}

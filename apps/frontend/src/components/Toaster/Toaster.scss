@@ -1,0 +1,45 @@
+.Toastify__close-button > svg {
+  // transform: translateY(90%);
+  color: #696666;
+}
+
+.toaster-container {
+  & > .Toastify__toast-theme--colored {
+    background: linear-gradient(225deg, #25d695 0%, #179b69 100%);
+  }
+}
+
+.Toastify__toast {
+  padding: 16px;
+  align-items: center;
+  height: fit-content;
+  min-height: unset;
+}
+
+.Toastify__toast-theme--colored.Toastify__toast--success {
+  color: #21262e;
+  font-family: "Noto Sans";
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: -0.28px;
+}
+.Toastify__toast-theme--colored.Toastify__toast--warning {
+  color: #21262e;
+  font-family: "Noto Sans";
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: -0.28px;
+}
+.Toastify__toast-theme--colored.Toastify__toast--error {
+  color: #21262e;
+  font-family: "Noto Sans";
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: -0.28px;
+}

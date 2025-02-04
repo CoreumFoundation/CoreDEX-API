@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package denom;
+
+option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/denom;denom";
+
+message Denom {
+    string Currency = 1;
+    string Issuer = 2;
+    optional int32 Precision = 3;
+    bool IsIBC = 4;
+    string Denom = 5; // Could be handy for IBC
+    // Additional fields, make it possible to use the denom as the currency storage for display purposes
+    optional string Name = 6;
+    optional string Description = 7;
+    optional string Icon = 8;
+}
