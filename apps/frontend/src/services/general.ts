@@ -6,6 +6,7 @@ import {
   TradeHistoryResponse,
   CreateOrder,
   WalletAsset,
+  CancelOrderResponse,
 } from "@/types/market";
 import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
@@ -21,20 +22,24 @@ export const getOHLC = async (
   from: string,
   to: string
 ): Promise<AxiosResponse<OhlcResponse>> => {
-  try {
-    const data = request(
-      {},
-      `${API_URL}/ohlc?symbol=${symbol}&period=${period}&from=${from}&to=${to}`,
-      APIMethod.GET
-    );
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING OHLC DATA >>", e);
-    throw e;
+  const params = new URLSearchParams({
+    symbol,
+    period,
+    from,
+    to,
+  });
+
+  const response = await request(
+    {},
+    `${API_URL}/ohlc?${params}`,
+    APIMethod.GET
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from OHLC API");
   }
+
+  return response;
 };
 
 export const getTrades = async (
@@ -43,146 +48,144 @@ export const getTrades = async (
   to: number,
   account?: string
 ): Promise<AxiosResponse<TradeHistoryResponse>> => {
-  try {
-    const data = await request(
-      {},
-      `${API_URL}/trades?symbol=${symbol}&from=${from}&to=${to}${
-        account ? `&account=${account}` : ""
-      }`,
-      APIMethod.GET
-    );
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING TRADES DATA >>", e);
-    throw e;
+  const params = new URLSearchParams({
+    symbol,
+    from: from.toString(),
+    to: to.toString(),
+    ...(account && { account }),
+  });
+
+  const response = await request(
+    {},
+    `${API_URL}/trades?${params}`,
+    APIMethod.GET
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from Trades API");
   }
+
+  return response;
 };
 
 export const getTickers = async (
   symbols: string
 ): Promise<AxiosResponse<TickerResponse>> => {
-  try {
-    const data = await request(
-      {},
-      `${API_URL}/tickers?symbols=${symbols}`,
-      APIMethod.GET
-    );
+  const params = new URLSearchParams({
+    symbols,
+  });
 
-    if (!data) {
-      throw new Error("No data received from API");
-    }
+  const response = await request(
+    {},
+    `${API_URL}/tickers?${params}`,
+    APIMethod.GET
+  );
 
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING TICKERS DATA >>", e);
-    throw e;
+  if (!response.data) {
+    throw new Error("No data received from Tickers API");
   }
+
+  return response;
 };
 
 export const getCurrencies = async (): Promise<
   AxiosResponse<CurrencyResponse>
 > => {
-  try {
-    const data = await request({}, `${API_URL}/currencies`, APIMethod.GET);
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING CURRENCIES DATA >>", e);
-    throw e;
+  const response = await request({}, `${API_URL}/currencies`, APIMethod.GET);
+
+  if (!response.data) {
+    throw new Error("No data received from Currencies API");
   }
+
+  return response;
 };
 
 export const createOrder = async (order: CreateOrder) => {
-  try {
-    const data = request(order, `${API_URL}/order/create`, APIMethod.POST);
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR CREATING ORDER >>", e);
-    throw e;
+  const response = await request(
+    order,
+    `${API_URL}/order/create`,
+    APIMethod.POST
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from CreateOrder API");
   }
+
+  return response;
 };
 
 export const submitOrder = async (order: { TX: string }) => {
-  try {
-    const data = request(order, `${API_URL}/order/submit`, APIMethod.POST);
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR SUBMITTING ORDER >>", e);
-    throw e;
+  const response = await request(
+    order,
+    `${API_URL}/order/submit`,
+    APIMethod.POST
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from SubmitOrder API");
   }
+
+  return response;
 };
 
 export const getOrderbook = async (
   symbol: string,
   account?: string
 ): Promise<AxiosResponse<OrderbookResponse>> => {
-  try {
-    const data = request(
-      {},
-      `${API_URL}/order/orderbook?symbol=${symbol}${
-        account ? `&account=${account}` : ""
-      }`,
-      APIMethod.GET
-    );
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING ORDERBOOK DATA >>", e);
-    throw e;
+  const params = new URLSearchParams({
+    symbol,
+    ...(account && { account }),
+  });
+
+  const response = await request(
+    {},
+    `${API_URL}/order/orderbook?${params}`,
+    APIMethod.GET
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from Orderbook API");
   }
+
+  return response;
 };
 
 export const getWalletAssets = async (
   address: string
 ): Promise<AxiosResponse<WalletAsset[]>> => {
-  try {
-    const data = await request(
-      {},
-      `${API_URL}/wallet/assets?address=${address}`,
-      APIMethod.GET
-    );
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
-    throw e;
+  const params = new URLSearchParams({
+    address,
+  });
+
+  const response = await request(
+    {},
+    `${API_URL}/wallet/assets?${params}`,
+    APIMethod.GET
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from Wallet Assets API");
   }
+
+  return response;
 };
 
 export const cancelOrder = async (
   address: string,
   id: string
-): Promise<AxiosResponse<any>> => {
-  try {
-    const data = await request(
-      {
-        Sender: address,
-        OrderID: id,
-      },
-      `${API_URL}/order/cancel`,
-      APIMethod.POST
-    );
-    if (!data) {
-      throw new Error("No data received from API");
-    }
-    return data;
-  } catch (e) {
-    console.log("ERROR CANCELING ORDER >>", e);
-    throw e;
+): Promise<CancelOrderResponse> => {
+  const response = await request(
+    {
+      Sender: address,
+      OrderID: id,
+    },
+    `${API_URL}/order/cancel`,
+    APIMethod.POST
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from CancelOrder API");
   }
+
+  return response.data;
 };

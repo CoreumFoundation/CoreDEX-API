@@ -24,7 +24,7 @@ export function FormatNumber(props: FormatNumberProps) {
     insideElement = true,
     smallDecimals = true,
     customStyle,
-    precision,
+    precision = 6,
     prefix,
     suffix,
   } = props;

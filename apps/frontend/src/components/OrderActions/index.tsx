@@ -49,7 +49,6 @@ const OrderActions = ({
         const response = await getWalletAssets(wallet?.address);
         if (response.status === 200 && response.data.length > 0) {
           const data = response.data;
-          console.log("ASSET BALANCES", data);
           setBalances(data);
         }
       } catch (e) {
@@ -203,6 +202,7 @@ const OrderActions = ({
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
+      console.log("!!", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -350,7 +350,7 @@ const OrderActions = ({
               <FormatNumber
                 number={totalPrice || 0}
                 className="order-total-number"
-                precision={7}
+                precision={6}
               />
               <p className="order-total-currency">
                 {market.counter.Denom.Currency}
@@ -411,8 +411,6 @@ const OrderActions = ({
           <p className="balance-value">{counterBalance}</p>
         </div>
       </div>
-
-
     </div>
   );
 };

@@ -187,7 +187,7 @@ export default function Orderbook({
 
       lineGroup.forEach((g) => {
         const element = document.querySelector(
-          `.orderbook-row[data-value="${g.HumanReadablePrice}_${orderType}"]`
+          `.orderbook-row[data-value="${g.HumanReadablePrice}_${orderType}_${g.Sequence}"]`
         );
         element?.classList.add(
           `${orderType === ORDERBOOK_TYPE.BUY ? "hovered-buy" : "hovered-sell"}`
@@ -256,7 +256,7 @@ export default function Orderbook({
       <div
         key={index}
         className="orderbook-row"
-        data-value={`${order.HumanReadablePrice}_${type}`}
+        data-value={`${order.HumanReadablePrice}_${type}_${order.Sequence}`}
         onMouseEnter={(e) => handleTooltip(e, index, type, true)}
         onMouseLeave={() => {
           removeHoverClasses();
@@ -277,19 +277,16 @@ export default function Orderbook({
         <div className="orderbook-numbers-wrapper">
           <FormatNumber
             number={Number(order.HumanReadablePrice)}
-            precision={6}
             className={`orderbook-number price-${isBuy ? "buys" : "sells"}`}
           />
           <FormatNumber
             number={Number(order.SymbolAmount)}
-            precision={8}
             className="orderbook-number"
           />
           <FormatNumber
             number={
               Number(order.HumanReadablePrice) * Number(order.SymbolAmount)
             }
-            precision={8}
             className="orderbook-number"
           />
         </div>
@@ -332,7 +329,7 @@ export default function Orderbook({
               {spread && (
                 <div className="orderbook-spread">
                   <p className="spread-label">{`${market.counter.Denom.Name} Spread:`}</p>
-                  <FormatNumber number={spread?.valueOf()} precision={8} />
+                  <FormatNumber number={spread?.valueOf()} />
                 </div>
               )}
 

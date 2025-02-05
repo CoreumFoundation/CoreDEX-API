@@ -13,8 +13,8 @@ import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
-import Modal from "../Modal";
-import Button, { ButtonVariant } from "../Button";
+import { DEX } from "coreum-js-nightly";
+import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -31,6 +31,7 @@ const OrderHistory = () => {
     orderHistory,
     setOrderHistory,
     pushNotification,
+    coreum,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
@@ -111,7 +112,6 @@ const OrderHistory = () => {
     ].sort((a, b) => a.Sequence - b.Sequence);
   };
 
-  // TODO: move to ws service
   const handleOrderHistory = useCallback(
     (message: WebSocketMessage) => {
       const data = message.Subscription?.Content;
@@ -163,24 +163,33 @@ const OrderHistory = () => {
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
     try {
-      const response = await cancelOrder(wallet.address, id);
-      if (response.status === 200 && response.data) {
-        try {
-          const tx = response.data.TXBytes;
-          await navigator.clipboard.writeText(tx);
+      const data = await cancelOrder(wallet.address, id);
 
-          pushNotification({
-            type: "success",
-            message: `Order Cancelled! TXHash copied to clipboard: ${tx.slice(
-              0,
-              6
-            )}...${tx.slice(-4)}`,
-          });
-        } catch (copyError) {
-          console.error("Copy failed:", copyError);
-        }
+      if (data) {
+        const cancelMessage: MsgCancelOrder = {
+          sender: wallet.address,
+          id: id,
+        };
+
+        const response = DEX.CancelOrder(cancelMessage);
+        await coreum?.sendTx([response]);
+        pushNotification({
+          type: "success",
+          message: "Order Cancelled!",
+        });
       }
-    } catch (e) {
+    } catch (e: any) {
+      // TODO: sendTX outputs this error but the cancel still goes through successfully
+      // clarify with coreum team
+      if (
+        e.error.message === "Invalid string. Length must be a multiple of 4"
+      ) {
+        pushNotification({
+          type: "success",
+          message: "Order Cancelled!",
+        });
+        return;
+      }
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
         type: "error",
@@ -259,26 +268,16 @@ const OrderHistory = () => {
                             : "Unspecified"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <FormatNumber
-                          number={order.Price}
-                          precision={5}
-                          className="price"
-                        />
+                        <FormatNumber number={order.Price} className="price" />
                         <FormatNumber
                           number={order.Volume}
-                          precision={4}
                           className="volume"
                         />
-                        <FormatNumber
-                          number={order.Total}
-                          precision={4}
-                          className="total"
-                        />
+                        <FormatNumber number={order.Total} className="total" />
                         <div
                           className="cancel-order-container"
                           onClick={() => {
-                            setCancelOrderModal(true);
-                            setCancelOrderId(order.OrderID);
+                            handleCancelOrder(order.OrderID);
                           }}
                         >
                           <svg
@@ -330,12 +329,10 @@ const OrderHistory = () => {
                         <div className="status">TODO</div>
                         <FormatNumber
                           number={order.HumanReadablePrice}
-                          precision={5}
                           className="price"
                         />
                         <FormatNumber
                           number={order.SymbolAmount}
-                          precision={4}
                           className="volume"
                         />
                         <FormatNumber
@@ -343,7 +340,6 @@ const OrderHistory = () => {
                             Number(order.HumanReadablePrice) *
                             Number(order.SymbolAmount)
                           }
-                          precision={4}
                           className="total"
                         />
                         <p className="date">
@@ -381,44 +377,6 @@ const OrderHistory = () => {
           </div>
         </>
       )}
-      <Modal
-        isOpen={cancelOrderModal}
-        onClose={() => {
-          setCancelOrderModal(false);
-          setCancelOrderId("");
-        }}
-        title="Cancel Open Order"
-        children={
-          <div className="cancel-order">
-            <p className="cancel-order-description">
-              Do you want to cancel this open order?
-            </p>
-            <div className="cancel-order-btns">
-              <Button
-                variant={ButtonVariant.PRIMARY}
-                onClick={() => {
-                  handleCancelOrder(cancelOrderId);
-                  setCancelOrderModal(false);
-                  setCancelOrderId("");
-                }}
-                width={"100%"}
-                height={37}
-                label="Confirm"
-              />
-              <Button
-                variant={ButtonVariant.DANGER}
-                onClick={() => {
-                  setCancelOrderModal(false);
-                  setCancelOrderId("");
-                }}
-                width={"100%"}
-                height={37}
-                label="Cancel"
-              />
-            </div>
-          </div>
-        }
-      />
     </div>
   );
 };

@@ -58,7 +58,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     };
   }, [market, chartPeriod]);
 
-  // TODO try to move update handling to websocket service
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
@@ -83,7 +82,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     }));
 
     dataFeed.subscriptions.forEach((sub) => {
-      console.log("ohlc tradingview bar", bars);
       if (bars.length > 0) {
         sub.onRealtimeCallback(bars[bars.length - 1]);
       }

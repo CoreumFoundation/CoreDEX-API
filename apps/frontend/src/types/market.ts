@@ -297,3 +297,7 @@ export type WalletAsset = {
   Denom: string;
   SymbolAmount: string;
 };
+
+export type CancelOrderResponse = {
+  TXBytes: string;
+};
