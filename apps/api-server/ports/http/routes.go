@@ -9,6 +9,8 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
+const routePrepend = "/api"
+
 type httpServer struct {
 	app *app.Application
 }
@@ -20,16 +22,16 @@ func NewHttpServer(app *app.Application) *behttp.Server {
 		Path: "/healthz", Method: behttp.GET, Handler: s.Health(),
 	})
 	behttp.InitRoutes([]behttp.Route{
-		{Path: "/ohlc", Method: behttp.GET, Handler: s.getOHLC()},
-		{Path: "/tickers", Method: behttp.GET, Handler: s.getTickers()},
-		{Path: "/trades", Method: behttp.GET, Handler: s.getTrades()},
-		{Path: "/currencies", Method: behttp.GET, Handler: s.getCurrencies()},
-		{Path: "/order/create", Method: behttp.POST, Handler: s.createOrder()},
-		{Path: "/order/cancel", Method: behttp.POST, Handler: s.cancelOrder()},
-		{Path: "/order/submit", Method: behttp.POST, Handler: s.submitOrder()},
-		{Path: "/order/orderbook", Method: behttp.GET, Handler: s.getOrders()},
-		{Path: "/wallet/assets", Method: behttp.GET, Handler: s.getAssets()},
-		{Path: "/ws", Method: behttp.GET, Handler: s.wsEndpoint()},
+		{Path: routePrepend + "/ohlc", Method: behttp.GET, Handler: s.getOHLC()},
+		{Path: routePrepend + "/tickers", Method: behttp.GET, Handler: s.getTickers()},
+		{Path: routePrepend + "/trades", Method: behttp.GET, Handler: s.getTrades()},
+		{Path: routePrepend + "/currencies", Method: behttp.GET, Handler: s.getCurrencies()},
+		{Path: routePrepend + "/order/create", Method: behttp.POST, Handler: s.createOrder()},
+		{Path: routePrepend + "/order/cancel", Method: behttp.POST, Handler: s.cancelOrder()},
+		{Path: routePrepend + "/order/submit", Method: behttp.POST, Handler: s.submitOrder()},
+		{Path: routePrepend + "/order/orderbook", Method: behttp.GET, Handler: s.getOrders()},
+		{Path: routePrepend + "/wallet/assets", Method: behttp.GET, Handler: s.getAssets()},
+		{Path: routePrepend + "/ws", Method: behttp.GET, Handler: s.wsEndpoint()},
 	})
 	return behttp.HTTPServer
 }

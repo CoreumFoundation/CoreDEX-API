@@ -59,7 +59,7 @@ Steps to do this are:
 2. Run the following SQL command:
 
 ```sql
-UPDATE State SET content = '{"Height":6618678}' WHERE StateType=1;
+UPDATE State SET Content = '{"Height":6618678}' WHERE StateType=1;
 ```
 
 After which the data-aggregator can be started again by running the start script.

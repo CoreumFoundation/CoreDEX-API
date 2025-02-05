@@ -25,16 +25,16 @@ In the following paragraphs, the endpoints are described in more detail.
 
 The API server provides the following routes:
 
-* GET /ohlc : Returns OHLC data
-* GET /trades : Returns trade data (filterable)
-* GET /tickers?symbols=base64encoded : Returns the latest price for one or more trading pairs
-* GET /currencies : Returns the currencies
-* GET /ws : Websocket for real-time updates
-* POST /order/create : Create an order
-* POST /order/cancel : Cancel an order
-* POST /order/submit : Submit an order
-* GET /order/orderbook : Returns the order book
-* GET /wallet/assets : Returns the assets of a wallet
+* GET /api/ohlc : Returns OHLC data
+* GET /api/trades : Returns trade data (filterable)
+* GET /api/tickers?symbols=base64encoded : Returns the latest price for one or more trading pairs
+* GET /api/currencies : Returns the currencies
+* GET /api/ws : Websocket for real-time updates
+* POST /api/order/create : Create an order
+* POST /api/order/cancel : Cancel an order
+* POST /api/order/submit : Submit an order
+* GET /api/order/orderbook : Returns the order book
+* GET /api/wallet/assets : Returns the assets of a wallet
 
 #### GET /ohlc
 
@@ -75,8 +75,8 @@ Returns:
 #### Example
 
 ```bash
-curl "https://api.coreum.com/ohlc?symbol=dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&period=1m&from=1611007200&to=1611070980" \
---header "Network: mainnet"
+curl "https://coredex.test.coreum.dev/api/ohlc?symbol=dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&period=1m&from=1611007200&to=1611070980" \
+--header "Network: devnet"
 ```
 
 #### Get /trades
@@ -156,8 +156,8 @@ The content to be base64 encode is a JSON array: `["USD-..._BTC-...]`.
 Example call:
 
 ```bash
-curl -H "Network: mainnet" \
--X "GET" "https://api.coreum.com/tickers?symbols=WyJVU0QrckQ5VzdVTHZlYXZ6OHFCR00xUjVqTWdLMlFLc0VEUFFWaS9YUlAiLCAiWFJQL1VTRCtyRDlXN1VMdmVhdno4cUJHTTFSNWpNZ0syUUtzRURQUVZpIl0="
+curl -H "Network: devnet" \
+-X "GET" "https://coredex.test.coreum.dev/api/tickers?symbols=WyJVU0QrckQ5VzdVTHZlYXZ6OHFCR00xUjVqTWdLMlFLc0VEUFFWaS9YUlAiLCAiWFJQL1VTRCtyRDlXN1VMdmVhdno4cUJHTTFSNWpNZ0syUUtzRURQUVZpIl0="
 ```
 
 Returns: 
@@ -246,8 +246,8 @@ Returns a list of currencies.
 Example call:
 
 ```bash
-curl -H "Network: mainnet" \
--X "GET" "https://api.coreum.com/currencies"
+curl -H "Network: devnet" \
+-X "GET" "https://coredex.test.coreum.dev/api/currencies"
 ```
 
 #### /order/create
@@ -281,7 +281,7 @@ Example call:
 
 ```bash
 curl -H "Network: devnet" \
--X "POST" "https://api.coreum.com/order/create" \
+-X "POST" "https://coredex.test.coreum.dev/api/order/create" \
 -d '{
     "Sender": "devcore1878pk82zlndhldglx26r606qcd886562mad59y",
     "Type": 1,
@@ -315,7 +315,7 @@ Example call:
 
 ```bash
 curl -H "Network: devnet" \
--X "POST" "https://api.coreum.com/order/cancel" \
+-X "POST" "https://coredex.test.coreum.dev/api/order/cancel" \
 -d '{
     "Sender": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
     "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac"
@@ -330,7 +330,7 @@ Example call:
 
 ```bash
 curl -H "Network: devnet" \
--X "POST" "https://api.coreum.com/order/submit" \
+-X "POST" "https://coredex.test.coreum.dev/api/order/submit" \
 -d '{
   "TX": "CqcCCqQCChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEoMCCvwBCvkBChwvY29yZXVtLmRleC52MS5Nc2dQbGFjZU9yZGVyEtgBCi5kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzEAEaBnN0cmluZyI8ZGV4dGVzdGRlbm9tNS1kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzKjxkZXh0ZXN0ZGVub205LWRldmNvcmUxcDBlZHp5enBhenB0Njh2ZHJqeTIwYzQybHZ3c2pwdmZ6YWh5Z3MyBTI1ZS0yOgoxMDAwMDAwMDAwQAFKCwjoBxIGCMCv9MYGEgISABJSCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDWIusTf5MdJVCJlqRR1MVNO5So6We2b5v42yCQl+k3D0SBAoCCAESABpAa+STFz77MqaUIU2bbS5uKtXeOyGW/m2qLcf96WEAJPJCSnO/3em/QZtGKnF1eg4ylCawYOH/8gpDLrxI1ybsiw=="
 }
@@ -414,7 +414,7 @@ Example call:
 
 ```bash
 curl -H "Network: devnet" \
--X "GET" "https://api.coreum.com/wallet/assets?address=devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+-X "GET" "https://coredex.test.coreum.dev/api/wallet/assets?address=devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
 ```
 
 #### Update service for real-time updates
@@ -490,7 +490,7 @@ The base coin is configured in a json array which depending on usage might requi
 {
   "BaseCoin": [
     {
-      "Network": "mainnet",
+      "Network": "devnet",
       "Coin": "ucore"
     },
     {
@@ -508,14 +508,14 @@ The base coin is configured in a json array which depending on usage might requi
 ### Base USDC
 
 Base USDC is used by a path resolving algorithm (non-weighted Dijkstra alghorithm) to find the path between two assets and be able to resolve that to the representative USD value using a USDC as base.
-Often devnet and testnet will not have an IBC USDC currency available, resulting in a mainnet configuration only. On devnet/testnet the user will most likely not see any USD values in the data.
+Often devnet and testnet will not have an IBC USDC currency available, resulting in a devnet configuration only. On devnet/testnet the user will most likely not see any USD values in the data.
 The base USDC is configured in a json array which depending on usage might require escaping. The base USDC configuration is as follows:
 
 ```json
 {
   "BaseCoin": [
     {
-      "Network": "mainnet",
+      "Network": "devnet",
       "Coin": "uusdc-E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D"
     }
   ]
