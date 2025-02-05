@@ -46,18 +46,18 @@ func (r *Reader) QueryOrderBookOrders(
 
 type OrderBookOrder struct {
 	priceDec           decimal.Decimal
-	Price              string `json:"Price"`
-	HumanReadablePrice string `json:"HumanReadablePrice"`
-	Amount             string `json:"Amount"`
-	SymbolAmount       string `json:"SymbolAmount"`
-	Sequence           uint64 `json:"Sequence"`
-	Account            string `json:"Account"`
-	OrderID            string `json:"OrderID"`
+	Price              string
+	HumanReadablePrice string
+	Amount             string
+	SymbolAmount       string
+	Sequence           uint64
+	Account            string
+	OrderID            string
 }
 
 type OrderBookOrders struct {
-	Buy  []*OrderBookOrder `json:"Buy"`
-	Sell []*OrderBookOrder `json:"Sell"`
+	Buy  []*OrderBookOrder
+	Sell []*OrderBookOrder
 }
 
 func (r *Reader) QueryOrderBookBySide(ctx context.Context,
