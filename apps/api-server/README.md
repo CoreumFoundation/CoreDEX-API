@@ -4,6 +4,21 @@ The API server provides a RESTFUL API for the Coreum DEX.
 The goal of the API server is to flatten the learning curve for the Coreum DEX (and with that of the Cosmos SDK) and to provide a simple and easy to use API for developers to interact with the Coreum DEX.
 The only part where there is some Cosmos knowledge required is where the developer has to interact with a wallet application to sign the transaction.
 
+The API design principles used are:
+
+* Reduce/eliminate blockchain required knowledge as much as possible for a frontend/business developer
+* Remove required calculations to work with blockchain denomination notations
+* Reduce business rules related code in the frontend.
+
+This means that:
+
+* Numberic values are published in the internal representation and as human readable values: HumanReadablePrice, SymbolAmount
+* Submission of values into the order/create endpoint is in human readable values (e.g. 0.25 for a price instead of 25000 (Depending on precision: The developer does not need to know how to work with precision))
+* Submission into endpoints like order/create check all the relevant business rules so that the frontend dev can be concerned with UX/UI instead of what order works or not
+* The frontend uses a single javascript package to communicate with the backend thus abstracting the communication between this API and the frontend, making it easier to implement a personalized DEX
+
+The goal is that by using this API any developer can launch a Coreum DEX with a lower investment and commoditize the DEX market.
+
 ## Requirement for running the API
 
 The API depends on the store to be running. The data in the store is populated by the `data-aggregator`, which is also present in this repository (see `/apps/data-aggregator`).
@@ -133,7 +148,8 @@ Returns:
         "TXID": "29E2362BE19BE53B5A38CFAAB4B777484F5956972C656A4378D7620A6E8F4A36",
         "BlockHeight": 6714462,
         "HumanReadablePrice": "35.015385",
-        "SymbolAmount": "0.002080"
+        "SymbolAmount": "0.002080",
+        "Status": 3
     },
     //...
   ],

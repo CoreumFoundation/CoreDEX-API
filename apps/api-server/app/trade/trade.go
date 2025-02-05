@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradegrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 )
@@ -16,6 +17,7 @@ type Trade struct {
 	*tradegrpc.Trade
 	HumanReadablePrice string
 	SymbolAmount       string
+	Status             ordergrpc.OrderStatus
 }
 
 type Trades []*Trade
@@ -40,6 +42,7 @@ func (app *Application) GetTrades(ctx context.Context, filter *tradegrpc.Filter)
 		tr.HumanReadablePrice = fmt.Sprintf("%f", trade.Price)
 		tr.SymbolAmount = fmt.Sprintf("%f", trade.Amount.Float64())
 		trs = append(trs, tr)
+		tr.Status = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
 	}
 	return &trs, nil
 }

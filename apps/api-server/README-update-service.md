@@ -1,8 +1,6 @@
 # update service
 
-The update
-
-The way it does this is by listening on a kafka topic and publishing the messages to the interested listeners.
+The update service provides a websocket which refreshes the data based on actual changes. The use of the websocker reduces the numbers of reads required to produce the same data to the connected clients, thus lowering database load and related costs.
 
 ## Response messages
 

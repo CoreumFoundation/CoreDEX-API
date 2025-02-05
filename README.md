@@ -1,4 +1,15 @@
-# CoreDEX API
+# CoreDEX API: The API for the Coreum DEX, A business-ready exchange
+
+## About the Coreum DEX
+
+The Coreum DEX is a permissionless, fee-free exchange with an ***organic order book*** designed for RWAs. Build trading interfaces using the CoreDEX APi pre-built extenstions for compliance and increased security.
+
+| Quick Setup | Custom Trading Logic | Developer Ready API |
+|-|-|-|
+| Get started in under 15 minutes with minimal technical overhead   | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions   | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints   |
+
+
+## About the CoreDEX API
 
 The CoreDEX is an API on top of the Coreum blockchain integrated DEX. The API is in RESTFUL style so that it is easier to use than using the blockchain directly. By using this restful API the developer onbly needs to integrate signing of transactions with their preferred wallet system.
 
