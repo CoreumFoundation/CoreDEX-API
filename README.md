@@ -1,6 +1,6 @@
-# Coreum friendly DEX
+# CoreDEX API
 
-The Coreum Friendly DEX is an API on top of the Coreum blockchain integrated DEX. The API is in RESTFUL style so that it is easier to use than using the blockchain directly. By using this restful API the developer onbly needs to integrate signing of transactions with their preferred wallet system.
+The CoreDEX is an API on top of the Coreum blockchain integrated DEX. The API is in RESTFUL style so that it is easier to use than using the blockchain directly. By using this restful API the developer onbly needs to integrate signing of transactions with their preferred wallet system.
 
 The project provides a data aggrator (block chain scanner), an API server, store, and an UI (for demo purposes).
 
@@ -24,9 +24,9 @@ The store (folder `/apps/store`) is an implementation against a MySQL database, 
 
 ## Installation and running of the Friendly DEX
 
-Getting the Friendly DEX running on your local (unix or linux) system takes just a few minutes.
+Getting the CoreDEX running on your local (unix or linux) system takes just a few minutes.
 
-To run the Friendly DEX you need to have the following installed:
+To run the CoreDEX you need to have the following installed:
 
 * Go lang 1.23 or higher (https://golang.org/dl/)
 * MySQL (https://dev.mysql.com/downloads/)
@@ -59,7 +59,7 @@ Steps to do this are:
 2. Run the following SQL command:
 
 ```sql
-UPDATE State SET content = '{"Height":6618678}' WHERE StateType=1;
+UPDATE State SET Content = '{"Height":6618678}' WHERE StateType=1;
 ```
 
 After which the data-aggregator can be started again by running the start script.
@@ -98,6 +98,15 @@ CPU and memory expectations:
 * UI: 1 CPU, 256MB memory
 
 A set of single instances is expected to be able to handle 1000s of parallel requests.
+
+To support deployment on cloud services, there are 4 docker files in the root of the project. These can be used to build the docker images for the components.
+
+```bash
+docker build -t api-server -f Dockerfile.api-server .
+docker build -t data-aggregator -f Dockerfile.data-aggregator .
+docker build -t store -f Dockerfile.store .
+docker build -t frontend -f Dockerfile.frontend .
+```
 
 ## Application documentation
 

@@ -1,0 +1,22 @@
+FROM golang:1.23-alpine AS build
+
+WORKDIR /go/src/app
+
+COPY . .
+# RUN go mod download && go mod verify
+
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+WORKDIR /go/src/app/apps/store
+RUN export flags="-s -w" && \
+    go build -ldflags "${flags}" -o /go/bin/app .
+
+FROM alpine
+
+WORKDIR /app
+
+COPY --from=build /go/bin/ ./
+
+CMD ["./app"]
