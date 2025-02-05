@@ -302,6 +302,7 @@ const OrderActions = ({
                 }}
                 inputWrapperClassname="order-input"
                 decimals={13}
+                adornmentRight={market.base.Denom.Currency}
               />
               <Input
                 maxLength={16}
@@ -336,6 +337,7 @@ const OrderActions = ({
                   fontSize: 16,
                 }}
                 decimals={13}
+                adornmentRight={market.base.Denom.Currency}
               />
             </div>
           )}
@@ -343,7 +345,7 @@ const OrderActions = ({
 
         <div className="order-bottom">
           <div className="order-total">
-            <p className="order-total-label">Total:</p>
+            <p className="order-total-label">Total Cost:</p>
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}
@@ -409,6 +411,8 @@ const OrderActions = ({
           <p className="balance-value">{counterBalance}</p>
         </div>
       </div>
+
+
     </div>
   );
 };

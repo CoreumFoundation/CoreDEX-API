@@ -13,6 +13,8 @@ import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
+import Modal from "../Modal";
+import Button, { ButtonVariant } from "../Button";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -32,6 +34,8 @@ const OrderHistory = () => {
   } = useStore();
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
+  const [cancelOrderModal, setCancelOrderModal] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState("");
 
   // fetch order history
   useEffect(() => {
@@ -161,11 +165,20 @@ const OrderHistory = () => {
     try {
       const response = await cancelOrder(wallet.address, id);
       if (response.status === 200 && response.data) {
-        console.log("Order cancelled", response.data);
-        pushNotification({
-          type: "success",
-          message: "Order cancelled successfully",
-        });
+        try {
+          const tx = response.data.TXBytes;
+          await navigator.clipboard.writeText(tx);
+
+          pushNotification({
+            type: "success",
+            message: `Order Cancelled! TXHash copied to clipboard: ${tx.slice(
+              0,
+              6
+            )}...${tx.slice(-4)}`,
+          });
+        } catch (copyError) {
+          console.error("Copy failed:", copyError);
+        }
       }
     } catch (e) {
       console.log("ERROR CANCELLING ORDER >>", e);
@@ -264,7 +277,8 @@ const OrderHistory = () => {
                         <div
                           className="cancel-order-container"
                           onClick={() => {
-                            handleCancelOrder(order.OrderID);
+                            setCancelOrderModal(true);
+                            setCancelOrderId(order.OrderID);
                           }}
                         >
                           <svg
@@ -367,6 +381,44 @@ const OrderHistory = () => {
           </div>
         </>
       )}
+      <Modal
+        isOpen={cancelOrderModal}
+        onClose={() => {
+          setCancelOrderModal(false);
+          setCancelOrderId("");
+        }}
+        title="Cancel Open Order"
+        children={
+          <div className="cancel-order">
+            <p className="cancel-order-description">
+              Do you want to cancel this open order?
+            </p>
+            <div className="cancel-order-btns">
+              <Button
+                variant={ButtonVariant.PRIMARY}
+                onClick={() => {
+                  handleCancelOrder(cancelOrderId);
+                  setCancelOrderModal(false);
+                  setCancelOrderId("");
+                }}
+                width={"100%"}
+                height={37}
+                label="Confirm"
+              />
+              <Button
+                variant={ButtonVariant.DANGER}
+                onClick={() => {
+                  setCancelOrderModal(false);
+                  setCancelOrderId("");
+                }}
+                width={"100%"}
+                height={37}
+                label="Cancel"
+              />
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 };

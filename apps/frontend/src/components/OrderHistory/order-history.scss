@@ -182,4 +182,23 @@
   .date.order-label {
     color: $text-muted;
   }
+
+  .cancel-order {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    .cancel-order-description {
+      color: #c3c3c3;
+      font-family: "Noto Sans";
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 28px;
+      letter-spacing: -0.16px;
+    }
+    .cancel-order-btns {
+      display: flex;
+      gap: 8px;
+    }
+  }
 }

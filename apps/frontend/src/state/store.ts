@@ -97,19 +97,19 @@ export const useStore = create<State>((set) => ({
     },
     counter: {
       Denom: {
-        Currency: "dextestdenom1",
-        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Precision: 6,
-        Denom: "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Name: "DexTestDenom1",
-        Description: "Dex Test Denom",
+        Currency: "udevcore",
+        Precision: 0,
+        Denom: "udevcore",
+        Name: "udevcore",
+        Description: "devcore coin",
       },
-      Description: "Dex Test Denom",
+
+      Description: "devcore coin",
     },
     pair_symbol:
-      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_udevcore",
     reversed_pair_symbol:
-      "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "udevcore_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
   },
   setMarket: (market: Market) => {
     set({ market: market });
