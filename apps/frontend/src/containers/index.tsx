@@ -14,7 +14,7 @@ import { useWindowSize } from "react-use";
 
 const Home = () => {
   const [orderbookAction, setOrderbookAction] = useState<OrderbookAction>();
-  const { loginModal, setLoginModal } = useStore();
+  const { loginModal, setLoginModal, market } = useStore();
   const { width } = useWindowSize();
 
   return (
@@ -39,7 +39,7 @@ const Home = () => {
       ) : (
         <>
           <div className="row">
-            <TradingView height="100%" />
+            <TradingView height="100%" key={`${market.pair_symbol}`} />
             <OrderActions orderbookAction={orderbookAction} />
           </div>
 

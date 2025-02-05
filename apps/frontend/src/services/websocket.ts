@@ -55,6 +55,7 @@ class WebSocketManager {
   private ws: WebSocket | null = null;
   private handlers: Map<string, MessageHandler[]> = new Map();
   private pendingSubscriptions: Subscription[] = [];
+  private pendingUnsubscriptions: Subscription[] = [];
   private isConnected = false;
 
   private constructor() {}
@@ -70,20 +71,42 @@ class WebSocketManager {
     if (this.ws) return;
 
     this.ws = new WebSocket(url);
-    this.ws.onopen = () => {
-      this.isConnected = true;
-      console.log("WebSocket connected");
-      this.pendingSubscriptions.forEach((sub) => this.sendSubscription(sub));
-      this.pendingSubscriptions = [];
-    };
-
+    this.ws.onopen = () => this.handleConnectionOpen();
     this.ws.onmessage = (event) => this.handleMessage(event.data);
-
     this.ws.onclose = () => {
       this.isConnected = false;
       this.ws = null;
       console.log("WebSocket disconnected");
     };
+  }
+
+  private handleConnectionOpen() {
+    this.isConnected = true;
+    console.log("WebSocket connected");
+
+    this.pendingUnsubscriptions.forEach((sub) => this.sendUnsubscription(sub));
+    this.pendingUnsubscriptions = [];
+
+    this.pendingSubscriptions.forEach((sub) => this.sendSubscription(sub));
+    this.pendingSubscriptions = [];
+  }
+
+  private sendSubscription(subscription: Subscription) {
+    this.ws?.send(
+      JSON.stringify({
+        Action: Action.SUBSCRIBE,
+        Subscription: subscription,
+      })
+    );
+  }
+
+  private sendUnsubscription(subscription: Subscription) {
+    this.ws?.send(
+      JSON.stringify({
+        Action: Action.UNSUBSCRIBE,
+        Subscription: subscription,
+      })
+    );
   }
 
   public subscribe(subscription: Subscription, handler: MessageHandler) {
@@ -110,29 +133,15 @@ class WebSocketManager {
     );
 
     if (this.isConnected) {
-      this.ws?.send(
-        JSON.stringify({
-          Action: Action.UNSUBSCRIBE,
-          Subscription: subscription,
-        })
-      );
+      this.sendUnsubscription(subscription);
+    } else {
+      this.pendingUnsubscriptions.push(subscription);
     }
-  }
-
-  private sendSubscription(subscription: Subscription) {
-    this.ws?.send(
-      JSON.stringify({
-        Action: Action.SUBSCRIBE,
-        Subscription: subscription,
-      })
-    );
   }
 
   private handleMessage(data: string) {
     try {
-      if (data === "Connected") {
-        return;
-      }
+      if (data === "Connected") return;
 
       const message: WebSocketMessage = JSON.parse(data);
       this.notifyHandlers(message);
@@ -156,6 +165,7 @@ class WebSocketManager {
     this.ws?.close();
     this.handlers.clear();
     this.pendingSubscriptions = [];
+    this.pendingUnsubscriptions = [];
   }
 }
 

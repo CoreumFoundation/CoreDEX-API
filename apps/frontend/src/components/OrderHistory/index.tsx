@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
+  OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
   SIDE_BUY,
@@ -35,8 +36,22 @@ const OrderHistory = () => {
   } = useStore();
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
-  const [cancelOrderModal, setCancelOrderModal] = useState(false);
-  const [cancelOrderId, setCancelOrderId] = useState("");
+
+  // TODO replace from backend
+  const resolveOrderStatus = (status: OrderHistoryStatus) => {
+    switch (status) {
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_OPEN:
+        return "Open";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_EXPIRED:
+        return "Expired";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_CANCELED:
+        return "Cancelled";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_FILLED:
+        return "Filled";
+      default:
+        return "Unspecified";
+    }
+  };
 
   // fetch order history
   useEffect(() => {
@@ -180,7 +195,7 @@ const OrderHistory = () => {
       }
     } catch (e: any) {
       // TODO: sendTX outputs this error but the cancel still goes through successfully
-      // clarify with coreum team
+      // clarify with coreum
       if (
         e.error.message === "Invalid string. Length must be a multiple of 4"
       ) {
@@ -326,7 +341,9 @@ const OrderHistory = () => {
                           {order.Side === SIDE_BUY.BUY ? "Buy" : "Sell"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <div className="status">TODO</div>
+                        <div className="status">
+                          {resolveOrderStatus(order.Status)}
+                        </div>
                         <FormatNumber
                           number={order.HumanReadablePrice}
                           className="price"

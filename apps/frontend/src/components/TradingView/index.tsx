@@ -69,6 +69,20 @@ const TradingView = ({ height }: { height: number | string }) => {
 
   useWebSocket(ohlcSubscription, handleDataFeedUpdate);
 
+  useEffect(() => {
+    mountChart();
+
+    return () => {
+      if (window.tvWidget) {
+        window.tvWidget.remove();
+        window.tvWidget = null;
+      }
+      if (dataFeed) {
+        dataFeed.subscriptions = [];
+      }
+    };
+  }, [market.pair_symbol]);
+
   // data feed updates
   useEffect(() => {
     if (!lastUpdate || !dataFeed) return;
@@ -176,12 +190,11 @@ const TradingView = ({ height }: { height: number | string }) => {
   };
 
   const { chartReady, setReady } = useMountChart(mountChart);
+  useChartTheme(chartReady);
   const { clearable, saveChart, clearChart } = useSaveAndClear(
     mountChart,
     setReady
   );
-
-  useChartTheme(chartReady);
 
   return (
     <div className="chart-wrapper">
