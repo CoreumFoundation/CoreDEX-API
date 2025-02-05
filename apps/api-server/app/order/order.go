@@ -4,16 +4,17 @@ import (
 	"context"
 	"errors"
 
-	"github.com/CoreumFoundation/CoreDEX-API/coreum"
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/shopspring/decimal"
 
-	"github.com/CoreumFoundation/coreum/v5/pkg/client"
+	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
+	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 )
 
 type Application struct {
@@ -155,22 +156,21 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 	// Transform the coins to WalletAsset and add the symbol amount (apply precision)
 	walletAssets := make([]WalletAsset, 0)
 	for _, coin := range coins {
-		// denomCurrency, err := a.currencyClient.Get(context.Background(), &currencygrpc.ID{
-		// 	Network: network,
-		// 	Denom:   coin.Denom,
-		// })
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// precision := int64(0)
-		// if denomCurrency.Denom.Precision != nil {
-		// 	precision = int64(*denomCurrency.Denom.Precision)
-		// }
+		denomCurrency, err := a.currencyClient.Get(context.Background(), &currencygrpc.ID{
+			Network: network,
+			Denom:   coin.Denom,
+		})
+		if err != nil {
+			return nil, err
+		}
+		precision := int32(0)
+		if denomCurrency.Denom.Precision != nil {
+			precision = int32(*denomCurrency.Denom.Precision)
+		}
 		walletAssets = append(walletAssets, WalletAsset{
 			Denom:        coin.Denom,
 			Amount:       coin.Amount.String(),
-			SymbolAmount: coin.Amount.String(),
-			// SymbolAmount: coin.Amount.Quo(sdk.NewIntFromUint64(uint64(10) * uint64(precision))).String(),
+			SymbolAmount: decimal.NewFromBigInt(coin.Amount.BigInt(), 0).Div(decimal.New(1, precision)).String(),
 		})
 	}
 	return walletAssets, nil
