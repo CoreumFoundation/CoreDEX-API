@@ -3,10 +3,11 @@ package domain
 import (
 	"context"
 
+	"github.com/cosmos/gogoproto/proto"
+
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
-	"github.com/cosmos/gogoproto/proto"
 )
 
 type MsgHandler interface {

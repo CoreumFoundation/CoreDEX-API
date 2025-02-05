@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const OHLCDataFields = `Symbol, 

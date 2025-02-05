@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	logger "github.com/CoreumFoundation/CoreDEX-API/utils/logger"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type StoreBase struct {

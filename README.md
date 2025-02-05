@@ -21,15 +21,15 @@ The API provides (folder `/apps/api-server`)
 
 * Trade history
 * Order tracking
-* OHLC (Open/Hight/Low/Close) data
+* OHLC (Open/High/Low/Close) data
 * Tickers
 * Order entry and execution
 
-Furthermore the CoreDEX API provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
+Furthermore, the CoreDEX API provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
 
-The API server is horizontally scalable thus providing the developer/operator with the ability to serve 1000s of parallel requests.
+The API server is horizontally scalable, thus providing the developer/operator with the ability to serve 1000s of parallel requests.
 
-The data-aggregator is single instance and is build such that it will, in case of a crash, restart where it left of before the crash, thus making certain the full history is present.
+The data-aggregator is a single instance and is build such that it will, in case of a crash, restart where it left of before the crash, thus making certain the full history is present.
 
 The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling would require this.
 
@@ -62,7 +62,7 @@ Run
 ### First start
 
 On the first start, the process will start scanning from block 1 in the chain. So catching up is going to take a while.
-If you however want to get to just current, you can set the state in the database to the current block number.
+If you, however, want to get to just current, you can set the state in the database to the current block number.
 
 Steps to do this are:
 

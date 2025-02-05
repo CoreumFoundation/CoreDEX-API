@@ -3,6 +3,11 @@ package dex
 import (
 	"context"
 
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/gogoproto/proto"
+	dec "github.com/shopspring/decimal"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
@@ -14,11 +19,6 @@ import (
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradeclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/gogoproto/proto"
-	dec "github.com/shopspring/decimal"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 

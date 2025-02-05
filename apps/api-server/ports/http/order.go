@@ -11,15 +11,15 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
 	dmnsymbol "github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
-
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 

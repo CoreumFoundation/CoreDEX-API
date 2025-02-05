@@ -170,6 +170,7 @@ func main() {
 	txf = txf.
 		WithAccountNumber(acc.GetAccountNumber()).
 		WithSequence(acc.GetSequence())
+
 	//Sign the transaction
 	err = client.Sign(context.Background(), txf, "key-name", builder, true)
 	if err != nil {

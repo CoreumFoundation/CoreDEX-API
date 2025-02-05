@@ -4,11 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/order"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestOrders(t *testing.T) {

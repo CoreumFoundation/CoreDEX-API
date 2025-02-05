@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -14,9 +12,10 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	coreumconfig "github.com/CoreumFoundation/coreum/v5/pkg/config"
-
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
+	coreumconfig "github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 )
 

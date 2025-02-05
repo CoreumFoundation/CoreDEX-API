@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	metadata "github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Application struct {

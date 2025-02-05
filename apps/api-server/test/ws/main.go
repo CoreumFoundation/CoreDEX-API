@@ -9,11 +9,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/gorilla/websocket"
+
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
-	"github.com/gorilla/websocket"
 )
 
 func main() {

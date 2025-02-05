@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
@@ -14,7 +16,6 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/domain/rates"
 	tradesclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Application struct {

@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
-	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
