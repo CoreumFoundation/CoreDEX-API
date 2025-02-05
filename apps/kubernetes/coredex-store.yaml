@@ -51,4 +51,4 @@ metadata:
   name: coredex-store-config
 data:
   MYSQL_CONFIG: |-
-    {"Username": "store_user","Password": "syZDHIF32o9UCmLO5A0M","Host": "mysql-dfb35674-oe1f53f0f.database.cloud.ovh.net","Port": 20184,"Database": "friendly_dex"}
+    {"Username": "{your user}}","Password": "{your password}","Host": "{your mysql host}","Port": 20184,"Database": "friendly_dex"}
