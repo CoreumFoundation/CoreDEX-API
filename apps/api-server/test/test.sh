@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Global variable to store the current host
-HOST="http://localhost:8080"
-WS_HOST="ws://localhost:8080"
+HOST="http://localhost:8080/api"
+WS_HOST="ws://localhost:8080/api"
 
 # used for TX submit
 senderMnemonic="silk loop drastic novel taste project mind dragon shock outside stove patrol immense car collect winter melody pizza all deputy kid during style ribbon"
@@ -15,11 +15,11 @@ set_host_local() {
     echo "Host set to localhost"
 }
 
-# Function to set the host to https://api.coreum.com
+# Function to set the host to https://coredex.test.coreum.dev
 set_host_coreum() {
-    HOST="https://api.coreum.com"
-    WS_HOST="wss://api.coreum.com"
-    echo "Host set to api.coreum.com"
+    HOST="https://coredex.test.coreum.dev"
+    WS_HOST="wss://coredex.test.coreum.dev"
+    echo "Host set to coredex.test.coreum.dev"
 }
 
 # Function for GET /ohlc
