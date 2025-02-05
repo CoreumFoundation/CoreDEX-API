@@ -9,6 +9,18 @@ Note: this webapp is not fully responsive and is developed for a desktop screen 
 - `cd` into `/apps/frontend/` and run `./bin/start.sh`
 - You might need to run `chmod +x ./bin/start.sh` first
 
+### Envs
+
+```
+VITE_ENV_BASE_API: API server
+VITE_ENV_WS: Websocket
+VITE_MODE: Development flag
+```
+
+In this project envs are import in `services/general.ts` and `hooks/websocket.tsx`.
+
+If you are using a different framework or build tool, you will need adjust how envs are named and imported.
+
 ## Websocket
 
 This app uses primarily React and Zustand on the front-end. But for your application you may choose a different framework. Within `/src/services/websocket.ts` is a TypeScript utility file that manages the websocket connection and should be reusable in other frameworks.
