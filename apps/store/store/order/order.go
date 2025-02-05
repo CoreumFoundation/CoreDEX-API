@@ -29,6 +29,7 @@ OrderFee,
 MetaData, 
 TXID, 
 BlockHeight,
+OrderStatus,
 Network `
 
 type Application struct {
@@ -94,6 +95,21 @@ func (a *Application) initDB() {
 	if err != nil {
 		logger.Fatalf("Error creating historical table OrderDataHistory: %v", err)
 	}
+	// Add the 		OrderStatus INT column
+	_, err = a.client.Client.Exec(`ALTER TABLE OrderData ADD COLUMN OrderStatus INT`)
+	if err != nil {
+		logger.Fatalf("Error adding OrderStatus column to OrderData: %v", err)
+	}
+	// Add the 		OrderStatus INT column
+	_, err = a.client.Client.Exec(`ALTER TABLE OrderDataHistory ADD COLUMN OrderFee BIGINT`)
+	if err != nil {
+		logger.Fatalf("Error adding OrderFee column to OrderDataHistory: %v", err)
+	}
+	// Replace the trigger with the new one
+	_, err = a.client.Client.Exec(`DROP TRIGGER IF EXISTS after_order_update`)
+	if err != nil {
+		logger.Fatalf("Error dropping trigger after_order_update: %v", err)
+	}
 	_, err = a.client.Client.Exec(`
 	CREATE TRIGGER IF NOT EXISTS after_order_update
 	AFTER UPDATE ON OrderData
@@ -117,6 +133,7 @@ func (a *Application) initDB() {
 			NEW.MetaData,
 			NEW.TXID,
 			NEW.BlockHeight,
+			NEW.OrderStatus,
 			NEW.Network
 		);
 	END;`)
@@ -288,7 +305,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
         VALUES (?, ?, ?, ?, ?,
 			    ?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
-				?, ?, ?) 
+				?, ?, ?, ?, ?) 
         ON DUPLICATE KEY UPDATE Account=?, 
 		Price=?, 
 		RemainingQuantity=?,
@@ -296,6 +313,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		MetaData=?, 
 		TXID=?, 
 		BlockHeight=?,
+		OrderStatus=?,
 		OrderFee=?`,
 		in.Account,
 		in.Type,
@@ -314,6 +332,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		metaData,
 		*in.TXID,
 		in.BlockHeight,
+		in.OrderStatus,
 		in.MetaData.Network,
 		in.Account,
 		in.Price,
@@ -322,6 +341,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		metaData,
 		*in.TXID,
 		in.BlockHeight,
+		in.OrderStatus,
 		in.OrderFee)
 	if err != nil {
 		logger.Errorf("Error upserting order %s-%d-%s: %v", in.OrderID, in.Sequence, in.MetaData.Network.String(), err)
@@ -369,6 +389,7 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 		&metaData,
 		&order.TXID,
 		&order.BlockHeight,
+		&order.OrderStatus,
 		&network,
 	)
 	if err != nil {
