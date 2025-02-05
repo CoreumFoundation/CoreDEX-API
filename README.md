@@ -35,6 +35,14 @@ The store (folder `/apps/store`) is an implementation against a MySQL database, 
 
 ## Installation and running of the Friendly DEX
 
+There are 3 provided methods of running the Friendly DEX:
+
+* Localhost with handy shell start scripts: Good for development and testing
+* Docker-compose: Good for testing and development
+* Kubernetes example deployment files: Handy for production
+
+### Get up and running on localhost
+
 Getting the CoreDEX running on your local (unix or linux) system takes just a few minutes.
 
 To run the CoreDEX you need to have the following installed:
@@ -94,11 +102,12 @@ You should see the following processes:
 The configuration provided uses the devnet public node of the Coreum blockchain. While there is a public node for Coreum available, that node does not have a guaranteed performance and the installation of a local node is recommended.
 See the [Coreum](https://docs.coreum.dev/docs/become-validator/run-full-node) for more information on how to install a local node.
 
-## Running the Friendly DEX on VMs, Kubernetes or other cloud services
+### Running the Friendly DEX on VMs, Kubernetes or other cloud services
 
 The architecture of the Friendly DEX such that it is horizontally scalable. Setup deployments such that:
 
 * API Server and store are in stateless deployments, scale 1 to n
+* Store can be a stateless deployment, scale 1 to n
 * Data aggregator can be in stateless or stateful, scale 1 max
 
 CPU and memory expectations:
@@ -118,6 +127,8 @@ docker build -t data-aggregator -f Dockerfile.data-aggregator .
 docker build -t store -f Dockerfile.store .
 docker build -t frontend -f Dockerfile.frontend .
 ```
+
+There are also sample deployment files for Kubernetes in the `apps/kubernetes` directory.
 
 ## Application documentation
 
