@@ -44,24 +44,23 @@ const OrderActions = ({
 
   useEffect(() => {
     fetchWalletAssets();
-  }, [wallet?.address, market.pair_symbol]);
+  }, [wallet, market]);
 
   useEffect(() => {
-    if (balances && balances.length > 0) {
-      const baseBalance: WalletAsset = balances.find(
-        (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
-      );
-      const counterBalance: WalletAsset = balances.find(
-        (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
-      );
-      if (baseBalance) {
-        setBaseBalance(baseBalance.SymbolAmount);
-      }
-      if (counterBalance) {
-        setCounterBalance(counterBalance.SymbolAmount);
-      }
-    }
-  }, [market.pair_symbol, balances]);
+    if (!balances) return;
+
+    const baseBalanceObject = balances.find(
+      (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
+    );
+    const counterBalanceObject = balances.find(
+      (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
+    );
+
+    setBaseBalance(baseBalanceObject ? baseBalanceObject.SymbolAmount : "0");
+    setCounterBalance(
+      counterBalanceObject ? counterBalanceObject.SymbolAmount : "0"
+    );
+  }, [market, balances]);
 
   // trigger when click on orderbook
   useEffect(() => {
