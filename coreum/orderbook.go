@@ -224,8 +224,7 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 	}
 
 	sort.SliceStable(orderBookOrders.Buy, func(i, j int) bool {
-		//return big.RatGT(orderBookOrders.Buy[i].priceDec, orderBookOrders.Buy[j].priceDec)
-		return orderBookOrders.Buy[i].priceDec.Cmp(orderBookOrders.Buy[j].priceDec) == 1
+		return big.RatGT(orderBookOrders.Buy[i].priceDec, orderBookOrders.Buy[j].priceDec)
 	})
 	if uint64(len(orderBookOrders.Buy)) > limit {
 		orderBookOrders.Buy = orderBookOrders.Buy[0:limit]
