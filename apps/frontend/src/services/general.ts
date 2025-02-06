@@ -14,7 +14,7 @@ import { AxiosResponse } from "axios";
 const API_URL =
   import.meta.env.VITE_MODE === "development"
     ? import.meta.env.VITE_ENV_BASE_API
-    : (window as any).SOLOGENIC.env.VITE_ENV_BASE_API;
+    : (window as any).COREUM.env.VITE_ENV_BASE_API;
 
 export const getOHLC = async (
   symbol: string,
