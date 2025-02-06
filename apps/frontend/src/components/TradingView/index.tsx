@@ -3,7 +3,7 @@ import themes from "./tools/theme";
 import { widget as Widget } from "../../vendor/tradingview/charting_library";
 import { CoreumDataFeed } from "./tools/api";
 import { DEFAULT_CONFIGS, getOverrides } from "./tools/config";
-import { useSaveAndClear, useMountChart, useChartTheme } from "@/hooks";
+import { useSaveAndClear, useMountChart } from "@/hooks";
 import { useStore } from "@/state/store";
 import "./tradingview.scss";
 import {
