@@ -172,6 +172,16 @@
         color: grey;
         font-weight: 400;
       }
+      .spread {
+        color: var(--Primary-Pure-White, #fff);
+        text-align: right;
+        font-family: "Noto Sans";
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 24px; /* 150% */
+        letter-spacing: -0.32px;
+      }
 
       & > p {
         font-size: 16px;

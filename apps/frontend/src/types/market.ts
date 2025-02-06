@@ -264,7 +264,21 @@ export type TradeRecord = {
   BlockHeight: number;
   USD: number;
   FeeUSD: number;
+  Status: OrderHistoryStatus;
 };
+
+export enum OrderHistoryStatus {
+  // order_status_unspecified reserves the default value, to protect against unexpected settings.
+  OrderStatus_ORDER_STATUS_UNSPECIFIED = 0,
+  // order_status_open means that the order is open with any remaining quantity
+  OrderStatus_ORDER_STATUS_OPEN = 1,
+  // order_status_cancelled means the user has canceled the order.
+  OrderStatus_ORDER_STATUS_CANCELED = 2,
+  // order_status_filled means that the order is filled (quantity remaining is 0)
+  OrderStatus_ORDER_STATUS_FILLED = 3,
+  // order_status_expired means that the order is expired (e.g. a block event has passed the good til block height/time).
+  OrderStatus_ORDER_STATUS_EXPIRED = 4,
+}
 
 export interface TransformedOrder {
   Side: number;
@@ -296,4 +310,8 @@ export type WalletAsset = {
   Amount: string;
   Denom: string;
   SymbolAmount: string;
+};
+
+export type CancelOrderResponse = {
+  TXBytes: string;
 };

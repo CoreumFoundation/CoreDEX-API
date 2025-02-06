@@ -61,7 +61,6 @@ const enabled_features: string[] = [
 ];
 
 const misc = {
-  custom_css_url: "css/solo.css",
   width: "100%",
   library_path: window.location.href.split("/")[0] + "/trade/charting_library/",
   container: "chartContainer",

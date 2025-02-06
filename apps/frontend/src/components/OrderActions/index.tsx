@@ -39,25 +39,12 @@ const OrderActions = ({
   const [volume, setVolume] = useState<string>("");
   const [tradeType, setTradeType] = useState(TradeType.MARKET);
   const [balances, setBalances] = useState<any>(null);
-  const [baseBalance, setBaseBalance] = useState<number | string>(0);
-  const [counterBalance, setCounterBalance] = useState<number | string>(0);
+  const [baseBalance, setBaseBalance] = useState<string>("0");
+  const [counterBalance, setCounterBalance] = useState<string>("0");
 
   useEffect(() => {
-    const fetchWalletAssets = async () => {
-      if (!wallet?.address) return;
-      try {
-        const response = await getWalletAssets(wallet?.address);
-        if (response.status === 200 && response.data.length > 0) {
-          const data = response.data;
-          console.log("ASSET BALANCES", data);
-          setBalances(data);
-        }
-      } catch (e) {
-        console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
-      }
-    };
     fetchWalletAssets();
-  }, [wallet?.address]);
+  }, [wallet?.address, market.pair_symbol]);
 
   useEffect(() => {
     if (balances && balances.length > 0) {
@@ -122,6 +109,19 @@ const OrderActions = ({
       }
     }
   }, [volume, limitPrice, orderbook, tradeType, orderType]);
+
+  const fetchWalletAssets = async () => {
+    if (!wallet?.address) return;
+    try {
+      const response = await getWalletAssets(wallet?.address);
+      if (response.status === 200 && response.data.length > 0) {
+        const data = response.data;
+        setBalances(data);
+      }
+    } catch (e) {
+      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
+    }
+  };
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
@@ -215,23 +215,19 @@ const OrderActions = ({
         });
         throw new Error("Error submitting order");
       }
-
-      try {
-        const txHash = submitResponse.data.TXHash;
-        await navigator.clipboard.writeText(txHash);
-
-        pushNotification({
-          type: "success",
-          message: `Order Placed! TXHash copied to clipboard: ${txHash.slice(
-            0,
-            6
-          )}...${txHash.slice(-4)}`,
-        });
-      } catch (copyError) {
-        console.error("Copy failed:", copyError);
-      }
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
+          -4
+        )}`,
+      });
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
+      pushNotification({
+        type: "error",
+        message: e.error.message,
+      });
       throw e;
     }
   };
@@ -302,6 +298,7 @@ const OrderActions = ({
                 }}
                 inputWrapperClassname="order-input"
                 decimals={13}
+                adornmentRight={market.base.Denom.Currency}
               />
               <Input
                 maxLength={16}
@@ -336,6 +333,7 @@ const OrderActions = ({
                   fontSize: 16,
                 }}
                 decimals={13}
+                adornmentRight={market.base.Denom.Currency}
               />
             </div>
           )}
@@ -343,12 +341,12 @@ const OrderActions = ({
 
         <div className="order-bottom">
           <div className="order-total">
-            <p className="order-total-label">Total:</p>
+            <p className="order-total-label">Total Cost:</p>
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}
                 className="order-total-number"
-                precision={7}
+                precision={6}
               />
               <p className="order-total-currency">
                 {market.counter.Denom.Currency}
@@ -386,7 +384,8 @@ const OrderActions = ({
                   (tradeType === TradeType.LIMIT && !limitPrice) ||
                   (orderType === OrderType.BUY &&
                     totalPrice > Number(counterBalance)) ||
-                  (orderType === OrderType.SELL && totalPrice > Number(baseBalance))
+                  (orderType === OrderType.SELL &&
+                    totalPrice > Number(baseBalance))
                 }
               />
             </>
@@ -398,14 +397,18 @@ const OrderActions = ({
         <p className="title">Assets</p>
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
-          <p className="balance-value">{baseBalance}</p>
+          <p className="balance-value">
+            {Number(baseBalance).toLocaleString()}
+          </p>
         </div>
 
         <div className="balance-row">
           <p className="balance-label">
             {market.counter.Denom.Currency} Balance
           </p>
-          <p className="balance-value">{counterBalance}</p>
+          <p className="balance-value">
+            {Number(counterBalance).toLocaleString()}
+          </p>
         </div>
       </div>
     </div>

@@ -50,7 +50,6 @@ const ExchangeHistory = () => {
     [setExchangeHistory]
   );
 
-
   const subscription = useMemo(
     () => ({
       Network: NetworkToEnum(network),
@@ -82,13 +81,10 @@ const ExchangeHistory = () => {
                     trade.Side === SIDE_BUY.BUY ? "positive" : "negative"
                   }`}
                 >
-                  <FormatNumber
-                    number={trade.HumanReadablePrice}
-                    precision={6}
-                  />
+                  <FormatNumber number={trade.HumanReadablePrice} />
                 </div>
                 <div className="exchange-history-body-value volume">
-                  <FormatNumber number={trade.SymbolAmount} precision={6} />
+                  <FormatNumber number={trade.SymbolAmount} />
                 </div>
                 <div className="exchange-history-body-value time">
                   {dayjs(trade.MetaData.CreatedAt.seconds).format("HH:mm:ss")}

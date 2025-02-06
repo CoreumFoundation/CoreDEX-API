@@ -8,7 +8,7 @@ import {
 const WEBSOCKET_URL =
   import.meta.env.VITE_MODE === "development"
     ? import.meta.env.VITE_ENV_WS
-    : (window as any).SOLOGENIC.env.VITE_ENV_WS;
+    : (window as any).COREUM.env.VITE_ENV_WS;
 
 export const useWebSocket = (
   subscription: Subscription,

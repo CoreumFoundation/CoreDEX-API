@@ -3,7 +3,7 @@ import themes from "./tools/theme";
 import { widget as Widget } from "../../vendor/tradingview/charting_library";
 import { CoreumDataFeed } from "./tools/api";
 import { DEFAULT_CONFIGS, getOverrides } from "./tools/config";
-import { useSaveAndClear, useMountChart, useChartTheme } from "@/hooks";
+import { useSaveAndClear, useMountChart } from "@/hooks";
 import { useStore } from "@/state/store";
 import "./tradingview.scss";
 import {
@@ -58,7 +58,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     };
   }, [market, chartPeriod]);
 
-  // TODO try to move update handling to websocket service
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
@@ -69,6 +68,20 @@ const TradingView = ({ height }: { height: number | string }) => {
   );
 
   useWebSocket(ohlcSubscription, handleDataFeedUpdate);
+
+  useEffect(() => {
+    mountChart();
+
+    return () => {
+      if (window.tvWidget) {
+        window.tvWidget.remove();
+        window.tvWidget = null;
+      }
+      if (dataFeed) {
+        dataFeed.subscriptions = [];
+      }
+    };
+  }, [market.pair_symbol]);
 
   // data feed updates
   useEffect(() => {
@@ -83,7 +96,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     }));
 
     dataFeed.subscriptions.forEach((sub) => {
-      console.log("ohlc tradingview bar", bars);
       if (bars.length > 0) {
         sub.onRealtimeCallback(bars[bars.length - 1]);
       }
@@ -178,12 +190,7 @@ const TradingView = ({ height }: { height: number | string }) => {
   };
 
   const { chartReady, setReady } = useMountChart(mountChart);
-  useSaveAndClear(
-    mountChart,
-    setReady
-  );
-
-  useChartTheme(chartReady);
+  useSaveAndClear(mountChart, setReady);
 
   return (
     <div className="chart-wrapper">

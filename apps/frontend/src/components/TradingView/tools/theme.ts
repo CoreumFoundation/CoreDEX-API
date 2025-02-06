@@ -1,8 +1,7 @@
 const dark = {
   colors: {
     body_bg: "#101216",
-    solo_red: "#D81D3C",
-    solo_red_transparent: "rgba(216, 29,60, 0.1)",
+
     backgrounds: {
       edit_btn: "#3e3e3e",
       edit_btn_border: "#454545",
@@ -87,9 +86,6 @@ const dark = {
       header_gradient: "linear-gradient(256.59deg, #454545 0%, #2D2D2D 100%);",
       stat_box:
         "linear-gradient(111.42deg, rgba(250, 250, 250, 0.5) -17.24%, rgba(255, 255, 255, 0.1) 100%)",
-      solo_card: "linear-gradient(249.66deg, #2D2D2D 1.44%, #101010 99.85%)",
-      solo_card_body:
-        "linear-gradient(180deg, #262626 0%, #1D1D1D 52.08%, #101216 100%)",
       bridge_body: "linear-gradient(0.52deg, #101216 0.49%, #454545 99.6%)",
       bridge_box:
         "linear-gradient(345.59deg, rgba(34, 34, 34, 0) 9.23%, #3E3E3E 88.8%)",
@@ -291,8 +287,6 @@ const dark = {
 const light = {
   colors: {
     body_bg: "#F8F8F8",
-    solo_red: "#D81D3C",
-    solo_red_transparent: "rgba(216, 29,60, 0.1)",
     backgrounds: {
       partner_card: "#fff",
       edit_btn: "#fafafa",
@@ -365,8 +359,6 @@ const light = {
       header_gradient: "linear-gradient(256.59deg, #FFFFFF 0%, #F9F9F9 100%)",
       stat_box:
         "linear-gradient(111.42deg, rgba(250, 250, 250, 0.5) -17.24%, rgba(255, 255, 255, 0.1) 100%)",
-      solo_card: "linear-gradient(225.1deg, #FFFFFF 0%, #F9F9F9 100%)",
-      solo_card_body: "#FFFFFF",
       bridge_body: "linear-gradient(359.43deg, #EEEEEE 0.44%, #FFFFFF 99.46%)",
       bridge_box:
         "linear-gradient(359.01deg, rgba(238, 238, 238, 0) 0.77%, #FFFFFF 99.07%)",

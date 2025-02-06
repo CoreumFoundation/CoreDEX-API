@@ -16,6 +16,7 @@ export const ButtonVariant = {
   PRIMARY: "primary",
   SECONDARY: "secondary",
   TERTIARY: "tertiary",
+  DANGER: "danger",
 };
 
 export type ButtonVariantType =

@@ -37,7 +37,6 @@ const Tickers = () => {
     (message: WebSocketMessage) => {
       const tickerContent =
         message.Subscription?.Content.Tickers[market.pair_symbol];
-      console.log("ticker msg", tickerContent);
       if (!tickerContent) return;
       setTickers(tickerContent);
     },
@@ -68,10 +67,7 @@ const Tickers = () => {
     <div className="tickers-container">
       <div className="price-container">
         <div className="price">
-          <FormatNumber
-            number={tickers ? tickers.LastPrice : 0}
-            precision={6}
-          />
+          <FormatNumber number={tickers ? tickers.LastPrice : 0} />
         </div>
         <div
           className={`change ${Number(change) > 0 ? "positive" : "negative"}`}
