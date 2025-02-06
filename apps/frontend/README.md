@@ -4,12 +4,16 @@ This is the front-end UI for the Coreum Dex demo.
 
 Note: this webapp is not fully responsive and is developed for a desktop screen of 1440px - 1024px. Some screen sizes may not look the best as of now.
 
+//TODO add description for websocket manager file and services file here. maybe add its own section
+
 ## To Run
 
 - `cd` into `/apps/frontend/` and run `./bin/start.sh`
 - You might need to run `chmod +x ./bin/start.sh` first
 
-### Envs
+### Start Parameters
+
+//TODO better description
 
 ```
 VITE_ENV_BASE_API: API server

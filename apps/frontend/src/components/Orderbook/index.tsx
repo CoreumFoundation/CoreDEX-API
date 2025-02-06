@@ -45,6 +45,7 @@ export default function Orderbook({
         const response = await getOrderbook(market.pair_symbol);
         if (response.status === 200 && response.data) {
           const data = response.data;
+          console.log(data);
           setOrderbook(data);
         }
       } catch (e) {
@@ -79,7 +80,8 @@ export default function Orderbook({
 
     const calculateSpread = () => {
       const bestBid = orderbook.Buy[0]?.HumanReadablePrice;
-      const bestAsk = orderbook.Sell[0]?.HumanReadablePrice;
+      const bestAsk =
+        orderbook.Sell[orderbook.Sell.length - 1]?.HumanReadablePrice;
 
       if (!bestBid && !bestAsk) return new BigNumber(0);
 

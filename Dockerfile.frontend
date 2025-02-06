@@ -1,12 +1,13 @@
-FROM node:18-alpine as base
+FROM node:20-alpine as base
 
 EXPOSE 3000
 
 RUN apk update && apk add --no-cache git openssh ca-certificates
-WORKDIR /app
+WORKDIR /go/src/app
+COPY . .
+WORKDIR /go/src/app/apps/frontend
 RUN npm install -g vite && npm install -g tsc
 
-COPY . .
 
 RUN npm install && npm run build && \
 rm -rf node_modules
@@ -16,7 +17,7 @@ FROM nginx:1.23.3-alpine
 RUN rm -rf /etc/nginx/conf.d
 COPY conf /etc/nginx
 RUN mkdir -p /usr/share/nginx/html
-COPY --from=base /app/dist /usr/share/nginx/html
+COPY --from=base /go/src/app/apps/frontend/dist /usr/share/nginx/html
 EXPOSE 80
 ADD ./prepare.sh ./
 RUN chmod +x ./prepare.sh
