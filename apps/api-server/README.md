@@ -1,4 +1,4 @@
-# Coreum DEX friendly API server
+# Coreum DEX API server
 
 The API server provides a RESTFUL API for the Coreum DEX.
 The goal of the API server is to flatten the learning curve for the Coreum DEX (and with that of the Cosmos SDK) and to provide a simple and easy to use API for developers to interact with the Coreum DEX.

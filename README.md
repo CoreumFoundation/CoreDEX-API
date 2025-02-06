@@ -25,7 +25,7 @@ The API provides (folder `/apps/api-server`)
 * Tickers
 * Order entry and execution
 
-Furthermore the Friendly DEX provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
+Furthermore the CoreDEX API provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
 
 The API server is horizontally scalable thus providing the developer/operator with the ability to serve 1000s of parallel requests.
 
@@ -33,7 +33,7 @@ The data-aggregator is single instance and is build such that it will, in case o
 
 The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling would require this.
 
-## Installation and running of the Friendly DEX
+## Installation and running of the CoreDEX API
 
 Getting the CoreDEX running on your local (unix or linux) system takes just a few minutes.
 
@@ -51,18 +51,18 @@ GRANT ALL PRIVILEGES ON friendly_dex.* TO 'testuser'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-There is a start script for all the components, excluding MySQL, in the `bin` directory of each component and in the main `/bin` directory. 
+There is a start script for all the components, excluding MySQL, in the `bin` directory of each component and in the main `/bin` directory.
 
-Run 
+Run
 
 ```bash
 ./bin/start.sh
 ```
 
-### First start 
+### First start
 
 On the first start, the process will start scanning from block 1 in the chain. So catching up is going to take a while.
-If you however want to get to just current, you can set the state in the database to the current block number. 
+If you however want to get to just current, you can set the state in the database to the current block number.
 
 Steps to do this are:
 
@@ -94,9 +94,9 @@ You should see the following processes:
 The configuration provided uses the devnet public node of the Coreum blockchain. While there is a public node for Coreum available, that node does not have a guaranteed performance and the installation of a local node is recommended.
 See the [Coreum](https://docs.coreum.dev/docs/become-validator/run-full-node) for more information on how to install a local node.
 
-## Running the Friendly DEX on VMs, Kubernetes or other cloud services
+## Running the CoreDEX API on VMs, Kubernetes or other cloud services
 
-The architecture of the Friendly DEX such that it is horizontally scalable. Setup deployments such that:
+The architecture of the CoreDEX API such that it is horizontally scalable. Setup deployments such that:
 
 * API Server and store are in stateless deployments, scale 1 to n
 * Data aggregator can be in stateless or stateful, scale 1 max
@@ -121,5 +121,5 @@ docker build -t frontend -f Dockerfile.frontend .
 
 ## Application documentation
 
-See the `README.md` files in the associated application folders. 
+See the `README.md` files in the associated application folders.
 Do note the UI `README.md` where there is information on some javascript packages/files which take care of UI data management.
