@@ -39,8 +39,8 @@ const OrderActions = ({
   const [volume, setVolume] = useState<string>("");
   const [tradeType, setTradeType] = useState(TradeType.MARKET);
   const [balances, setBalances] = useState<any>(null);
-  const [baseBalance, setBaseBalance] = useState<number | string>(0);
-  const [counterBalance, setCounterBalance] = useState<number | string>(0);
+  const [baseBalance, setBaseBalance] = useState<string>("0");
+  const [counterBalance, setCounterBalance] = useState<string>("0");
 
   useEffect(() => {
     const fetchWalletAssets = async () => {
@@ -202,7 +202,6 @@ const OrderActions = ({
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
-      console.log("!!", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -215,23 +214,19 @@ const OrderActions = ({
         });
         throw new Error("Error submitting order");
       }
-
-      try {
-        const txHash = submitResponse.data.TXHash;
-        await navigator.clipboard.writeText(txHash);
-
-        pushNotification({
-          type: "success",
-          message: `Order Placed! TXHash copied to clipboard: ${txHash.slice(
-            0,
-            6
-          )}...${txHash.slice(-4)}`,
-        });
-      } catch (copyError) {
-        console.error("Copy failed:", copyError);
-      }
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
+          -4
+        )}`,
+      });
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
+      pushNotification({
+        type: "error",
+        message: e.error.message,
+      });
       throw e;
     }
   };
@@ -401,14 +396,18 @@ const OrderActions = ({
         <p className="title">Assets</p>
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
-          <p className="balance-value">{baseBalance}</p>
+          <p className="balance-value">
+            {Number(baseBalance).toLocaleString()}
+          </p>
         </div>
 
         <div className="balance-row">
           <p className="balance-label">
             {market.counter.Denom.Currency} Balance
           </p>
-          <p className="balance-value">{counterBalance}</p>
+          <p className="balance-value">
+            {Number(counterBalance).toLocaleString()}
+          </p>
         </div>
       </div>
     </div>

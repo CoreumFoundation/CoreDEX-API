@@ -239,7 +239,6 @@ export default function Orderbook({
       el.classList.remove("hovered-buy", "hovered-sell");
     });
   }, []);
-
   const renderOrderRow = (
     order: OrderbookRecord,
     index: number,

@@ -80,7 +80,9 @@ const Wallet = ({}) => {
     {
       label: "Open Explorer",
       action: () => {
-        window.open(resolveCoreumExplorer(network));
+        window.open(
+          `${resolveCoreumExplorer(network)}/accounts/${wallet.address}`
+        );
       },
       image: (
         <svg

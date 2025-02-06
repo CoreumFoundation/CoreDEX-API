@@ -259,6 +259,7 @@
       display: flex;
       width: 100%;
       justify-content: space-between;
+      align-items: center;
     }
     .balance-label {
       color: var(--Shades-Carbon, #5e6773);
@@ -267,6 +268,8 @@
       font-style: normal;
       font-weight: 400;
       line-height: 18px; /* 150% */
+      display: flex;
+      align-items: center;
     }
   }
 
