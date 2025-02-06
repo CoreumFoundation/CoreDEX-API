@@ -80,34 +80,28 @@ const Tickers = () => {
       <div className="volume-base">
         <div className="label">{`24h Volume (${market.base.Denom.Name})`}</div>
         <div className="volume">
-          <FormatNumber number={tickers ? tickers.Volume : 0} precision={4} />
+          <FormatNumber number={tickers ? tickers.Volume : 0} />
         </div>
       </div>
 
       <div className="volume-counter">
         <div className="label">{`24h Volume (${market.counter.Denom.Name})`}</div>
         <div className="volume">
-          <FormatNumber
-            number={tickers ? tickers.Invertedvolume : 0}
-            precision={4}
-          />
+          <FormatNumber number={tickers ? tickers.Invertedvolume : 0} />
         </div>
       </div>
 
       <div className="high">
         <div className="label">{`24h High`}</div>
         <div className="volume">
-          <FormatNumber
-            number={tickers ? tickers.HighPrice : 0}
-            precision={4}
-          />
+          <FormatNumber number={tickers ? tickers.HighPrice : 0} />
         </div>
       </div>
 
       <div className="low">
         <div className="label">{`24h Low`}</div>
         <div className="volume">
-          <FormatNumber number={tickers ? tickers.LowPrice : 0} precision={4} />
+          <FormatNumber number={tickers ? tickers.LowPrice : 0} />
         </div>
       </div>
     </div>

@@ -346,7 +346,6 @@ const OrderActions = ({
               <FormatNumber
                 number={totalPrice || 0}
                 className="order-total-number"
-                precision={6}
               />
               <p className="order-total-currency">
                 {market.counter.Denom.Currency}
