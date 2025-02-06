@@ -190,11 +190,7 @@ const TradingView = ({ height }: { height: number | string }) => {
   };
 
   const { chartReady, setReady } = useMountChart(mountChart);
-  useChartTheme(chartReady);
-  const { clearable, saveChart, clearChart } = useSaveAndClear(
-    mountChart,
-    setReady
-  );
+  useSaveAndClear(mountChart, setReady);
 
   return (
     <div className="chart-wrapper">

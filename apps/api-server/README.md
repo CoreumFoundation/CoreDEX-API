@@ -1,4 +1,4 @@
-# Coreum DEX friendly API server
+# Coreum DEX API server
 
 The API server provides a RESTFUL API for the Coreum DEX.
 The goal of the API server is to flatten the learning curve for the Coreum DEX (and with that of the Cosmos SDK) and to provide a simple and easy to use API for developers to interact with the Coreum DEX.
@@ -176,7 +176,7 @@ curl -H "Network: devnet" \
 -X "GET" "https://coredex.test.coreum.dev/api/tickers?symbols=WyJVU0QrckQ5VzdVTHZlYXZ6OHFCR00xUjVqTWdLMlFLc0VEUFFWaS9YUlAiLCAiWFJQL1VTRCtyRDlXN1VMdmVhdno4cUJHTTFSNWpNZ0syUUtzRURQUVZpIl0="
 ```
 
-Returns: 
+Returns:
 
 ```json
 {
@@ -253,7 +253,7 @@ Returns a list of currencies.
                 "CreatedAt": "2020-01-01T00:00:00Z"
             }
         },
-        //... 
+        //...
     ],
     "Offset": 0
 }
@@ -354,7 +354,7 @@ curl -H "Network: devnet" \
 
 Where the TX is the signed TX in base64 encoding.
 
-Response: 
+Response:
 
 ```json
 {
@@ -398,7 +398,7 @@ Sample return:
             "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac"
         }
     ]
-} 
+}
 ```
 
 #### /wallet/assets
@@ -443,12 +443,12 @@ See the [README-update-service.md](README-update-service.md) for extensive infor
 
 The API server can be started with the following parameters:
 
-- `NETWORKS` - The networks handled by the blockchain scanner. 
-- `STATE_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: {host}:50051
-- `TRADE_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: {host}:50051
-- `OHLC_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: {host}:50051
-- `ORDER_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: {host}:50051
-- `CURRENCY_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: {host}:50051
+- `NETWORKS` - The networks handled by the blockchain scanner.
+- `STATE_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: `{host}`:50051
+- `TRADE_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: `{host}`:50051
+- `OHLC_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: `{host}`:50051
+- `ORDER_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: `{host}`:50051
+- `CURRENCY_STORE` - Location where the store is running, typically at grpc port 50051, syntax for non-google cloudrun usage: `{host}`:50051
 - `LOG_LEVEL` - info. Other values: debug, error, warn
 - `HTTP_CONFIG` - HTTP configuration with CORS settings
 - `BASE_COIN` - Native/system coin configuration
