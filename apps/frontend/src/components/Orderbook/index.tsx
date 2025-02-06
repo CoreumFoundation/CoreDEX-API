@@ -328,7 +328,7 @@ export default function Orderbook({
               {spread && (
                 <div className="orderbook-spread">
                   <p className="spread-label">{`${market.counter.Denom.Name} Spread:`}</p>
-                  <FormatNumber number={spread?.valueOf()} />
+                  <FormatNumber number={spread?.toNumber()} />
                 </div>
               )}
 

@@ -105,6 +105,10 @@
     flex-direction: column;
     gap: 8px;
 
+    &::-webkit-scrollbar {
+      width: 2px;
+    }
+
     .history-row,
     .open-row {
       display: grid;

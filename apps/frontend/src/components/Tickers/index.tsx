@@ -37,6 +37,7 @@ const Tickers = () => {
     (message: WebSocketMessage) => {
       const tickerContent =
         message.Subscription?.Content.Tickers[market.pair_symbol];
+      console.log(message.Subscription?.Content);
       if (!tickerContent) return;
       setTickers(tickerContent);
     },

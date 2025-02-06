@@ -43,20 +43,8 @@ const OrderActions = ({
   const [counterBalance, setCounterBalance] = useState<string>("0");
 
   useEffect(() => {
-    const fetchWalletAssets = async () => {
-      if (!wallet?.address) return;
-      try {
-        const response = await getWalletAssets(wallet?.address);
-        if (response.status === 200 && response.data.length > 0) {
-          const data = response.data;
-          setBalances(data);
-        }
-      } catch (e) {
-        console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
-      }
-    };
     fetchWalletAssets();
-  }, [wallet?.address]);
+  }, [wallet?.address, market.pair_symbol]);
 
   useEffect(() => {
     if (balances && balances.length > 0) {
@@ -121,6 +109,19 @@ const OrderActions = ({
       }
     }
   }, [volume, limitPrice, orderbook, tradeType, orderType]);
+
+  const fetchWalletAssets = async () => {
+    if (!wallet?.address) return;
+    try {
+      const response = await getWalletAssets(wallet?.address);
+      if (response.status === 200 && response.data.length > 0) {
+        const data = response.data;
+        setBalances(data);
+      }
+    } catch (e) {
+      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
+    }
+  };
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
