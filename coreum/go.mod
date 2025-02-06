@@ -16,14 +16,16 @@ replace (
 	github.com/spf13/viper => github.com/spf13/viper v1.16.0
 )
 
-require github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20241218174859-4a3a53385319
+require github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
 
-require github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20241218174859-4a3a53385319
+require github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250204222705-64b06c939bc4
+
+replace github.com/CoreumFoundation/CoreDEX-API/utils => ../utils
 
 replace github.com/CoreumFoundation/CoreDEX-API/domain => ../domain
 
 require (
-	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250131140441-f3f8e022d82d
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250206174717-3afaf3b89525
 	github.com/cometbft/cometbft v0.38.12
 	github.com/cosmos/cosmos-sdk v0.50.10
 	github.com/pkg/errors v0.9.1

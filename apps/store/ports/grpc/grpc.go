@@ -4,11 +4,11 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/currency"
-	ohlc "github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/ohlc"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/ohlc"
 	order "github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/order"
 	state "github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/state"
 	trade "github.com/CoreumFoundation/CoreDEX-API/apps/store/ports/grpc/trade"
-	store "github.com/CoreumFoundation/CoreDEX-API/apps/store/store"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"

@@ -1,6 +1,6 @@
-// Manages the state
+// Package state Manages the state.
 // State is per app and network.
-// Registered final value is in int64 height
+// The registered final value is in int64 height
 package state
 
 import (
@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	stategrpc "github.com/CoreumFoundation/CoreDEX-API/domain/state"
 	stateclient "github.com/CoreumFoundation/CoreDEX-API/domain/state/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const defaultStateType = stategrpc.StateType_BLOCK_HEIGHT

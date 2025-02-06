@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
-	logger "github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
+	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
 )
 
 const (
