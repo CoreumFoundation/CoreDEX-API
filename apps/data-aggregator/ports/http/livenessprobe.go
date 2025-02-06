@@ -1,4 +1,4 @@
-// The default listener for new recalculation requests
+// Package http is the default listener for new recalculation requests
 package http
 
 import (

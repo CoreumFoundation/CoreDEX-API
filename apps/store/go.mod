@@ -3,8 +3,8 @@ module github.com/CoreumFoundation/CoreDEX-API/apps/store
 go 1.23.3
 
 require (
-	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20241219123654-3d7f0f240ded
-	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20241219123654-3d7f0f240ded
+	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250204222705-64b06c939bc4
+	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
 	google.golang.org/grpc v1.69.0
 	google.golang.org/protobuf v1.36.0
 )

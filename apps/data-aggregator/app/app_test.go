@@ -13,15 +13,6 @@ import (
 	"testing"
 	"time"
 
-	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain"
-	"github.com/CoreumFoundation/CoreDEX-API/coreum"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/order"
-	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/cosmos/cosmos-sdk/codec"
 	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptosecp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -33,6 +24,15 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain"
+	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/order"
+	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 

@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/require"
+
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/ports/http"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/require"
 )
 
 func TestWebSocket(t *testing.T) {

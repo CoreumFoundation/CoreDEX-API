@@ -7,15 +7,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
-	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
-	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
+	"github.com/asaskevich/govalidator"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/asaskevich/govalidator"
-
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
+	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
+	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
 )
 
 type TradeOptionsFromParams struct {

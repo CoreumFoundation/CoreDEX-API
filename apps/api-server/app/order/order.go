@@ -4,17 +4,16 @@ import (
 	"context"
 	"errors"
 
+	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
+	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/shopspring/decimal"
-
-	"github.com/CoreumFoundation/CoreDEX-API/coreum"
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 )
 
 type Application struct {

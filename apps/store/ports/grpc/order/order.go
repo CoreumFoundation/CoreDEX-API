@@ -5,7 +5,7 @@ import (
 
 	pb "google.golang.org/protobuf/types/known/emptypb"
 
-	store "github.com/CoreumFoundation/CoreDEX-API/apps/store/store"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )

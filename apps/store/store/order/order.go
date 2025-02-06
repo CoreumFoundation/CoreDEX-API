@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const OrderDataFields = `Account, 

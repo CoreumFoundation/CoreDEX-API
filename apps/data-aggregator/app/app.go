@@ -4,6 +4,14 @@ import (
 	"context"
 	"time"
 
+	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptosecp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/app/ohlc"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/app/state"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain/dex"
@@ -17,15 +25,6 @@ import (
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradeclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	cryptosecp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/app/ohlc"
-
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 
