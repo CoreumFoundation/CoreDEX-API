@@ -178,7 +178,7 @@ const TradingView = ({ height }: { height: number | string }) => {
   };
 
   const { chartReady, setReady } = useMountChart(mountChart);
-  const { clearable, saveChart, clearChart } = useSaveAndClear(
+  useSaveAndClear(
     mountChart,
     setReady
   );

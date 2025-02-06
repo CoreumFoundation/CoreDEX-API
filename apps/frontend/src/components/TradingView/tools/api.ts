@@ -69,7 +69,7 @@ export class CoreumDataFeed {
           has_weekly_and_monthly: true,
           supported_resolutions: SUPPORTED_RESOLUTIONS,
           pricescale:
-            ticker && Number(ticker.last_price) < 0.000001
+            ticker && Number(ticker.LastPrice) < 0.000001
               ? Number(`1${zeros()}`)
               : 1000000,
           minmov: 1,
