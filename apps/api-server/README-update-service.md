@@ -1,6 +1,6 @@
 # update service
 
-The update service provides a websocket which refreshes the data based on actual changes. The use of the websocker reduces the numbers of reads required to produce the same data to the connected clients, thus lowering database load and related costs.
+The update service provides a websocket which refreshes the data based on actual changes. The use of the websocket reduces the numbers of reads required to produce the same data to the connected clients, thus lowering database load and related costs.
 
 ## Response messages
 
@@ -81,7 +81,7 @@ which will close the websocket on the server side.
 The messages sent to the client are in structure the same as the messages sent to the server.
 The differences are:
 
-* `Action`: `response` (Enum value) 
+* `Action`: `response` (Enum value)
 * `ID`: Always present since now the BE has to tell which ID should be used for a refresh (or if there is more FE logic: Which ID the potential refresh is related to)
 
 A sample response:
