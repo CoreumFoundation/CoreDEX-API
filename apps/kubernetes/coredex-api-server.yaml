@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredex-api-server
+  labels:
+    app: coredex-api-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredex-api-server
+  template:
+    metadata:
+      labels:
+        app: coredex-api-server
+    spec:
+      containers:
+      - name: coredex-api-server
+        image: {{ images.coredex_api_server[1] }}:{{ images.coredex_api_server[0] }}  # Replace with your Docker image
+        imagePullPolicy: Always
+        env:
+        - name: NETWORKS
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-api-server-config
+              key: NETWORKS
+        - name: HTTP_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-api-server-config
+              key: HTTP_CONFIG
+        - name: BASE_COIN
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-api-server-config
+              key: BASE_COIN
+        - name: BASE_USDC
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-api-server-config
+              key: BASE_USDC
+        - name: STATE_STORE
+          value: "coredex-store:50051"
+        - name: TRADE_STORE
+          value: "coredex-store:50051"
+        - name: OHLC_STORE
+          value: "coredex-store:50051"
+        - name: ORDER_STORE
+          value: "coredex-store:50051"
+        - name: CURRENCY_STORE
+          value: "coredex-store:50051"
+        - name: LOG_LEVEL
+          value: "debug"
+        ports:
+        - containerPort: 8080  # Replace with the port your app uses
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredex-api-server
+  labels:
+    app: coredex-api-server
+spec:
+  selector:
+    app: coredex-api-server
+  ports:
+  - port: 8080  # Replace with the port your app uses
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredex-api-server-config
+data:
+  NETWORKS: |-
+    {"Node":[{"Network": "devnet","GRPCHost":"full-node.devnet-1.coreum.dev:9090","RPCHost":"https://full-node.devnet-1.coreum.dev:26657"}]}
+  HTTP_CONFIG: |-
+    {"port": ":8080","cors": {"allowedOrigins":["https://dex.devnet-1.coreum.dev","http://localhost:3000","http://localhost:3001"]},"timeouts": {"read": "10s","write": "10s","idle": "10s","shutdown": "10s"}}
+  BASE_COIN: |-
+    {"BaseCoin":[{"Network": "mainnet","Coin": "ucore"},{"Network": "testnet","Coin": "utestcore"},{"Network": "devnet","Coin": "udevcore"}]}
+  BASE_USDC: |-
+    {"BaseCoin":[{"Network": "mainnet","Coin": "uusdc-E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D"}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coredex-api-server-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ coredexURL }}
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: coredex-api-server  # Replace with your service name
+                port:
+                  number: 8080  # Adjust the port as needed
+  tls: []

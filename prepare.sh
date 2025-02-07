@@ -6,6 +6,7 @@ for variable in \
     VITE_ENV_BASE_API \
     VITE_ENV_BASE_WS \
     VITE_MODE \
+    VITE_ENV_WS \
     VITE_ALLOWED_HOST ; do
   eval value="\$${variable}"
   echo ${value}
