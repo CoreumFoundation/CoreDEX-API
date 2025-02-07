@@ -95,16 +95,9 @@ func (a *Application) initDB() {
 	if err != nil {
 		logger.Fatalf("Error creating historical table OrderDataHistory: %v", err)
 	}
-	// Add the 		OrderStatus INT column
-	_, err = a.client.Client.Exec(`ALTER TABLE OrderData ADD COLUMN OrderStatus INT`)
-	if err != nil {
-		logger.Fatalf("Error adding OrderStatus column to OrderData: %v", err)
-	}
-	// Add the 		OrderStatus INT column
-	_, err = a.client.Client.Exec(`ALTER TABLE OrderDataHistory ADD COLUMN OrderFee BIGINT`)
-	if err != nil {
-		logger.Fatalf("Error adding OrderFee column to OrderDataHistory: %v", err)
-	}
+	// Add the OrderStatus INT column (ignore error if it already exists)
+	a.client.Client.Exec(`ALTER TABLE OrderData ADD COLUMN OrderStatus INT`)
+	a.client.Client.Exec(`ALTER TABLE OrderDataHistory ADD COLUMN OrderStatus INT`)
 	// Replace the trigger with the new one
 	_, err = a.client.Client.Exec(`DROP TRIGGER IF EXISTS after_order_update`)
 	if err != nil {
@@ -177,7 +170,7 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 
 	queryBuilder.WriteString(`
             SELECT ` + OrderDataFields + `
-            FROM Order 
+            FROM OrderData 
             WHERE Network=?
         `)
 	args = append(args, filter.Network)
@@ -224,6 +217,10 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 	if filter.Side != nil && *filter.Side != 0 {
 		queryBuilder.WriteString(" AND Side=?")
 		args = append(args, *filter.Side)
+	}
+	if filter.OrderStatus != nil && *filter.OrderStatus != 0 {
+		queryBuilder.WriteString(" AND OrderStatus=?")
+		args = append(args, *filter.OrderStatus)
 	}
 	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
 	queryBuilder.WriteString(" LIMIT 100")
@@ -369,6 +366,7 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 	metaData := make([]byte, 0)
 	quantity := make([]byte, 0)
 	remainingQuantity := make([]byte, 0)
+	var orderStatus sql.NullInt64
 	var network int // Dummy variable to scan into
 
 	err := b.Scan(
@@ -389,12 +387,16 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 		&metaData,
 		&order.TXID,
 		&order.BlockHeight,
-		&order.OrderStatus,
+		orderStatus,
 		&network,
 	)
 	if err != nil {
 		return nil, err
 	}
+	if orderStatus.Valid {
+		order.OrderStatus = ordergrpc.OrderStatus(orderStatus.Int64)
+	}
+
 	json.Unmarshal(baseDenom, &order.BaseDenom)
 	json.Unmarshal(quoteDenom, &order.QuoteDenom)
 	json.Unmarshal(goodTil, &order.GoodTil)
