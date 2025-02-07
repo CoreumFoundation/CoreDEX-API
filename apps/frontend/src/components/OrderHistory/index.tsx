@@ -9,7 +9,7 @@ import {
 } from "@/types/market";
 import { useStore } from "@/state/store";
 import { FormatNumber } from "../FormatNumber";
-import { cancelOrder, getOrderbook, getTrades } from "@/services/general";
+import { cancelOrder, getOrderbook, getTrades } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";

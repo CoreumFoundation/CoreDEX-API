@@ -5,7 +5,7 @@ import { TooltipPosition, useTooltip } from "@/hooks";
 import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";
-import { getOrderbook } from "@/services/general";
+import { getOrderbook } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import "./orderbook.scss";

@@ -11,7 +11,7 @@ import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
 import BigNumber from "bignumber.js";
-import { submitOrder, getWalletAssets } from "@/services/general";
+import { submitOrder, getWalletAssets } from "@/services/api";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import "./order-actions.scss";

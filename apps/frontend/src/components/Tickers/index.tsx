@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
-import { getTickers } from "@/services/general";
+import { getTickers } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import "./tickers.scss";

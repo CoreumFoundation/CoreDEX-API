@@ -4,7 +4,7 @@ This is the front-end UI for the Coreum Dex demo.
 
 Note: this webapp is not fully responsive and is developed for a desktop screen of 1440px - 1024px. Some screen sizes may not look the best as of now.
 
-//TODO add description for websocket manager file and services file here. maybe add its own section
+There are two utility files in this project that are intended for you to use for your own Dex: `services/websocket.ts` and `services/api.ts`. See Websocket and API sections below.
 
 ## To Run
 
@@ -16,24 +16,32 @@ Note: this webapp is not fully responsive and is developed for a desktop screen 
 //TODO better description
 
 ```
-VITE_ENV_BASE_API: API server
-VITE_ENV_WS: Websocket
-VITE_MODE: Development flag
+VITE_ENV_BASE_API: API server URL used in services/api.ts
+VITE_ENV_WS: Websocket URL used in services/websocket.ts
+VITE_MODE: Development flag for how the app imports envs when in development vs when in production
 ```
 
-In this project envs are import in `services/general.ts` and `hooks/websocket.tsx`.
+In this project, envs are imported in `services/general.ts` and `services/websocket.ts`.
 
-If you are using a different framework or build tool, you will need adjust how envs are named and imported.
+If you are using a different framework or build tool, you will need to adjust how envs are named and imported in these files:
+
+```
+// for vite
+const API_URL =
+  import.meta.env.VITE_MODE === "development"
+    ? import.meta.env.VITE_ENV_BASE_API
+    : (window as any).COREUM.env.VITE_ENV_BASE_API;
+```
 
 ## Websocket
 
-This app uses primarily React and Zustand on the front-end. But for your application you may choose a different framework. Within `/src/services/websocket.ts` is a TypeScript utility file that manages the websocket connection and should be reusable in other frameworks.
+This app uses primarily React and Zustand on the front-end. But for your application you may choose a different framework. Within `services/websocket.ts` is a TypeScript utility file that manages the websocket connection and is reusable in other frameworks/projects.
 
-In this demo app, we use the websocket manager inside of a React Hook (see `hooks/websocket.tsx) to make things easier.
+The websocket manager takes care of data handling and manages its own state.
 
-An alternative would be to use the websocket manager in a state manager of your choice and handle the connections within your components (eg.`state/websocket.ts`)
+You may choose to create a wrapper like a React hook for the websocket manager in your project. But below is an example of how you would connect and subscribe using only the websocket manager:
 
-Below is an example of how you might use the hook to connect, subscribe and listen to messages.
+// TODO update examples after refactoring websocket
 
 ```
 import { useEffect } from 'react';
@@ -70,6 +78,10 @@ const TestOrderBook: React.FC = () => {
 
 export default TestOrderBook;
 ```
+
+## API
+
+This project also handles all backend API calls in `services/api.ts` and can be ported to your project as well.
 
 ## Other
 
