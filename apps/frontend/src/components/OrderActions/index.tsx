@@ -244,7 +244,6 @@ const OrderActions = ({
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
         <div className="order-top">
-          {" "}
           <div className="order-switch">
             <div
               className={`switch switch-buy ${
@@ -348,30 +347,32 @@ const OrderActions = ({
                     />
                   </div>
 
-                  {advSettingsOpen && (
-                    <>
-                      <div className="time-in-force">
-                        <p className="time-in-force-label">Time in Force</p>
-                        <Dropdown
-                          variant={DropdownVariant.OUTLINED}
-                          items={(
-                            Object.keys(TIME_IN_FORCE_STRING) as Array<
-                              keyof typeof TIME_IN_FORCE_STRING
-                            >
-                          ).map((key) => [TIME_IN_FORCE_STRING[key]])}
-                          value={timeInForce}
-                          renderItem={(item) => (
-                            <div
-                              className="network-item"
-                              onClick={() => {
-                                setTimeInForce(item[0] as TIME_IN_FORCE_STRING);
-                              }}
-                            >
-                              {item}
-                            </div>
-                          )}
-                        />
-                      </div>
+                  <div
+                    className={`advanced-settings-content ${
+                      advSettingsOpen ? "open" : ""
+                    }`}
+                  >
+                    <div className="time-in-force">
+                      <p className="time-in-force-label">Time in Force</p>
+                      <Dropdown
+                        variant={DropdownVariant.OUTLINED}
+                        items={(
+                          Object.keys(TIME_IN_FORCE_STRING) as Array<
+                            keyof typeof TIME_IN_FORCE_STRING
+                          >
+                        ).map((key) => [TIME_IN_FORCE_STRING[key]])}
+                        value={timeInForce}
+                        renderItem={(item) => (
+                          <div
+                            className="network-item"
+                            onClick={() => {
+                              setTimeInForce(item[0] as TIME_IN_FORCE_STRING);
+                            }}
+                          >
+                            {item}
+                          </div>
+                        )}
+                      />
 
                       {timeInForce === TIME_IN_FORCE_STRING.goodTilTime && (
                         <Dropdown
@@ -394,8 +395,8 @@ const OrderActions = ({
                           )}
                         />
                       )}
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
