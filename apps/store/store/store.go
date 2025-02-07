@@ -1,11 +1,11 @@
 package store
 
 import (
-	currency "github.com/CoreumFoundation/CoreDEX-API/apps/store/store/currency"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store/currency"
 	ohlc "github.com/CoreumFoundation/CoreDEX-API/apps/store/store/ohlc"
-	order "github.com/CoreumFoundation/CoreDEX-API/apps/store/store/order"
-	state "github.com/CoreumFoundation/CoreDEX-API/apps/store/store/state"
-	trade "github.com/CoreumFoundation/CoreDEX-API/apps/store/store/trade"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store/order"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store/state"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/store/store/trade"
 	storebase "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
 )
 

@@ -19,7 +19,6 @@ import (
 
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 

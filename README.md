@@ -21,19 +21,19 @@ The API provides (folder `/apps/api-server`)
 
 * Trade history
 * Order tracking
-* OHLC (Open/Hight/Low/Close) data
+* OHLC (Open/High/Low/Close) data
 * Tickers
 * Order entry and execution
 
-Furthermore the Friendly DEX provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
+Furthermore, the CoreDEX API provides data aggregation for the trades and orders, thus generating the OHLC (folder `/apps/data-aggregator`).
 
-The API server is horizontally scalable thus providing the developer/operator with the ability to serve 1000s of parallel requests.
+The API server is horizontally scalable, thus providing the developer/operator with the ability to serve 1000s of parallel requests.
 
-The data-aggregator is single instance and is build such that it will, in case of a crash, restart where it left of before the crash, thus making certain the full history is present.
+The data-aggregator is a single instance and is build such that it will, in case of a crash, restart where it left of before the crash, thus making certain the full history is present.
 
 The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling would require this.
 
-## Installation and running of the Friendly DEX
+## Installation and running of the CoreDEX API
 
 There are 3 provided methods of running the Friendly DEX:
 
@@ -59,18 +59,18 @@ GRANT ALL PRIVILEGES ON friendly_dex.* TO 'testuser'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-There is a start script for all the components, excluding MySQL, in the `bin` directory of each component and in the main `/bin` directory. 
+There is a start script for all the components, excluding MySQL, in the `bin` directory of each component and in the main `/bin` directory.
 
-Run 
+Run
 
 ```bash
 ./bin/start.sh
 ```
 
-### First start 
+### First start
 
 On the first start, the process will start scanning from block 1 in the chain. So catching up is going to take a while.
-If you however want to get to just current, you can set the state in the database to the current block number. 
+If you, however, want to get to just current, you can set the state in the database to the current block number.
 
 Steps to do this are:
 
@@ -108,7 +108,7 @@ TODO: Add docker-compose file
 
 ### Running the Friendly DEX on VMs, Kubernetes or other cloud services
 
-The architecture of the Friendly DEX such that it is horizontally scalable. Setup deployments such that:
+The architecture of the CoreDEX API such that it is horizontally scalable. Setup deployments such that:
 
 * API Server and store are in stateless deployments, scale 1 to n
 * Store can be a stateless deployment, scale 1 to n
@@ -136,5 +136,5 @@ There are also sample deployment files for Kubernetes in the `apps/kubernetes` d
 
 ## Application documentation
 
-See the `README.md` files in the associated application folders. 
+See the `README.md` files in the associated application folders.
 Do note the UI `README.md` where there is information on some javascript packages/files which take care of UI data management.

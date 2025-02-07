@@ -5,15 +5,15 @@ go 1.23.3
 require (
 	cosmossdk.io/log v1.4.1
 	cosmossdk.io/math v1.4.0
-	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250131140441-f3f8e022d82d
+	github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250131141802-988390a8fb35
+	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250204222705-64b06c939bc4
+	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250206174717-3afaf3b89525
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/cosmos/cosmos-db v1.1.0
 	github.com/cosmos/cosmos-sdk v0.50.11
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250131141802-988390a8fb35
-	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250131141802-988390a8fb35
-	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250131141802-988390a8fb35
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.69.0

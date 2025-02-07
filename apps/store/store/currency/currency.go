@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
-
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
+	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
 )
 
 const currencyTableFields = `Denom, 

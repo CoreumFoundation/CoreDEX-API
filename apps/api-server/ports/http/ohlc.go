@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/asaskevich/govalidator"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
-	"github.com/asaskevich/govalidator"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type OHLCOptionsFromParams struct {

@@ -3,6 +3,9 @@ package dex
 import (
 	"context"
 
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/gogoproto/proto"
+
 	"github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	ordermodel "github.com/CoreumFoundation/CoreDEX-API/domain/order"
@@ -10,9 +13,6 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradeclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/gogoproto/proto"
-
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 

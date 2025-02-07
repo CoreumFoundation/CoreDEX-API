@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
+  OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
   SIDE_BUY,
@@ -13,6 +14,8 @@ import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
+import { DEX } from "coreum-js-nightly";
+import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -29,9 +32,26 @@ const OrderHistory = () => {
     orderHistory,
     setOrderHistory,
     pushNotification,
+    coreum,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
+
+  // TODO replace from backend
+  const resolveOrderStatus = (status: OrderHistoryStatus) => {
+    switch (status) {
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_OPEN:
+        return "Open";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_EXPIRED:
+        return "Expired";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_CANCELED:
+        return "Cancelled";
+      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_FILLED:
+        return "Filled";
+      default:
+        return "Unspecified";
+    }
+  };
 
   // fetch order history
   useEffect(() => {
@@ -107,7 +127,6 @@ const OrderHistory = () => {
     ].sort((a, b) => a.Sequence - b.Sequence);
   };
 
-  // TODO: move to ws service
   const handleOrderHistory = useCallback(
     (message: WebSocketMessage) => {
       const data = message.Subscription?.Content;
@@ -159,15 +178,33 @@ const OrderHistory = () => {
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
     try {
-      const response = await cancelOrder(wallet.address, id);
-      if (response.status === 200 && response.data) {
-        console.log("Order cancelled", response.data);
+      const data = await cancelOrder(wallet.address, id);
+
+      if (data) {
+        const cancelMessage: MsgCancelOrder = {
+          sender: wallet.address,
+          id: id,
+        };
+
+        const response = DEX.CancelOrder(cancelMessage);
+        await coreum?.sendTx([response]);
         pushNotification({
           type: "success",
-          message: "Order cancelled successfully",
+          message: "Order Cancelled!",
         });
       }
-    } catch (e) {
+    } catch (e: any) {
+      // TODO: sendTX outputs this error but the cancel still goes through successfully
+      // clarify with coreum
+      if (
+        e.error.message === "Invalid string. Length must be a multiple of 4"
+      ) {
+        pushNotification({
+          type: "success",
+          message: "Order Cancelled!",
+        });
+        return;
+      }
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
         type: "error",
@@ -246,21 +283,12 @@ const OrderHistory = () => {
                             : "Unspecified"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <FormatNumber
-                          number={order.Price}
-                          precision={5}
-                          className="price"
-                        />
+                        <FormatNumber number={order.Price} className="price" />
                         <FormatNumber
                           number={order.Volume}
-                          precision={4}
                           className="volume"
                         />
-                        <FormatNumber
-                          number={order.Total}
-                          precision={4}
-                          className="total"
-                        />
+                        <FormatNumber number={order.Total} className="total" />
                         <div
                           className="cancel-order-container"
                           onClick={() => {
@@ -313,15 +341,15 @@ const OrderHistory = () => {
                           {order.Side === SIDE_BUY.BUY ? "Buy" : "Sell"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <div className="status">TODO</div>
+                        <div className="status">
+                          {resolveOrderStatus(order.Status)}
+                        </div>
                         <FormatNumber
                           number={order.HumanReadablePrice}
-                          precision={5}
                           className="price"
                         />
                         <FormatNumber
                           number={order.SymbolAmount}
-                          precision={4}
                           className="volume"
                         />
                         <FormatNumber
@@ -329,7 +357,6 @@ const OrderHistory = () => {
                             Number(order.HumanReadablePrice) *
                             Number(order.SymbolAmount)
                           }
-                          precision={4}
                           className="total"
                         />
                         <p className="date">

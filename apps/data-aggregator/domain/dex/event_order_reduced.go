@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	cmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
 

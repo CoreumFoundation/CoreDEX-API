@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useStore } from "@/state/store";
 import "./wallet.scss";
+import { resolveCoreumExplorer } from "@/utils";
 
 const Wallet = ({}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { wallet, setLoginModal, pushNotification } = useStore();
+  const { wallet, setLoginModal, pushNotification, network } = useStore();
 
   const togglewallet = () => setIsOpen((prev) => !prev);
 
@@ -79,7 +80,9 @@ const Wallet = ({}) => {
     {
       label: "Open Explorer",
       action: () => {
-        console.log("open");
+        window.open(
+          `${resolveCoreumExplorer(network)}/accounts/${wallet.address}`
+        );
       },
       image: (
         <svg

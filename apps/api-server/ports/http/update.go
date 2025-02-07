@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/gorilla/websocket"
 
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
+	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 var upgrader = websocket.Upgrader{

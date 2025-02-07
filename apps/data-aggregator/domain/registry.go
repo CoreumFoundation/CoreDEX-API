@@ -6,15 +6,16 @@ import (
 	"strings"
 	"time"
 
+	cmtypes "github.com/cometbft/cometbft/abci/types"
+	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
+
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
-	cmtypes "github.com/cometbft/cometbft/abci/types"
-	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 )
 
 type Registry struct {
