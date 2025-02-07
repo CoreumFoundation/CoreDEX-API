@@ -134,7 +134,7 @@ const OrderActions = ({
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
-  function formatPriceForRegex(value: BigNumber): string {
+  const formatPriceForRegex = (value: BigNumber): string => {
     let [mantissa, exponent = ""] = value.toExponential().split("e");
     exponent = exponent.replace(/^\+/, "");
 
@@ -168,7 +168,7 @@ const OrderActions = ({
     }
 
     return result;
-  }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -240,6 +240,7 @@ const OrderActions = ({
       throw e;
     }
   };
+
   return (
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
@@ -395,6 +396,19 @@ const OrderActions = ({
                           )}
                         />
                       )}
+
+                      {timeInForce === TIME_IN_FORCE_STRING.goodTilTime && timeToCancel === TIME_SELECTION.CUSTOM (
+                         <DatetimePicker
+                         selectedDate={customTime}
+                         onChange={(val: any) => {
+                           setCustomTime(val?.toString() || "");
+                         }}
+                         width={"100%"}
+                         minDate={new Date(dayjs.utc().add(1, "day").format())}
+                       />
+                     
+                      )}
+
                     </div>
                   </div>
                 </div>
