@@ -5,13 +5,15 @@ import {
   TradeType,
   OrderbookAction,
   WalletAsset,
+  TIME_IN_FORCE_STRING,
+  TIME_SELECTION,
 } from "@/types/market";
 import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
 import BigNumber from "bignumber.js";
-import { submitOrder, getWalletAssets } from "@/services/general";
+import { submitOrder, getWalletAssets } from "@/services/api";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import "./order-actions.scss";
@@ -22,6 +24,7 @@ import {
 } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
+import Dropdown, { DropdownVariant } from "../Dropdown";
 
 BigNumber.config({ DECIMAL_PLACES: 30, EXPONENTIAL_AT: 0 });
 
@@ -41,27 +44,33 @@ const OrderActions = ({
   const [balances, setBalances] = useState<any>(null);
   const [baseBalance, setBaseBalance] = useState<string>("0");
   const [counterBalance, setCounterBalance] = useState<string>("0");
+  const [advSettingsOpen, setAdvSetting] = useState<boolean>(false);
+  const [timeInForce, setTimeInForce] = useState<TIME_IN_FORCE_STRING>(
+    TIME_IN_FORCE_STRING.goodTilCancel
+  );
+  const [timeToCancel, setTimeToCancel] = useState<TIME_SELECTION>(
+    TIME_SELECTION["5M"]
+  );
 
   useEffect(() => {
     fetchWalletAssets();
-  }, [wallet?.address, market.pair_symbol]);
+  }, [wallet, market]);
 
   useEffect(() => {
-    if (balances && balances.length > 0) {
-      const baseBalance: WalletAsset = balances.find(
-        (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
-      );
-      const counterBalance: WalletAsset = balances.find(
-        (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
-      );
-      if (baseBalance) {
-        setBaseBalance(baseBalance.SymbolAmount);
-      }
-      if (counterBalance) {
-        setCounterBalance(counterBalance.SymbolAmount);
-      }
-    }
-  }, [market.pair_symbol, balances]);
+    if (!balances) return;
+
+    const baseBalanceObject = balances.find(
+      (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
+    );
+    const counterBalanceObject = balances.find(
+      (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
+    );
+
+    setBaseBalance(baseBalanceObject ? baseBalanceObject.SymbolAmount : "0");
+    setCounterBalance(
+      counterBalanceObject ? counterBalanceObject.SymbolAmount : "0"
+    );
+  }, [market, balances]);
 
   // trigger when click on orderbook
   useEffect(() => {
@@ -231,112 +240,185 @@ const OrderActions = ({
       throw e;
     }
   };
-
   return (
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
-        <div className="order-switch">
-          <div
-            className={`switch switch-buy ${
-              orderType === OrderType.BUY ? "active" : ""
-            }`}
-            onClick={() => setOrderType(OrderType.BUY)}
-          >
-            <p>Buy</p>
-          </div>
-
-          <div
-            className={`switch switch-sell ${
-              orderType === OrderType.SELL ? "active" : ""
-            }`}
-            onClick={() => setOrderType(OrderType.SELL)}
-          >
-            <p>Sell</p>
-          </div>
-        </div>
-
-        <div className="order-trade">
-          <div className="order-trade-types">
+        <div className="order-top">
+          {" "}
+          <div className="order-switch">
             <div
-              className={`type-item ${
-                tradeType === TradeType.MARKET ? "active" : ""
+              className={`switch switch-buy ${
+                orderType === OrderType.BUY ? "active" : ""
               }`}
-              onClick={() => {
-                setTradeType(TradeType.MARKET);
-              }}
+              onClick={() => setOrderType(OrderType.BUY)}
             >
-              Market
+              <p>Buy</p>
             </div>
+
             <div
-              className={`type-item ${
-                tradeType === TradeType.LIMIT ? "active" : ""
+              className={`switch switch-sell ${
+                orderType === OrderType.SELL ? "active" : ""
               }`}
-              onClick={() => {
-                setTradeType(TradeType.LIMIT);
-              }}
+              onClick={() => setOrderType(OrderType.SELL)}
             >
-              Limit
+              <p>Sell</p>
             </div>
           </div>
-        </div>
+          <div className="order-trade">
+            <div className="order-trade-types">
+              <div
+                className={`type-item ${
+                  tradeType === TradeType.MARKET ? "active" : ""
+                }`}
+                onClick={() => {
+                  setTradeType(TradeType.MARKET);
+                }}
+              >
+                Market
+              </div>
+              <div
+                className={`type-item ${
+                  tradeType === TradeType.LIMIT ? "active" : ""
+                }`}
+                onClick={() => {
+                  setTradeType(TradeType.LIMIT);
+                }}
+              >
+                Limit
+              </div>
+            </div>
+          </div>
+          <div className="order-trade">
+            {tradeType === TradeType.LIMIT ? (
+              <div className="limit-type-wrapper">
+                <Input
+                  maxLength={16}
+                  placeholder="Enter Amount"
+                  type={InputType.NUMBER}
+                  onValueChange={(val: string) => {
+                    setVolume(val);
+                  }}
+                  value={volume}
+                  inputName="volume"
+                  label="Amount"
+                  customCss={{
+                    fontSize: 14,
+                  }}
+                  inputWrapperClassname="order-input"
+                  decimals={13}
+                  adornmentRight={market.base.Denom.Currency}
+                />
+                <Input
+                  maxLength={16}
+                  placeholder="Enter Limit Price"
+                  type={InputType.NUMBER}
+                  onValueChange={(val: string) => {
+                    setLimitPrice(val);
+                  }}
+                  value={limitPrice}
+                  inputName="limit-price"
+                  label="Price"
+                  customCss={{
+                    fontSize: 14,
+                  }}
+                  inputWrapperClassname="order-input"
+                  decimals={13}
+                />
 
-        <div className="order-trade">
-          {tradeType === TradeType.LIMIT ? (
-            <div className="limit-type-wrapper">
-              <Input
-                maxLength={16}
-                placeholder="Enter Amount"
-                type={InputType.NUMBER}
-                onValueChange={(val: string) => {
-                  setVolume(val);
-                }}
-                value={volume}
-                inputName="volume"
-                label="Amount"
-                customCss={{
-                  fontSize: 14,
-                }}
-                inputWrapperClassname="order-input"
-                decimals={13}
-                adornmentRight={market.base.Denom.Currency}
-              />
-              <Input
-                maxLength={16}
-                placeholder="Enter Limit Price"
-                type={InputType.NUMBER}
-                onValueChange={(val: string) => {
-                  setLimitPrice(val);
-                }}
-                value={limitPrice}
-                inputName="limit-price"
-                label="Price"
-                customCss={{
-                  fontSize: 14,
-                }}
-                inputWrapperClassname="order-input"
-                decimals={13}
-              />
-            </div>
-          ) : (
-            <div className="market-type-wrapper">
-              <Input
-                maxLength={16}
-                placeholder="Enter Amount"
-                label="Amount"
-                type={InputType.NUMBER}
-                onValueChange={(val: string) => {
-                  setVolume(val);
-                }}
-                value={volume}
-                inputName="volume"
-                customCss={{
-                  fontSize: 16,
-                }}
-                decimals={13}
-                adornmentRight={market.base.Denom.Currency}
-              />
-            </div>
-          )}
+                <div className="advanced-settings-header">
+                  <div
+                    className="advanced-accordion"
+                    onClick={() => {
+                      setAdvSetting(!advSettingsOpen);
+                    }}
+                  >
+                    <p
+                      className={`advanced-label ${
+                        advSettingsOpen ? "active" : ""
+                      }`}
+                    >
+                      Advanced Settings
+                    </p>
+                    <img
+                      className={`advanced-arrow ${
+                        advSettingsOpen ? "active" : ""
+                      }`}
+                      src="/trade/images/arrow.svg"
+                      alt=""
+                    />
+                  </div>
+
+                  {advSettingsOpen && (
+                    <>
+                      <div className="time-in-force">
+                        <p className="time-in-force-label">Time in Force</p>
+                        <Dropdown
+                          variant={DropdownVariant.OUTLINED}
+                          items={(
+                            Object.keys(TIME_IN_FORCE_STRING) as Array<
+                              keyof typeof TIME_IN_FORCE_STRING
+                            >
+                          ).map((key) => [TIME_IN_FORCE_STRING[key]])}
+                          value={timeInForce}
+                          renderItem={(item) => (
+                            <div
+                              className="network-item"
+                              onClick={() => {
+                                setTimeInForce(item[0] as TIME_IN_FORCE_STRING);
+                              }}
+                            >
+                              {item}
+                            </div>
+                          )}
+                        />
+                      </div>
+
+                      {timeInForce === TIME_IN_FORCE_STRING.goodTilTime && (
+                        <Dropdown
+                          variant={DropdownVariant.OUTLINED}
+                          items={(
+                            Object.keys(TIME_SELECTION) as Array<
+                              keyof typeof TIME_SELECTION
+                            >
+                          ).map((key) => [TIME_SELECTION[key]])}
+                          value={timeToCancel}
+                          renderItem={(item) => (
+                            <div
+                              className="network-item"
+                              onClick={() => {
+                                setTimeToCancel(item[0] as TIME_SELECTION);
+                              }}
+                            >
+                              {item}
+                            </div>
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="market-type-wrapper">
+                <Input
+                  maxLength={16}
+                  placeholder="Enter Amount"
+                  label="Amount"
+                  type={InputType.NUMBER}
+                  onValueChange={(val: string) => {
+                    setVolume(val);
+                  }}
+                  value={volume}
+                  inputName="volume"
+                  customCss={{
+                    fontSize: 16,
+                  }}
+                  decimals={13}
+                  adornmentRight={market.base.Denom.Currency}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="order-bottom">
@@ -346,7 +428,6 @@ const OrderActions = ({
               <FormatNumber
                 number={totalPrice || 0}
                 className="order-total-number"
-                precision={6}
               />
               <p className="order-total-currency">
                 {market.counter.Denom.Currency}

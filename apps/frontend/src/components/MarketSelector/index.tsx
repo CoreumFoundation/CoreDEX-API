@@ -4,7 +4,7 @@ import Modal from "../Modal";
 import Dropdown, { DropdownVariant } from "../Dropdown";
 import { useStore } from "@/state/store";
 import { Token } from "@/types/market";
-import { getCurrencies } from "@/services/general";
+import { getCurrencies } from "@/services/api";
 import "./market-selector.scss";
 
 const MarketSelector = () => {
