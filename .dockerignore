@@ -1,0 +1,12 @@
+package-lock.json
+node_modules
+README.md
+.env
+bin
+.vscode
+.idea
+
+tmp
+test
+go.work
+go.work.sum
