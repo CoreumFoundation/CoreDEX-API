@@ -268,7 +268,7 @@ curl -H "Network: devnet" \
 
 #### /order/create
 
-The order create uses a POST request to create an order. The function returns a to be signed transaction. The function does not persist the order in the order book (persistence is done only after submitting the order to the blockchain).
+The order create uses a POST request to create an order. The function returns a to-be-signed transaction. The function does not persist the order in the order book (persistence is done only after submitting the order to the blockchain).
 
 The call takes a POST:
 
@@ -523,7 +523,7 @@ The base coin is configured in a json array which depending on usage might requi
 
 ### Base USDC
 
-Base USDC is used by a path resolving algorithm (non-weighted Dijkstra alghorithm) to find the path between two assets and be able to resolve that to the representative USD value using a USDC as base.
+Base USDC is used by a path resolving algorithm (non-weighted Dijkstra algorithm) to find the path between two assets and be able to resolve that to the representative USD value using a USDC as base.
 Often devnet and testnet will not have an IBC USDC currency available, resulting in a devnet configuration only. On devnet/testnet the user will most likely not see any USD values in the data.
 The base USDC is configured in a json array which depending on usage might require escaping. The base USDC configuration is as follows:
 
