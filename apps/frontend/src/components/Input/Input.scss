@@ -40,6 +40,15 @@
     border: 1px solid #1b1d23;
     border-radius: 10px;
     max-height: 40px;
+    font-weight: 300;
+    width: 100%;
+    background: none;
+    border: none;
+    background-color: transparent;
+    line-height: 1.5;
+    color: #eee;
+    font-family: "Noto Sans";
+
     &:focus,
     &:focus-within,
     &:active {

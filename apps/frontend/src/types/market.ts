@@ -41,6 +41,25 @@ export enum TIME_IN_FORCE {
   // time_in_force_fok means that order must be fully executed or canceled.
   TIME_IN_FORCE_FOK = 3,
 }
+
+export enum TIME_IN_FORCE_STRING {
+  goodTilCancel = "Good till Cancel",
+  goodTilTime = "Good till Time",
+  immediateOrCancel = "Immediate or Cancel",
+  fillOrKill = "Fill or Kill",
+}
+
+export enum TIME_SELECTION {
+  "5M" = "5 Mins",
+  "15M" = "15 Mins",
+  "30M" = "30 Mins",
+  "1H" = "1 Hour",
+  "6H" = "6 Hours",
+  "12H" = "12 Hours",
+  "1D" = "1 Day",
+  CUSTOM = "Custom",
+}
+
 export enum SIDE_BUY {
   BUY = 1,
   SELL = 2,
@@ -95,22 +114,6 @@ export type OrderbookAction = {
   price: number;
   volume: number;
 };
-export enum TIME_POLICY {
-  goodTilCancel = "Good till Cancel",
-  goodTilTime = "Good till Time",
-  immediateOrCancel = "Immediate or Cancel",
-  fillOrKill = "Fill or Kill",
-}
-export enum TIME_SELECTION {
-  "5M" = "5 Mins",
-  "15M" = "15 Mins",
-  "30M" = "30 Mins",
-  "1H" = "1 Hour",
-  "6H" = "6 Hours",
-  "12H" = "12 Hours",
-  "1D" = "1 Day",
-  CUSTOM = "Custom",
-}
 
 // tradingview
 export type BarPeriodParams = {

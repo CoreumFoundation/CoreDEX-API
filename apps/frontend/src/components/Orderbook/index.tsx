@@ -45,7 +45,6 @@ export default function Orderbook({
         const response = await getOrderbook(market.pair_symbol);
         if (response.status === 200 && response.data) {
           const data = response.data;
-          console.log(data);
           setOrderbook(data);
         }
       } catch (e) {
