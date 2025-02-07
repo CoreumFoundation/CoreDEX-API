@@ -240,7 +240,6 @@ const OrderActions = ({
       throw e;
     }
   };
-  console.log(timeInForce);
   return (
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
