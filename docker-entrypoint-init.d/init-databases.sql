@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS friendly_dex;
+CREATE USER IF NOT EXISTS 'testuser'@'%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON friendly_dex.* TO 'testuser'@'%';
+FLUSH PRIVILEGES;
