@@ -334,7 +334,7 @@ func (app *Application) updateOrderbook(_ context.Context, subscription *updatep
 		wg.Done()
 		return
 	}
-	orders, err := app.Order.OrderBookRelevantOrders(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, 20)
+	orders, err := app.Order.OrderBookRelevantOrders(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, 50)
 	if err != nil {
 		logger.Errorf("Error getting orderbook orders: %v", err)
 		wg.Done()

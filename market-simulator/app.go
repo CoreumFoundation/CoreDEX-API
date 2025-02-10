@@ -32,7 +32,6 @@ import (
 	coreumconfig "github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	cbig "github.com/CoreumFoundation/coreum/v5/pkg/math/big"
-	"github.com/CoreumFoundation/coreum/v5/testutil/event"
 	assetfttypes "github.com/CoreumFoundation/coreum/v5/x/asset/ft/types"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
@@ -150,7 +149,6 @@ func NewApp(
 
 	slog.Info("Denoms array", slog.Any("denoms", denoms))
 
-
 	sides := []dextypes.Side{
 		dextypes.SIDE_SELL,
 		dextypes.SIDE_BUY,
@@ -197,57 +195,44 @@ func (fa *App) CreateOrder(
 	ctx context.Context,
 	rootRnd *rand.Rand,
 	sender types.AccAddress,
-	ordersCount int,
 ) error {
 	startTime := time.Now()
-	for i := 0; i < ordersCount; i++ {
-		orderSeed := rootRnd.Int63()
-		orderRnd := rand.New(rand.NewSource(orderSeed))
+	orderSeed := rootRnd.Int63()
+	orderRnd := rand.New(rand.NewSource(orderSeed))
 
-		msgIssue, msgPlaceOrder, err := fa.GenOrder(orderRnd, sender)
-		if err != nil {
-			return err
-		}
-
-		_, err = client.BroadcastTx(
-			ctx,
-			fa.clientCtx.WithFromAddress(fa.issuer),
-			fa.txFactory,
-			msgIssue,
-		)
-		if err != nil {
-			return err
-		}
-
-		res, err := client.BroadcastTx(
-			ctx,
-			fa.clientCtx.WithFromAddress(sender),
-			fa.txFactory,
-			msgPlaceOrder,
-		)
-		if err != nil {
-			if strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-				slog.Error("it's prohibited to save more than 100 orders per denom", slog.String("account", msgPlaceOrder.Sender), slog.String("denom", msgPlaceOrder.BaseDenom))
-				continue
-			}
-			return err
-		}
-
-		slog.Info("new order", slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceOrder))
-
-		eventOrderReducedEvts, err := event.FindTypedEvents[*dextypes.EventOrderReduced](res.Events)
-		if err != nil {
-			if strings.Contains(err.Error(), "can't find event") {
-				continue
-			}
-			return err
-		}
-		for _, trade := range eventOrderReducedEvts {
-			slog.Info("new trade", slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Uint64("Sequence", trade.Sequence))
-		}
+	msgIssue, msgPlaceOrder, err := fa.GenOrder(orderRnd, sender)
+	if err != nil {
+		return err
 	}
+
+	_, err = client.BroadcastTx(
+		ctx,
+		fa.clientCtx.WithFromAddress(fa.issuer),
+		fa.txFactory,
+		msgIssue,
+	)
+	if err != nil {
+		return err
+	}
+
+	res, err := client.BroadcastTx(
+		ctx,
+		fa.clientCtx.WithFromAddress(sender),
+		fa.txFactory,
+		msgPlaceOrder,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
+			slog.Error("it's prohibited to save more than 100 orders per denom", slog.String("account", msgPlaceOrder.Sender), slog.String("denom", msgPlaceOrder.BaseDenom))
+			return err
+		}
+		return err
+	}
+
+	slog.Info("new order", slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceOrder))
+
 	took := time.Since(startTime)
-	slog.Info(fmt.Sprintf("broadcasting %d orders took %s\n", ordersCount, took.String()))
+	slog.Info(fmt.Sprintf("broadcasting order took %s\n", took.String()))
 	return nil
 }
 
@@ -257,18 +242,15 @@ func (fa *App) GetAccounts() []types.AccAddress {
 
 func (fa *App) GenPair(rnd *rand.Rand) (string, string) {
 	// take two denoms for single market
-	return fa.denoms[10], fa.denoms[11]
+	return fa.denoms[0], fa.denoms[1]
 }
 
 func (fa *App) GenOrder(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.MsgMint, *dextypes.MsgPlaceOrder, error) {
 	baseDenom, quoteDenom := fa.GenPair(rnd)
 	side := getAnyItemByIndex(fa.sides, rnd.Intn(len(fa.sides)))
 
-	priceNum := randIntInRange(rnd, 1, 100)
-	priceExp := int8(randIntInRange(rnd, -1, 1))
-	if priceExp == 0 {
-		priceExp = 1
-	}
+	priceNum := randIntInRange(rnd, 80, 100)
+	var priceExp int8 = 0
 
 	price, ok := buildNumExpPrice(uint64(priceNum), priceExp)
 	if !ok {
@@ -276,10 +258,7 @@ func (fa *App) GenOrder(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.
 	}
 
 	// the quantity can't be zero
-	quantity := rnd.Int63n(5000)
-	if quantity == 0 {
-		quantity = 1
-	}
+	quantity := int64(randIntInRange(rnd, 10, 20))*10 ^ 6
 
 	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
 	if side == dextypes.SIDE_BUY {
@@ -295,14 +274,18 @@ func (fa *App) GenOrder(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.
 			Recipient: sender.String(),
 		},
 		&dextypes.MsgPlaceOrder{
-			Sender:      sender.String(),
-			Type:        dextypes.ORDER_TYPE_LIMIT,
-			ID:          uuid.New().String(),
-			BaseDenom:   baseDenom,
-			QuoteDenom:  quoteDenom,
-			Price:       &price,
-			Quantity:    math.NewInt(quantity),
-			Side:        side,
+			Sender:     sender.String(),
+			Type:       dextypes.ORDER_TYPE_LIMIT,
+			ID:         uuid.New().String(),
+			BaseDenom:  baseDenom,
+			QuoteDenom: quoteDenom,
+			Price:      &price,
+			Quantity:   math.NewInt(quantity),
+			Side:       side,
+			GoodTil: &dextypes.GoodTil{
+				GoodTilBlockHeight: 0,
+				GoodTilBlockTime:   lo.ToPtr(time.Now().Add(time.Hour)),
+			},
 			TimeInForce: dextypes.TIME_IN_FORCE_GTC,
 		}, nil
 }
