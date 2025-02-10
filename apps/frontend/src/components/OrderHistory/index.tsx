@@ -3,7 +3,7 @@ import {
   OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
-  SIDE_BUY,
+  SideBuy,
   TradeHistoryResponse,
   TransformedOrder,
 } from "@/types/market";
@@ -105,7 +105,7 @@ const OrderHistory = () => {
   ): TransformedOrder[] => {
     const transformSide = (
       orders: OrderbookRecord[],
-      side: SIDE_BUY.BUY | SIDE_BUY.SELL
+      side: SideBuy.BUY | SideBuy.SELL
     ) =>
       orders.map(
         (order) =>
@@ -122,8 +122,8 @@ const OrderHistory = () => {
       );
 
     return [
-      ...transformSide(orderbook.Buy, SIDE_BUY.BUY),
-      ...transformSide(orderbook.Sell, SIDE_BUY.SELL),
+      ...transformSide(orderbook.Buy, SideBuy.BUY),
+      ...transformSide(orderbook.Sell, SideBuy.SELL),
     ].sort((a, b) => a.Sequence - b.Sequence);
   };
 
@@ -273,12 +273,12 @@ const OrderHistory = () => {
                       <div key={index} className="open-row">
                         <div
                           className={
-                            order.Side === SIDE_BUY.BUY ? `buy` : "sell"
+                            order.Side === SideBuy.BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SIDE_BUY.BUY
+                          {order.Side === SideBuy.BUY
                             ? "Buy"
-                            : order.Side === SIDE_BUY.SELL
+                            : order.Side === SideBuy.SELL
                             ? "Sell"
                             : "Unspecified"}
                         </div>
@@ -335,10 +335,10 @@ const OrderHistory = () => {
                       >
                         <div
                           className={
-                            order.Side === SIDE_BUY.BUY ? `buy` : "sell"
+                            order.Side === SideBuy.BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SIDE_BUY.BUY ? "Buy" : "Sell"}
+                          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
                         <div className="status">

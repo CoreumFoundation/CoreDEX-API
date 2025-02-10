@@ -34,6 +34,7 @@
       width: 100%;
       padding: 0px 16px 12px;
       display: grid;
+      column-gap: 8px;
       grid-template-columns: 1fr 1fr 1fr;
       & > div:last-child {
         text-align: right;
@@ -120,6 +121,7 @@
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
           padding: 0 16px;
+          column-gap: 8px;
           & > p {
             text-align: right;
           }

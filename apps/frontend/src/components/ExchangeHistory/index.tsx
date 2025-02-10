@@ -5,7 +5,7 @@ import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
-import { SIDE_BUY, TradeHistoryResponse } from "@/types/market";
+import { SideBuy, TradeHistoryResponse } from "@/types/market";
 import "./exchange-history.scss";
 
 const ExchangeHistory = () => {
@@ -78,7 +78,7 @@ const ExchangeHistory = () => {
               <div className="exchange-history-body-row" key={index}>
                 <div
                   className={`exchange-history-body-value  ${
-                    trade.Side === SIDE_BUY.BUY ? "positive" : "negative"
+                    trade.Side === SideBuy.BUY ? "positive" : "negative"
                   }`}
                 >
                   <FormatNumber number={trade.HumanReadablePrice} />

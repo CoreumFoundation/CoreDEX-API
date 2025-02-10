@@ -1,4 +1,10 @@
 // TODO - remove enums and types that can be replaced from backend protos
+import {
+  Side,
+  OrderType as OT,
+  TimeInForce,
+  timeInForceToJSON,
+} from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 
 export type Market = {
   base: Token;
@@ -26,30 +32,26 @@ export type CurrencyResponse = {
 };
 
 // order actions
-export enum ORDER_TYPE {
+export enum OrderType {
   LIMIT = 1,
   MARKET = 2,
 }
-export enum TIME_IN_FORCE {
-  // time_in_force_unspecified reserves the default value, to protect against unexpected settings.
-  TIME_IN_FORCE_UNSPECIFIED = 0,
-  // time_in_force_gtc means that the order remains active until it is fully executed or manually canceled.
-  TIME_IN_FORCE_GTC = 1,
-  // time_in_force_ioc  means that order must be executed immediately, either in full or partially. Any portion of the
-  //  order that cannot be filled immediately is canceled.
-  TIME_IN_FORCE_IOC = 2,
-  // time_in_force_fok means that order must be fully executed or canceled.
-  TIME_IN_FORCE_FOK = 3,
-}
 
-export enum TIME_IN_FORCE_STRING {
+export enum TimeInForceString {
   goodTilCancel = "Good till Cancel",
   goodTilTime = "Good till Time",
   immediateOrCancel = "Immediate or Cancel",
   fillOrKill = "Fill or Kill",
 }
 
-export enum TIME_SELECTION {
+export enum TimeInForceStringToEnum {
+  "Good till Cancel" = TimeInForce.TIME_IN_FORCE_GTC,
+  "Good till Time" = TimeInForce.TIME_IN_FORCE_GTC,
+  "Immediate or Cancel" = TimeInForce.TIME_IN_FORCE_IOC,
+  "Fill or Kill" = TimeInForce.TIME_IN_FORCE_FOK,
+}
+
+export enum TimeSelection {
   "5M" = "5 Mins",
   "15M" = "15 Mins",
   "30M" = "30 Mins",
@@ -60,14 +62,14 @@ export enum TIME_SELECTION {
   CUSTOM = "Custom",
 }
 
-export enum SIDE_BUY {
+export enum SideBuy {
   BUY = 1,
   SELL = 2,
 }
 
 export type CreateOrderObject = {
   sender: string;
-  type: ORDER_TYPE;
+  type: OrderType;
   id?: number;
   base_denom: string;
   quote_denom: string;
@@ -76,7 +78,7 @@ export type CreateOrderObject = {
     num: number;
   };
   quantity: number;
-  side: SIDE_BUY;
+  side: SideBuy;
   good_til: {
     good_til_block_height: number;
     good_til_block_time: string;
@@ -246,7 +248,7 @@ export type TradeRecord = {
     Description: string;
     Icon: string;
   };
-  Side: SIDE_BUY;
+  Side: SideBuy;
   BlockTime: {
     seconds: number;
     nanos: number;
@@ -295,13 +297,13 @@ export interface TransformedOrder {
 
 export type CreateOrder = {
   Sender: string;
-  Type: ORDER_TYPE;
+  Type: OrderType;
   OrderID: number;
   BaseDenom: string;
   QuoteDenom: string;
   Price: string;
   Quantity: string;
-  Side: SIDE_BUY;
+  Side: SideBuy;
   GoodTil: {
     GoodTilBlockHeight: number;
     GoodTilBlockTime: string;
