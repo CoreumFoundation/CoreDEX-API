@@ -22,6 +22,7 @@ import {
   Side,
   OrderType as OT,
   TimeInForce,
+  GoodTil,
 } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
@@ -259,39 +260,41 @@ const OrderActions = ({
           .toFixed(0),
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
         goodTil:
+          tradeType === TradeType.LIMIT &&
           timeInForce === TimeInForceString.goodTilTime
-            ? {
+            ? ({
                 goodTilBlockTime: expirationTime,
-              }
+              } as GoodTil)
             : undefined,
         timeInForce:
           tradeType === TradeType.LIMIT
-            ? TimeInForce.TIME_IN_FORCE_GTC
+            ? (TimeInForceStringToEnum[timeInForce] as any)
             : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
+      const signedTx = await coreum?.signTx([orderMessage]);
+      const encodedTx = TxRaw.encode(signedTx!).finish();
+      const base64Tx = fromByteArray(encodedTx);
+      const submitResponse = await submitOrder({ TX: base64Tx });
 
-      console.log(orderMessage);
-      // const signedTx = await coreum?.signTx([orderMessage]);
-      // const encodedTx = TxRaw.encode(signedTx!).finish();
-      // const base64Tx = fromByteArray(encodedTx);
-      // const submitResponse = await submitOrder({ TX: base64Tx });
+      if (submitResponse.status !== 200) {
+        pushNotification({
+          type: "error",
+          message: "There was an issue submitting your order",
+        });
+        throw new Error("Error submitting order");
+      }
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
+          -4
+        )}`,
+      });
 
-      // if (submitResponse.status !== 200) {
-      //   pushNotification({
-      //     type: "error",
-      //     message: "There was an issue submitting your order",
-      //   });
-      //   throw new Error("Error submitting order");
-      // }
-      // const txHash = submitResponse.data.TXHash;
-      // pushNotification({
-      //   type: "success",
-      //   message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
-      //     -4
-      //   )}`,
-      // });
+      setTimeInForce(TimeInForceString.goodTilCancel);
+      setTimeToCancel(TimeSelection["5M"]);
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
       pushNotification({
