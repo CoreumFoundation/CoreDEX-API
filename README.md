@@ -104,7 +104,17 @@ See the [Coreum](https://docs.coreum.dev/docs/become-validator/run-full-node) fo
 
 ### Running the Friendly DEX with Docker-compose
 
-TODO: Add docker-compose file
+There is a docker compose file, `docker-compose.yml`, in the root of the project. This file can be used to start the CoreDEX API in a docker environment.
+
+***Important***:
+To use the docker compose environment, edit the folder `mysql-init/init-databases.sql` to set the block height to start from.
+Once that has been done, the start script can be run:
+
+```bash
+./bin/start-docker-compose.sh
+```
+
+The script, `./bin/stop-docker-compose.sh`, can be used to stop the docker-compose environment. This script will remove the volumes (e.g. reset the database), so depending on your use case you might want to just shutdown with `docker compose down`.
 
 ### Running the Friendly DEX on VMs, Kubernetes or other cloud services
 
