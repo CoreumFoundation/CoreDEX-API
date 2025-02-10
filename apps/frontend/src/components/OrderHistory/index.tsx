@@ -9,13 +9,20 @@ import {
 } from "@/types/market";
 import { useStore } from "@/state/store";
 import { FormatNumber } from "../FormatNumber";
-import { cancelOrder, getOrderbook, getTrades } from "@/services/api";
+import {
+  cancelOrder,
+  getOrderbook,
+  getTrades,
+  submitOrder,
+} from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
+import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
+import { fromByteArray } from "base64-js";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -181,30 +188,35 @@ const OrderHistory = () => {
       const data = await cancelOrder(wallet.address, id);
 
       if (data) {
-        const cancelMessage: MsgCancelOrder = {
+        const orderCancel: MsgCancelOrder = {
           sender: wallet.address,
           id: id,
         };
 
-        const response = DEX.CancelOrder(cancelMessage);
-        await coreum?.sendTx([response]);
+        const cancelMessage = DEX.CancelOrder(orderCancel);
+        const signedTx = await coreum?.signTx([cancelMessage]);
+        const encodedTx = TxRaw.encode(signedTx!).finish();
+        const base64Tx = fromByteArray(encodedTx);
+        const submitResponse = await submitOrder({ TX: base64Tx });
+
+        if (submitResponse.status !== 200) {
+          pushNotification({
+            type: "error",
+            message: "There was an issue cancelling your order",
+          });
+          throw new Error("Error submitting order");
+        }
+
+        const txHash = submitResponse.data.TXHash;
         pushNotification({
           type: "success",
-          message: "Order Cancelled!",
+          message: `Order Cancelled! TXHash: ${txHash.slice(
+            0,
+            6
+          )}...${txHash.slice(-4)}`,
         });
       }
     } catch (e: any) {
-      // TODO: sendTX outputs this error but the cancel still goes through successfully
-      // clarify with coreum
-      if (
-        e.error.message === "Invalid string. Length must be a multiple of 4"
-      ) {
-        pushNotification({
-          type: "success",
-          message: "Order Cancelled!",
-        });
-        return;
-      }
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
         type: "error",
