@@ -114,19 +114,19 @@ const OrderHistory = () => {
       orders: OrderbookRecord[],
       side: SideBuy.BUY | SideBuy.SELL
     ) =>
-      orders.map(
-        (order) =>
-          ({
-            Side: side,
-            Price: order.HumanReadablePrice,
-            Volume: order.SymbolAmount,
-            Total:
-              Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
-            Account: order.Account,
-            Sequence: order.Sequence,
-            OrderID: order.OrderID,
-          } as TransformedOrder)
-      );
+      orders.map((order) => {
+        return {
+          Side: side,
+          HumanReadablePrice: order.HumanReadablePrice,
+          Price: order.Price,
+          Amount: order.Amount,
+          SymbolAmount: order.SymbolAmount,
+          Total: Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
+          Account: order.Account,
+          Sequence: order.Sequence,
+          OrderID: order.OrderID,
+        } as TransformedOrder;
+      });
 
     return [
       ...transformSide(orderbook.Buy, SideBuy.BUY),
@@ -295,9 +295,12 @@ const OrderHistory = () => {
                             : "Unspecified"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <FormatNumber number={order.Price} className="price" />
                         <FormatNumber
-                          number={order.Volume}
+                          number={order.HumanReadablePrice}
+                          className="price"
+                        />
+                        <FormatNumber
+                          number={order.SymbolAmount}
                           className="volume"
                         />
                         <FormatNumber number={order.Total} className="total" />

@@ -295,20 +295,20 @@ The response is a transaction that needs to be signed and submitted to the block
 
 Below is a matrix of possible values for the order object before it can be successfully submitted using `/order/submit`.
 
-| Parameter/Feature | Limit Order                                                              | Market Order                              |
-| ----------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
-| **price**         | Specified by trader (exponential notation eg. 1e-3)                      | Not specified (empty string/nil)          |
-| **timeInForce**   | TIME_IN_FORCE_GTC (1)                                                    | TIME_IN_FORCE_UNSPECIFIED (0)             |
-|                   | TIME_IN_FORCE_IOC (2)                                                    |                                           |
-|                   | TIME_IN_FORCE_FOK (3)                                                    |                                           |
-| **goodTil**       | {goodTilBlockTime: Date Object, goodTilBlockHeight: number} or undefined | undefined                                 |
-| **baseDenom**     | string (denomName-issuer eg. udevcore)                                   | string (denomName-issuer eg. udevcore)    |
-| **quoteDenom**    | string (denomName-issuer eg. udevcore)                                   | string (denomName-issuer eg. udevcore)    |
-| **quantity**      | string (eg. 10000)                                                       | string (eg. 10000)                        |
-| **side**          | SIDE_BUY (1 or 2)                                                        | SIDE_BUY (1 or 2)                         |
-| **type**          | ORDER_TYPE_LIMIT (1)                                                     | ORDER_TYPE_MARKET (2)                     |
-| **sender**        | string (wallet address eg."devcore123..")                                | string (wallet address eg."devcore123..") |
-| **id**            | string (user defined id eg."1234-abcd..")                                | string (user defined id eg."1234-abcd..") |
+| Parameter/Feature | Limit Order                                                         | Market Order                              |
+| ----------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| **price**         | Specified by trader (exponential notation eg. 1e-3)                 | Not specified (empty string/nil)          |
+| **timeInForce**   | TIME_IN_FORCE_GTC (1)                                               | TIME_IN_FORCE_UNSPECIFIED (0)             |
+|                   | TIME_IN_FORCE_IOC (2)                                               |                                           |
+|                   | TIME_IN_FORCE_FOK (3)                                               |                                           |
+| **goodTil**       | {goodTilBlockTime: Date Object, goodTilBlockHeight: 0} or undefined | undefined                                 |
+| **baseDenom**     | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
+| **quoteDenom**    | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
+| **quantity**      | string (eg. 10000)                                                  | string (eg. 10000)                        |
+| **side**          | SIDE_BUY (1 or 2)                                                   | SIDE_BUY (1 or 2)                         |
+| **type**          | ORDER_TYPE_LIMIT (1)                                                | ORDER_TYPE_MARKET (2)                     |
+| **sender**        | string (wallet address eg."devcore123..")                           | string (wallet address eg."devcore123..") |
+| **id**            | string (user defined id eg."1234-abcd..")                           | string (user defined id eg."1234-abcd..") |
 
 Example call:
 

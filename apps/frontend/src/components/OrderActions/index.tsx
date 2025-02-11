@@ -236,35 +236,19 @@ const OrderActions = ({
         id: crypto.randomUUID(),
         baseDenom: market.base.Denom.Denom,
         quoteDenom: market.counter.Denom.Denom,
-        ...(tradeType === TradeType.LIMIT
-          ? {
-              price: formatPriceForRegex(
-                BigNumber(limitPrice).dividedBy(
-                  BigNumber(10).pow(
-                    market.counter.Denom.Denom === "udevcore"
-                      ? 6
-                      : market.counter.Denom.Precision
-                  )
-                )
-              ),
-            }
-          : { price: "" }),
-        quantity: BigNumber(volume)
-          .multipliedBy(
-            BigNumber(10).pow(
-              market.counter.Denom.Denom === "udevcore"
-                ? 6
-                : market.counter.Denom.Precision
-            )
-          )
-          .toFixed(0),
+        price:
+          tradeType === TradeType.LIMIT
+            ? formatPriceForRegex(BigNumber(limitPrice))
+            : "",
+        quantity: volume,
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
         goodTil:
           tradeType === TradeType.LIMIT &&
           timeInForce === TimeInForceString.goodTilTime
-            ? ({
+            ? {
                 goodTilBlockTime: expirationTime,
-              } as GoodTil)
+                goodTilBlockHeight: 0,
+              }
             : undefined,
         timeInForce:
           tradeType === TradeType.LIMIT

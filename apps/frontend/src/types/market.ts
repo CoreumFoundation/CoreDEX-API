@@ -288,7 +288,9 @@ export enum OrderHistoryStatus {
 export interface TransformedOrder {
   Side: number;
   Price: string;
-  Volume: string;
+  HumanReadablePrice: string;
+  SymbolAmount: string;
+  Amount: string;
   Total: number;
   Sequence: number;
   Account: string;
