@@ -107,6 +107,7 @@
           background-color: #222222;
           &:hover {
             border-top: #666666 1px dashed;
+            margin-top: -1px;
           }
         }
         &.hovered-sell {
@@ -114,6 +115,7 @@
           background-color: #222222;
           &:hover {
             border-bottom: #666666 1px dashed;
+            margin-bottom: -1px;
           }
         }
         .orderbook-numbers-wrapper {

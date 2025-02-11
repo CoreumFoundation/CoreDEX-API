@@ -15,6 +15,7 @@ import {
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
+import dayjs from "dayjs";
 
 declare global {
   interface Window {
@@ -61,7 +62,10 @@ const TradingView = ({ height }: { height: number | string }) => {
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
-        // console.log("UPDATED OHLC MSG", message.Subscription.Content);
+        console.log(
+          "UPDATED OHLC MSG",
+          dayjs.unix(message.Subscription.Content[0][0]).toDate()
+        );
         setLastUpdate(message.Subscription.Content);
       }
     },

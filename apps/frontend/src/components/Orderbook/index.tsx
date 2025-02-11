@@ -205,13 +205,13 @@ export default function Orderbook({
         </div>
         
         <div class="inline-item">
-          <p class="inline-label">Sum (${
+          <p class="inline-item-label">Sum (${
             market.counter.Denom.Name
           }):</p> ${toFixedDown(totalVolume, 12)}
         </div>
         
         <div class="inline-item">
-          <p class="inline-label">Total Volume:</p> ${toFixedDown(sum, 12)}
+          <p class="inline-item-label">Total Amount:</p> ${toFixedDown(sum, 12)}
         </div>
       </div>
     `;

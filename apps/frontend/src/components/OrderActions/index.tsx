@@ -373,6 +373,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={13}
+                  adornmentRight={market.counter.Denom.Currency}
                 />
 
                 <div className="advanced-settings-header">
@@ -477,7 +478,7 @@ const OrderActions = ({
 
         <div className="order-bottom">
           <div className="order-total">
-            <p className="order-total-label">Total Cost:</p>
+            <p className="order-total-label">Total:</p>
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}

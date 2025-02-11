@@ -138,7 +138,7 @@ export const useStore = create<State>((set) => ({
   setLoginModal: (loginModal: boolean) => {
     set({ loginModal: loginModal });
   },
-  chartPeriod: "1",
+  chartPeriod: "1W",
   setChartPeriod: (period: string) => {
     set({ chartPeriod: period });
   },
