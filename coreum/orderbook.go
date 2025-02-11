@@ -2,19 +2,14 @@ package coreum
 
 import (
 	"context"
-	"fmt"
-	gobig "math/big"
 	"sort"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/shopspring/decimal"
 
-	"github.com/CoreumFoundation/coreum/v5/pkg/math/big"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
-
-const Precision = 16 // TODO
 
 // QueryOrderBooks returns list of available order books. the paginationKey should nil for the first page.
 // the nextPaginationKey will be nil if there are no more pages.
@@ -50,7 +45,7 @@ func (r *Reader) QueryOrderBookOrders(
 }
 
 type OrderBookOrder struct {
-	priceDec           *gobig.Rat
+	priceDec           decimal.Decimal
 	Price              string
 	HumanReadablePrice string
 	Amount             string
@@ -80,31 +75,19 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 	switch invert {
 	case false:
 		for _, order := range res {
-			price, ok := new(gobig.Rat).SetString(order.Price.String())
-			if !ok {
-				return nil, fmt.Errorf("could not parse order price %s as big.Rat", order.Price.String())
+			price, err := decimal.NewFromString(order.Price.String())
+			if err != nil {
+				return nil, err
 			}
-			var precision *gobig.Rat
-			precisionDiff := denom1Precision - denom2Precision
-			if precisionDiff < 0 {
-				precision = big.RatInv(decimal.New(1, int32(-precisionDiff)).Rat())
-			} else if precisionDiff > 0 {
-				precision = decimal.New(1, int32(-precisionDiff)).Rat()
-			} else {
-				precision = big.NewRatFromInt64(1)
-			}
-			humanReadablePrice := big.RatMul(price, precision)
-			quantity := new(gobig.Rat).SetInt(order.Quantity.BigInt())
-			symbolAmount := quantity
-			if denom1Precision != 0 {
-				symbolAmount = big.RatMul(quantity, big.RatInv(big.NewRatFromInt64(denom1Precision)))
-			}
+			humanReadablePrice := price.Mul(decimal.New(1, int32(denom1Precision-denom2Precision)))
+			symbolAmount := decimal.NewFromBigInt(order.Quantity.BigInt(), 0)
+			symbolAmount = symbolAmount.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
 				priceDec:           price,
-				Price:              ratToString(price),
-				HumanReadablePrice: ratToString(humanReadablePrice),
-				Amount:             ratToString(quantity),
-				SymbolAmount:       ratToString(symbolAmount),
+				Price:              price.String(),
+				HumanReadablePrice: humanReadablePrice.String(),
+				Amount:             order.Quantity.String(),
+				SymbolAmount:       symbolAmount.String(),
 				Sequence:           order.Sequence,
 				Account:            order.Creator,
 				OrderID:            order.ID,
@@ -112,32 +95,20 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 		}
 	case true:
 		for _, order := range res {
-			orderPrice, ok := new(gobig.Rat).SetString(order.Price.String())
-			if !ok {
-				return nil, fmt.Errorf("could not parse order price %s as big.Rat", order.Price.String())
+			orderPrice, err := decimal.NewFromString(order.Price.String())
+			if err != nil {
+				return nil, err
 			}
-			invPrice := big.RatInv(orderPrice)
-			var precision *gobig.Rat
-			precisionDiff := denom2Precision - denom1Precision
-			if precisionDiff < 0 {
-				precision = big.RatInv(decimal.New(1, int32(-precisionDiff)).Rat())
-			} else if precisionDiff > 0 {
-				precision = decimal.New(1, int32(-precisionDiff)).Rat()
-			} else {
-				precision = big.NewRatFromInt64(1)
-			}
-			humanReadablePrice := big.RatMul(invPrice, precision)
-			quantity := big.RatMul(new(gobig.Rat).SetInt(order.Quantity.BigInt()), invPrice)
-			symbolAmount := quantity
-			if denom1Precision != 0 {
-				symbolAmount = big.RatMul(quantity, big.RatInv(decimal.New(1, int32(denom1Precision)).Rat()))
-			}
+			invPrice := decimal.NewFromInt(1).Div(orderPrice)
+			humanReadablePrice := invPrice.Div(decimal.New(1, int32(denom1Precision-denom2Precision)))
+			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
+			symbolAmount := quantity.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
 				priceDec:           invPrice,
-				Price:              ratToString(invPrice),
-				HumanReadablePrice: ratToString(humanReadablePrice),
-				Amount:             ratToString(quantity),
-				SymbolAmount:       ratToString(symbolAmount),
+				Price:              invPrice.String(),
+				HumanReadablePrice: humanReadablePrice.String(),
+				Amount:             quantity.String(),
+				SymbolAmount:       symbolAmount.String(),
 				Sequence:           order.Sequence,
 				Account:            order.Creator,
 				OrderID:            order.ID,
@@ -217,22 +188,18 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 	}
 
 	sort.SliceStable(orderBookOrders.Sell, func(i, j int) bool {
-		return big.RatLT(orderBookOrders.Sell[i].priceDec, orderBookOrders.Sell[j].priceDec)
+		return orderBookOrders.Sell[i].priceDec.LessThan(orderBookOrders.Sell[j].priceDec)
 	})
 	if uint64(len(orderBookOrders.Sell)) > limit {
 		orderBookOrders.Sell = orderBookOrders.Sell[0:limit]
 	}
 
 	sort.SliceStable(orderBookOrders.Buy, func(i, j int) bool {
-		return big.RatGT(orderBookOrders.Buy[i].priceDec, orderBookOrders.Buy[j].priceDec)
+		return orderBookOrders.Buy[i].priceDec.GreaterThan(orderBookOrders.Buy[j].priceDec)
 	})
 	if uint64(len(orderBookOrders.Buy)) > limit {
 		orderBookOrders.Buy = orderBookOrders.Buy[0:limit]
 	}
 
 	return orderBookOrders, nil
-}
-
-func ratToString(num *gobig.Rat) string {
-	return decimal.NewFromBigRat(num, Precision).String()
 }
