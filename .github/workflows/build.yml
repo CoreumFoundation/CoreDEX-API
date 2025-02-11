@@ -51,10 +51,10 @@ jobs:
       - name: Build and push app
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile.${{ matrix.ci_step }}
+          file: Dockerfile.${{ matrix.application }}
           context: .
           push: true
           # if tag is an empty string, plugin will skip that tag.
           tags: |
-            ${{ env.ORG }}/${{ matrix.ci_step }}:latest
-            ${{ env.ORG }}/${{ matrix.ci_step }}:${{ env.SHA8 }}
+            ${{ env.ORG }}/${{ matrix.application }}:latest
+            ${{ env.ORG }}/${{ matrix.application }}:${{ env.SHA8 }}
