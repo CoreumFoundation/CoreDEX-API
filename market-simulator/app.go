@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	gomath "math"
 	"math/big"
@@ -258,8 +259,8 @@ func (fa *App) GenOrder(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.
 	}
 
 	// the quantity can't be zero
-	quantity := int64(randIntInRange(rnd, 10, 20))*10 ^ 6
-
+	quantity := int64(randIntInRange(rnd, 10, 20)) * (10 ^ 6)
+	log.Printf("quantity: %d", quantity)
 	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
 	if side == dextypes.SIDE_BUY {
 		amount, err := mulCeil(math.NewInt(quantity), price)
