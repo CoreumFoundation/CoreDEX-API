@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	gomath "math"
 	"math/big"
@@ -230,7 +229,7 @@ func (fa *App) CreateOrder(
 		return err
 	}
 
-	slog.Info("new order", slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceOrder))
+	slog.Info("new order", slog.Any("TX hash", res.TxHash), slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceOrder))
 
 	took := time.Since(startTime)
 	slog.Info(fmt.Sprintf("broadcasting order took %s\n", took.String()))
@@ -258,9 +257,7 @@ func (fa *App) GenOrder(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.
 		return nil, nil, fmt.Errorf("could not parse %de%d as price", priceNum, priceExp)
 	}
 
-	// the quantity can't be zero
-	quantity := int64(randIntInRange(rnd, 10, 20)) * (10 ^ 6)
-	log.Printf("quantity: %d", quantity)
+	quantity := int64(randIntInRange(rnd, 10, 20)) * int64(gomath.Pow(10, 6))
 	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
 	if side == dextypes.SIDE_BUY {
 		amount, err := mulCeil(math.NewInt(quantity), price)
