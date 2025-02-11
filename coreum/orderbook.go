@@ -79,7 +79,16 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			humanReadablePrice := price.Mul(decimal.New(1, int32(denom1Precision-denom2Precision)))
+			var precision decimal.Decimal
+			precisionDiff := denom1Precision - denom2Precision
+			if precisionDiff < 0 {
+				precision = decimal.NewFromInt(1).Div(decimal.New(1, int32(-precisionDiff)))
+			} else if precisionDiff > 0 {
+				precision = decimal.New(1, int32(-precisionDiff))
+			} else {
+				precision = decimal.NewFromInt(1)
+			}
+			humanReadablePrice := price.Mul(precision)
 			symbolAmount := decimal.NewFromBigInt(order.Quantity.BigInt(), 0)
 			symbolAmount = symbolAmount.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
@@ -100,7 +109,16 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 				return nil, err
 			}
 			invPrice := decimal.NewFromInt(1).Div(orderPrice)
-			humanReadablePrice := invPrice.Div(decimal.New(1, int32(denom1Precision-denom2Precision)))
+			var precision decimal.Decimal
+			precisionDiff := denom1Precision - denom2Precision
+			if precisionDiff < 0 {
+				precision = decimal.NewFromInt(1).Div(decimal.New(1, int32(-precisionDiff)))
+			} else if precisionDiff > 0 {
+				precision = decimal.New(1, int32(-precisionDiff))
+			} else {
+				precision = decimal.NewFromInt(1)
+			}
+			humanReadablePrice := invPrice.Div(precision)
 			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
 			symbolAmount := quantity.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
