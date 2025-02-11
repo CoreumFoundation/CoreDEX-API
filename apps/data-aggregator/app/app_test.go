@@ -250,7 +250,7 @@ func TestApp(t *testing.T) {
 					MetaData: &metadata.MetaData{
 						Network:   metadata.Network_DEVNET,
 						UpdatedAt: timestamppb.Now(),
-						CreatedAt: timestamppb.Now(),
+						CreatedAt: timestamppb.Now (),
 					},
 					BlockHeight: 103,
 					USD:         nil,

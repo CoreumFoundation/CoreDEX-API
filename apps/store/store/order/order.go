@@ -303,7 +303,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
         VALUES (?, ?, ?, ?, ?,
 			    ?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
-				?, ?, ?, ?, ?) 
+				?, ?, ?, ?) 
         ON DUPLICATE KEY UPDATE Account=?, 
 		Price=?, 
 		RemainingQuantity=?,
@@ -332,6 +332,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		in.BlockHeight,
 		in.OrderStatus,
 		in.MetaData.Network,
+
 		in.Account,
 		in.Price,
 		remainingQuantity,
@@ -388,7 +389,7 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 		&metaData,
 		&order.TXID,
 		&order.BlockHeight,
-		orderStatus,
+		&orderStatus,
 		&network,
 	)
 	if err != nil {
