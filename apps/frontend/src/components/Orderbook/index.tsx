@@ -8,6 +8,8 @@ import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
+import { wsManager, Subscription } from "@/services/websocket-refactor";
+
 import "./orderbook.scss";
 
 enum ORDERBOOK_TYPE {
@@ -21,7 +23,8 @@ export default function Orderbook({
 }: {
   setOrderbookAction: (action: OrderbookAction) => void;
 }) {
-  const { setOrderbook, orderbook, market, network } = useStore();
+  const { market, network } = useStore();
+  const [orderbook, setOrderbook] = useState<any>(null);
 
   const [spread, setSpread] = useState<BigNumber>(new BigNumber(0));
   const [topBuyVolume, setTopBuyVolume] = useState<number>(0);
@@ -38,6 +41,16 @@ export default function Orderbook({
   // in calcaulteGroupData and renderOrderRow
   // the alternative is to reverse the Sell array before setting in state but that
   // would require a lot of array manipulation on every message
+
+  const replaceState = (_prev: any, newContent: any) => newContent;
+
+  useEffect(() => {
+    wsManager.subscribe(subscription, setOrderbook, replaceState);
+
+    return () => {
+      wsManager.unsubscribe(subscription, setOrderbook);
+    };
+  }, [wsManager]);
 
   useEffect(() => {
     const fetchOrderbook = async () => {
@@ -70,8 +83,8 @@ export default function Orderbook({
     }),
     [market.pair_symbol]
   );
-
-  useWebSocket(subscription, handleOrderbookUpdate);
+  console.log(market);
+  // useWebSocket(subscription, handleOrderbookUpdate);
 
   // calculate spread
   useEffect(() => {
