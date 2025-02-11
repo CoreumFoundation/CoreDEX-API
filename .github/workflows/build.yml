@@ -27,7 +27,7 @@ jobs:
 
 
     name: Setup, Build, Publish, Webhook
-    runs-on: ubunut-22.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
