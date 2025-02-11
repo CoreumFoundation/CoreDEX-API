@@ -10,6 +10,7 @@ interface DropdownProps<T> {
   image?: string;
   label?: string;
   searchable?: boolean;
+  onClick?: (item: T) => void;
 }
 
 export const DropdownVariant = {
@@ -30,6 +31,7 @@ const Dropdown = <T,>({
   image,
   label,
   searchable = false,
+  onClick,
 }: DropdownProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedvalue, setSelectedvalue] = useState<string | undefined>(value);
@@ -71,6 +73,9 @@ const Dropdown = <T,>({
       setSelectedvalue(item.Denom.Name);
     } else {
       setSelectedvalue(getvalue ? getvalue(item) : (item as unknown as string));
+    }
+    if (onClick) {
+      onClick(item);
     }
     closeDropdown();
   };

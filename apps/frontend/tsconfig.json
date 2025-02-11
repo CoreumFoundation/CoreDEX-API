@@ -22,6 +22,7 @@
 
     /*For path alias*/
     "types": ["node", "react", "react-dom"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "paths": {
       "@/*": ["./src/*"]
     }

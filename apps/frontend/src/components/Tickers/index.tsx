@@ -37,6 +37,7 @@ const Tickers = () => {
     (message: WebSocketMessage) => {
       const tickerContent =
         message.Subscription?.Content.Tickers[market.pair_symbol];
+
       if (!tickerContent) return;
       setTickers(tickerContent);
     },
@@ -49,7 +50,7 @@ const Tickers = () => {
       Method: Method.TICKER,
       ID: market.pair_symbol,
     }),
-    [market.pair_symbol]
+    [market.pair_symbol, network]
   );
 
   useWebSocket(subscription, handleTickerUpdate);

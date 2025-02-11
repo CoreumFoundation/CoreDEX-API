@@ -3,19 +3,26 @@ import {
   OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
-  SIDE_BUY,
+  SideBuy,
   TradeHistoryResponse,
   TransformedOrder,
 } from "@/types/market";
 import { useStore } from "@/state/store";
 import { FormatNumber } from "../FormatNumber";
-import { cancelOrder, getOrderbook, getTrades } from "@/services/api";
+import {
+  cancelOrder,
+  getOrderbook,
+  getTrades,
+  submitOrder,
+} from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
+import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
+import { fromByteArray } from "base64-js";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -100,32 +107,34 @@ const OrderHistory = () => {
     fetchOpenOrders();
   }, [market.pair_symbol, wallet]);
 
-  const transformOrderbook = (
-    orderbook: OrderbookResponse
-  ): TransformedOrder[] => {
-    const transformSide = (
-      orders: OrderbookRecord[],
-      side: SIDE_BUY.BUY | SIDE_BUY.SELL
-    ) =>
-      orders.map(
-        (order) =>
-          ({
+  const transformOrderbook = useCallback(
+    (orderbook: OrderbookResponse): TransformedOrder[] => {
+      const transformSide = (
+        orders: OrderbookRecord[],
+        side: SideBuy.BUY | SideBuy.SELL
+      ) =>
+        orders.map((order) => {
+          return {
             Side: side,
-            Price: order.HumanReadablePrice,
-            Volume: order.SymbolAmount,
+            HumanReadablePrice: order.HumanReadablePrice,
+            Price: order.Price,
+            Amount: order.Amount,
+            SymbolAmount: order.SymbolAmount,
             Total:
               Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
             Account: order.Account,
             Sequence: order.Sequence,
             OrderID: order.OrderID,
-          } as TransformedOrder)
-      );
+          } as TransformedOrder;
+        });
 
-    return [
-      ...transformSide(orderbook.Buy, SIDE_BUY.BUY),
-      ...transformSide(orderbook.Sell, SIDE_BUY.SELL),
-    ].sort((a, b) => a.Sequence - b.Sequence);
-  };
+      return [
+        ...transformSide(orderbook.Buy, SideBuy.BUY),
+        ...transformSide(orderbook.Sell, SideBuy.SELL),
+      ].sort((a, b) => a.Sequence - b.Sequence);
+    },
+    []
+  );
 
   const handleOrderHistory = useCallback(
     (message: WebSocketMessage) => {
@@ -169,7 +178,7 @@ const OrderHistory = () => {
       Method: Method.ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
       ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
     }),
-    [market.pair_symbol, wallet]
+    [market.pair_symbol, wallet?.address, network]
   );
 
   useWebSocket(orderHistorySubscription, handleOrderHistory);
@@ -181,30 +190,35 @@ const OrderHistory = () => {
       const data = await cancelOrder(wallet.address, id);
 
       if (data) {
-        const cancelMessage: MsgCancelOrder = {
+        const orderCancel: MsgCancelOrder = {
           sender: wallet.address,
           id: id,
         };
 
-        const response = DEX.CancelOrder(cancelMessage);
-        await coreum?.sendTx([response]);
+        const cancelMessage = DEX.CancelOrder(orderCancel);
+        const signedTx = await coreum?.signTx([cancelMessage]);
+        const encodedTx = TxRaw.encode(signedTx!).finish();
+        const base64Tx = fromByteArray(encodedTx);
+        const submitResponse = await submitOrder({ TX: base64Tx });
+
+        if (submitResponse.status !== 200) {
+          pushNotification({
+            type: "error",
+            message: "There was an issue cancelling your order",
+          });
+          throw new Error("Error submitting order");
+        }
+
+        const txHash = submitResponse.data.TXHash;
         pushNotification({
           type: "success",
-          message: "Order Cancelled!",
+          message: `Order Cancelled! TXHash: ${txHash.slice(
+            0,
+            6
+          )}...${txHash.slice(-4)}`,
         });
       }
     } catch (e: any) {
-      // TODO: sendTX outputs this error but the cancel still goes through successfully
-      // clarify with coreum
-      if (
-        e.error.message === "Invalid string. Length must be a multiple of 4"
-      ) {
-        pushNotification({
-          type: "success",
-          message: "Order Cancelled!",
-        });
-        return;
-      }
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
         type: "error",
@@ -273,19 +287,22 @@ const OrderHistory = () => {
                       <div key={index} className="open-row">
                         <div
                           className={
-                            order.Side === SIDE_BUY.BUY ? `buy` : "sell"
+                            order.Side === SideBuy.BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SIDE_BUY.BUY
+                          {order.Side === SideBuy.BUY
                             ? "Buy"
-                            : order.Side === SIDE_BUY.SELL
+                            : order.Side === SideBuy.SELL
                             ? "Sell"
                             : "Unspecified"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
-                        <FormatNumber number={order.Price} className="price" />
                         <FormatNumber
-                          number={order.Volume}
+                          number={order.HumanReadablePrice}
+                          className="price"
+                        />
+                        <FormatNumber
+                          number={order.SymbolAmount}
                           className="volume"
                         />
                         <FormatNumber number={order.Total} className="total" />
@@ -335,10 +352,10 @@ const OrderHistory = () => {
                       >
                         <div
                           className={
-                            order.Side === SIDE_BUY.BUY ? `buy` : "sell"
+                            order.Side === SideBuy.BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SIDE_BUY.BUY ? "Buy" : "Sell"}
+                          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
                         </div>
                         <div className="order-id"> {order.Sequence}</div>
                         <div className="status">

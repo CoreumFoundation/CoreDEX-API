@@ -64,6 +64,8 @@
     gap: 24px;
     flex: 1;
     justify-content: space-between;
+    overflow-y: scroll;
+
     .order-balances {
       width: 100%;
       display: grid;
@@ -196,7 +198,7 @@
               -o-transition: all 0.1s ease-in-out;
 
               &.open {
-                max-height: 500px; /* Adjust this value to fit your content */
+                max-height: 500px;
                 opacity: 1;
                 overflow: visible;
               }
@@ -216,6 +218,7 @@
               .dropdown-item {
                 @extend %label;
                 color: #eee;
+                width: 100%;
                 padding: 8px 16px;
                 font-weight: 400;
               }

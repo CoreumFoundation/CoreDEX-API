@@ -84,15 +84,11 @@ const MarketSelector = () => {
               items={currencies || []}
               label="Base Token"
               value={baseToken ? baseToken.Denom.Name : market!.base.Denom.Name}
+              onClick={(item) => {
+                setBaseToken(item);
+              }}
               renderItem={(item: Token) => (
-                <div
-                  className="create-pair-token"
-                  onClick={() => {
-                    setBaseToken(item);
-                  }}
-                >
-                  {item.Denom.Name}
-                </div>
+                <div className="create-pair-token">{item.Denom.Name}</div>
               )}
             />
 
@@ -115,15 +111,11 @@ const MarketSelector = () => {
               value={
                 quoteToken ? quoteToken.Denom.Name : market!.counter.Denom.Name
               }
+              onClick={(item) => {
+                setQuoteToken(item);
+              }}
               renderItem={(item: Token) => (
-                <div
-                  className="create-pair-token"
-                  onClick={() => {
-                    setQuoteToken(item);
-                  }}
-                >
-                  {item.Denom.Name}
-                </div>
+                <div className="create-pair-token">{item.Denom.Name}</div>
               )}
             />
           </div>
