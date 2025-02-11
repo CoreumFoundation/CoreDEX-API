@@ -18,7 +18,7 @@ There are two utility files in this project that are intended for you to use for
 ```
 VITE_ENV_BASE_API: API server URL used in services/api.ts
 VITE_ENV_WS: Websocket URL used in services/websocket.ts
-VITE_MODE: Development flag for how the app imports envs when in development vs when in production
+VITE_ENV_MODE: Development flag for how the app imports envs when in development vs when in production
 ```
 
 In this project, envs are imported in `services/general.ts` and `services/websocket.ts`.
@@ -28,7 +28,7 @@ If you are using a different framework or build tool, you will need to adjust ho
 ```
 // for vite
 const API_URL =
-  import.meta.env.VITE_MODE === "development"
+  import.meta.env.VITE_ENV_MODE === "development"
     ? import.meta.env.VITE_ENV_BASE_API
     : (window as any).COREUM.env.VITE_ENV_BASE_API;
 ```
