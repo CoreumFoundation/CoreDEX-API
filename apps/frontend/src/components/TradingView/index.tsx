@@ -61,6 +61,7 @@ const TradingView = ({ height }: { height: number | string }) => {
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
+        // console.log("UPDATED OHLC MSG", message.Subscription.Content);
         setLastUpdate(message.Subscription.Content);
       }
     },
@@ -97,10 +98,42 @@ const TradingView = ({ height }: { height: number | string }) => {
 
     dataFeed.subscriptions.forEach((sub) => {
       if (bars.length > 0) {
-        sub.onRealtimeCallback(bars[bars.length - 1]);
+        handleWebsocketTick(sub, bars[bars.length - 1]);
       }
     });
   }, [lastUpdate, dataFeed]);
+
+  const handleWebsocketTick = (sub: any, newTick: any) => {
+    const lastBar = sub.lastBar;
+
+    if (!lastBar) {
+      sub.lastBar = newTick;
+      sub.onRealtimeCallback(newTick);
+      return;
+    }
+
+    if (newTick.time > lastBar.time) {
+      sub.lastBar = newTick;
+      sub.onRealtimeCallback(newTick);
+    } else if (newTick.time === lastBar.time) {
+      const updatedBar = {
+        ...lastBar,
+        close: newTick.close,
+        high: Math.max(lastBar.high, newTick.high),
+        low: Math.min(lastBar.low, newTick.low),
+        volume: newTick.volume,
+      };
+      sub.lastBar = updatedBar;
+      sub.onRealtimeCallback(updatedBar);
+    } else {
+      console.warn(
+        `Out-of-order tick ignored. Last bar time: ${new Date(
+          lastBar.time
+        ).toISOString()}, ` +
+          `new tick time: ${new Date(newTick.time).toISOString()}`
+      );
+    }
+  };
 
   const coreumConstructorFeed = () => {
     const { base: baseDenom, counter: counterDenom } = market;
@@ -162,7 +195,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     const widget = window.tvWidget;
     widget.chart().setResolution(res);
 
-    // resolve the resolution or default to '1W' if invalid
     const validResolutions = Object.keys(resolutions);
     const resolvedRes = validResolutions.includes(res)
       ? resolutions[res]
@@ -170,8 +202,8 @@ const TradingView = ({ height }: { height: number | string }) => {
     localStorage.chart_resolution = resolvedRes;
     setResolution(resolvedRes);
 
-    // resubscribe to bars with the new resolution
     if (dataFeed) {
+      dataFeed.reset();
       dataFeed.subscriptions.forEach((sub) => {
         dataFeed.unsubscribeBars(sub.key);
         dataFeed.subscribeBars(
@@ -196,6 +228,24 @@ const TradingView = ({ height }: { height: number | string }) => {
     <div className="chart-wrapper">
       <div className="top-toolbar">
         <div className="intervals">
+          <div
+            className={`interval ${resolution === "1" ? "active" : ""}`}
+            onClick={() => {
+              updateResolution("1");
+              setChartPeriod("1");
+            }}
+          >
+            1m
+          </div>
+          <div
+            className={`interval ${resolution === "1h" ? "active" : ""}`}
+            onClick={() => {
+              updateResolution("60");
+              setChartPeriod("60");
+            }}
+          >
+            1h
+          </div>
           <div
             className={`interval ${resolution === "1D" ? "active" : ""}`}
             onClick={() => {

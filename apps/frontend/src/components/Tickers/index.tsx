@@ -49,7 +49,7 @@ const Tickers = () => {
       Method: Method.TICKER,
       ID: market.pair_symbol,
     }),
-    [market.pair_symbol]
+    [market.pair_symbol, network]
   );
 
   useWebSocket(subscription, handleTickerUpdate);

@@ -257,6 +257,8 @@ const OrderActions = ({
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
+
+      console.log("ORDER", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);

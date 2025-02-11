@@ -97,19 +97,19 @@ export const useStore = create<State>((set) => ({
     },
     counter: {
       Denom: {
-        Currency: "udevcore",
-        Precision: 0,
-        Denom: "udevcore",
-        Name: "udevcore",
-        Description: "devcore coin",
+        Currency: "dextestdenom1",
+        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Precision: 6,
+        Denom: "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Name: "DexTestDenom1",
+        Description: "Dex Test Denom",
       },
-
-      Description: "devcore coin",
+      Description: "Dex Test Denom",
     },
     pair_symbol:
-      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_udevcore",
+      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
     reversed_pair_symbol:
-      "udevcore_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
   },
   setMarket: (market: Market) => {
     set({ market: market });
@@ -138,7 +138,7 @@ export const useStore = create<State>((set) => ({
   setLoginModal: (loginModal: boolean) => {
     set({ loginModal: loginModal });
   },
-  chartPeriod: "1W",
+  chartPeriod: "1",
   setChartPeriod: (period: string) => {
     set({ chartPeriod: period });
   },

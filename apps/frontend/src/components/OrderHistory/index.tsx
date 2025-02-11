@@ -107,32 +107,34 @@ const OrderHistory = () => {
     fetchOpenOrders();
   }, [market.pair_symbol, wallet]);
 
-  const transformOrderbook = (
-    orderbook: OrderbookResponse
-  ): TransformedOrder[] => {
-    const transformSide = (
-      orders: OrderbookRecord[],
-      side: SideBuy.BUY | SideBuy.SELL
-    ) =>
-      orders.map((order) => {
-        return {
-          Side: side,
-          HumanReadablePrice: order.HumanReadablePrice,
-          Price: order.Price,
-          Amount: order.Amount,
-          SymbolAmount: order.SymbolAmount,
-          Total: Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
-          Account: order.Account,
-          Sequence: order.Sequence,
-          OrderID: order.OrderID,
-        } as TransformedOrder;
-      });
+  const transformOrderbook = useCallback(
+    (orderbook: OrderbookResponse): TransformedOrder[] => {
+      const transformSide = (
+        orders: OrderbookRecord[],
+        side: SideBuy.BUY | SideBuy.SELL
+      ) =>
+        orders.map((order) => {
+          return {
+            Side: side,
+            HumanReadablePrice: order.HumanReadablePrice,
+            Price: order.Price,
+            Amount: order.Amount,
+            SymbolAmount: order.SymbolAmount,
+            Total:
+              Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
+            Account: order.Account,
+            Sequence: order.Sequence,
+            OrderID: order.OrderID,
+          } as TransformedOrder;
+        });
 
-    return [
-      ...transformSide(orderbook.Buy, SideBuy.BUY),
-      ...transformSide(orderbook.Sell, SideBuy.SELL),
-    ].sort((a, b) => a.Sequence - b.Sequence);
-  };
+      return [
+        ...transformSide(orderbook.Buy, SideBuy.BUY),
+        ...transformSide(orderbook.Sell, SideBuy.SELL),
+      ].sort((a, b) => a.Sequence - b.Sequence);
+    },
+    []
+  );
 
   const handleOrderHistory = useCallback(
     (message: WebSocketMessage) => {
@@ -176,7 +178,7 @@ const OrderHistory = () => {
       Method: Method.ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
       ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
     }),
-    [market.pair_symbol, wallet]
+    [market.pair_symbol, wallet?.address, network]
   );
 
   useWebSocket(orderHistorySubscription, handleOrderHistory);

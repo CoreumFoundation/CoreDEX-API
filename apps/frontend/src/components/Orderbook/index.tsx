@@ -293,7 +293,7 @@ export default function Orderbook({
       </div>
     );
   };
-
+  // console.log(orderbook);
   return (
     <div className="orderbook-container" ref={componentRef}>
       <div className="orderbook-body">

@@ -24,7 +24,7 @@
       .interval {
         color: #5e6773;
         cursor: pointer;
-        & .active,
+        &.active,
         &:hover {
           color: #ffffff;
         }

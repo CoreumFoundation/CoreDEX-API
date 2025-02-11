@@ -40,13 +40,13 @@ export function resolveResolution(resolution: string) {
       return "15m";
     case "30":
       return "30m";
-    case "60":
+    case "1h":
       return "1h";
-    case "180":
+    case "3h":
       return "3h";
-    case "360":
+    case "6h":
       return "6h";
-    case "720":
+    case "12h":
       return "12h";
     case "1D":
       return "1d";
