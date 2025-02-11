@@ -22,7 +22,6 @@ import {
   Side,
   OrderType as OT,
   TimeInForce,
-  GoodTil,
 } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";

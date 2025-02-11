@@ -68,7 +68,7 @@ export default function Orderbook({
       Method: Method.ORDERBOOK,
       ID: market.pair_symbol,
     }),
-    [market.pair_symbol]
+    [market.pair_symbol, network]
   );
 
   useWebSocket(subscription, handleOrderbookUpdate);
@@ -240,6 +240,7 @@ export default function Orderbook({
       el.classList.remove("hovered-buy", "hovered-sell");
     });
   }, []);
+
   const renderOrderRow = (
     order: OrderbookRecord,
     index: number,

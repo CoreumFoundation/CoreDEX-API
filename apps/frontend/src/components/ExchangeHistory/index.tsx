@@ -21,7 +21,6 @@ const ExchangeHistory = () => {
         const response = await getTrades(market.pair_symbol, to, from);
         if (response.status === 200) {
           const data = response.data;
-          console.log(data);
           setExchangeHistory(data);
         }
       } catch (e) {
@@ -35,7 +34,6 @@ const ExchangeHistory = () => {
   const handleExchangeHistoryUpdate = useCallback(
     (message: WebSocketMessage) => {
       const data = message.Subscription?.Content;
-      // TODO move this to ws service
 
       if (data.length > 0) {
         if (exchangeHistory) {
@@ -56,7 +54,7 @@ const ExchangeHistory = () => {
       Method: Method.TRADES_FOR_SYMBOL,
       ID: market.pair_symbol,
     }),
-    [market]
+    [market.pair_symbol, network]
   );
 
   useWebSocket(subscription, handleExchangeHistoryUpdate);
