@@ -21,6 +21,7 @@ const ExchangeHistory = () => {
         const response = await getTrades(market.pair_symbol, to, from);
         if (response.status === 200) {
           const data = response.data;
+          console.log(data);
           setExchangeHistory(data);
         }
       } catch (e) {
@@ -35,10 +36,9 @@ const ExchangeHistory = () => {
     (message: WebSocketMessage) => {
       const data = message.Subscription?.Content;
       // TODO move this to ws service
+
       if (data.length > 0) {
         if (exchangeHistory) {
-          console.log("exchange history msg", data);
-
           const updatedHistory: TradeHistoryResponse =
             exchangeHistory.concat(data);
           setExchangeHistory(updatedHistory);
@@ -54,7 +54,7 @@ const ExchangeHistory = () => {
     () => ({
       Network: NetworkToEnum(network),
       Method: Method.TRADES_FOR_SYMBOL,
-      ID: "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      ID: market.pair_symbol,
     }),
     [market]
   );
@@ -87,7 +87,7 @@ const ExchangeHistory = () => {
                   <FormatNumber number={trade.SymbolAmount} />
                 </div>
                 <div className="exchange-history-body-value time">
-                  {dayjs(trade.MetaData.CreatedAt.seconds).format("HH:mm:ss")}
+                  {dayjs(trade.BlockTime.seconds).format("HH:mm:ss")}
                 </div>
               </div>
             );
