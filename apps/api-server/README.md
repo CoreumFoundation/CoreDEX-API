@@ -6,16 +6,16 @@ The only part where there is some Cosmos knowledge required is where the develop
 
 The API design principles used are:
 
-* Reduce/eliminate blockchain required knowledge as much as possible for a frontend/business developer
-* Remove required calculations to work with blockchain denomination notations
-* Reduce business rules related code in the frontend.
+- Reduce/eliminate blockchain required knowledge as much as possible for a frontend/business developer
+- Remove required calculations to work with blockchain denomination notations
+- Reduce business rules related code in the frontend.
 
 This means that:
 
-* Numberic values are published in the internal representation and as human readable values: HumanReadablePrice, SymbolAmount
-* Submission of values into the order/create endpoint is in human readable values (e.g. 0.25 for a price instead of 25000 (Depending on precision: The developer does not need to know how to work with precision))
-* Submission into endpoints like order/create check all the relevant business rules so that the frontend dev can be concerned with UX/UI instead of what order works or not
-* The frontend uses a single javascript package to communicate with the backend thus abstracting the communication between this API and the frontend, making it easier to implement a personalized DEX
+- Numberic values are published in the internal representation and as human readable values: HumanReadablePrice, SymbolAmount
+- Submission of values into the order/create endpoint is in human readable values (e.g. 0.25 for a price instead of 25000 (Depending on precision: The developer does not need to know how to work with precision))
+- Submission into endpoints like order/create check all the relevant business rules so that the frontend dev can be concerned with UX/UI instead of what order works or not
+- The frontend uses a single javascript package to communicate with the backend thus abstracting the communication between this API and the frontend, making it easier to implement a personalized DEX
 
 The goal is that by using this API any developer can launch a Coreum DEX with a lower investment and commoditize the DEX market.
 
@@ -27,12 +27,12 @@ The API depends on the store to be running. The data in the store is populated b
 
 The following is provided:
 
-* OHLC data
-* Trade history & currencies
-* Order book
-* Update service using a websocket for real-time updates
-* Endpoint for transaction code generation
-* Endpoint for order submission
+- OHLC data
+- Trade history & currencies
+- Order book
+- Update service using a websocket for real-time updates
+- Endpoint for transaction code generation
+- Endpoint for order submission
 
 In the following paragraphs, the endpoints are described in more detail.
 
@@ -40,25 +40,25 @@ In the following paragraphs, the endpoints are described in more detail.
 
 The API server provides the following routes:
 
-* GET /api/ohlc : Returns OHLC data
-* GET /api/trades : Returns trade data (filterable)
-* GET /api/tickers?symbols=base64encoded : Returns the latest price for one or more trading pairs
-* GET /api/currencies : Returns the currencies
-* GET /api/ws : Websocket for real-time updates
-* POST /api/order/create : Create an order
-* POST /api/order/cancel : Cancel an order
-* POST /api/order/submit : Submit an order
-* GET /api/order/orderbook : Returns the order book
-* GET /api/wallet/assets : Returns the assets of a wallet
+- GET /api/ohlc : Returns OHLC data
+- GET /api/trades : Returns trade data (filterable)
+- GET /api/tickers?symbols=base64encoded : Returns the latest price for one or more trading pairs
+- GET /api/currencies : Returns the currencies
+- GET /api/ws : Websocket for real-time updates
+- POST /api/order/create : Create an order
+- POST /api/order/cancel : Cancel an order
+- POST /api/order/submit : Submit an order
+- GET /api/order/orderbook : Returns the order book
+- GET /api/wallet/assets : Returns the assets of a wallet
 
 #### GET /ohlc
 
 Params:
 
-- `symbol` *required* - symbol for which OHLC should be returned. NOTE: `symbol` should be urlsafe encoded.
-- `period` *required* - one of `["1m","3m","5m","15m","30m","1h","3h","6h","12h","1d","3d","1w"]`
-- `from` *required* - unix timestamp of OHLC start
-- `to` *required* - unix timestamp of OHLC end
+- `symbol` _required_ - symbol for which OHLC should be returned. NOTE: `symbol` should be urlsafe encoded.
+- `period` _required_ - one of `["1m","3m","5m","15m","30m","1h","3h","6h","12h","1d","3d","1w"]`
+- `from` _required_ - unix timestamp of OHLC start
+- `to` _required_ - unix timestamp of OHLC end
 
 **NOTE: API has limitation of 2000 points per request**
 
@@ -69,12 +69,12 @@ Returns:
 ```json5
 [
   [
-    1611069600,         // timestamp
+    1611069600, // timestamp
     "5.54016620498615", // open
     "5.54016620498615", // high
     "5.54016620498615", // low
     "5.54016620498615", // close
-    "1.9855"            // volume
+    "1.9855", // volume
   ],
   [
     1611069660,
@@ -82,7 +82,7 @@ Returns:
     "5.54016620498615",
     "5.54016620498615",
     "5.54016620498615",
-    "0"
+    "0",
   ],
 ]
 ```
@@ -98,62 +98,62 @@ curl "https://coredex.test.coreum.dev/api/ohlc?symbol=dextestdenom9-devcore1p0ed
 
 Params:
 
-- `symbol` *required* - symbol for which trades should be returned. NOTE: `symbol` should be urlsafe encoded.
-- `from` *required* - unix timestamp of trades start
-- `to` *required* - unix timestamp of trades end
-- `account` *optional* - account address for which trades should be returned
+- `symbol` _required_ - symbol for which trades should be returned. NOTE: `symbol` should be urlsafe encoded.
+- `from` _required_ - unix timestamp of trades start
+- `to` _required_ - unix timestamp of trades end
+- `account` _optional_ - account address for which trades should be returned
 
 Returns:
 
 ```json5
 {
-  "Trades": [
-   {
-        "Account": "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc",
-        "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac",
-        "Sequence": 27388,
-        "Amount": {
-            "Value": 2080,
-            "Exp": -6
+  Trades: [
+    {
+      Account: "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc",
+      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      Sequence: 27388,
+      Amount: {
+        Value: 2080,
+        Exp: -6,
+      },
+      Price: 35.015385,
+      Denom1: {
+        Currency: "dextestdenom8",
+        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Precision: 6,
+        Denom: "dextestdenom8-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      },
+      Denom2: {
+        Currency: "dextestdenom3",
+        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Precision: 6,
+        Denom: "dextestdenom3-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      },
+      Side: 1,
+      BlockTime: {
+        seconds: 1736358800,
+        nanos: 634506142,
+      },
+      MetaData: {
+        Network: 3,
+        UpdatedAt: {
+          seconds: 1737747689,
+          nanos: 498590000,
         },
-        "Price": 35.015385,
-        "Denom1": {
-            "Currency": "dextestdenom8",
-            "Issuer": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-            "Precision": 6,
-            "Denom": "dextestdenom8-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+        CreatedAt: {
+          seconds: 1737747689,
+          nanos: 498029000,
         },
-        "Denom2": {
-            "Currency": "dextestdenom3",
-            "Issuer": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-            "Precision": 6,
-            "Denom": "dextestdenom3-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
-        },
-        "Side": 1,
-        "BlockTime": {
-            "seconds": 1736358800,
-            "nanos": 634506142
-        },
-        "MetaData": {
-            "Network": 3,
-            "UpdatedAt": {
-                "seconds": 1737747689,
-                "nanos": 498590000
-            },
-            "CreatedAt": {
-                "seconds": 1737747689,
-                "nanos": 498029000
-            }
-        },
-        "TXID": "29E2362BE19BE53B5A38CFAAB4B777484F5956972C656A4378D7620A6E8F4A36",
-        "BlockHeight": 6714462,
-        "HumanReadablePrice": "35.015385",
-        "SymbolAmount": "0.002080",
-        "Status": 3
+      },
+      TXID: "29E2362BE19BE53B5A38CFAAB4B777484F5956972C656A4378D7620A6E8F4A36",
+      BlockHeight: 6714462,
+      HumanReadablePrice: "35.015385",
+      SymbolAmount: "0.002080",
+      Status: 3,
     },
     //...
   ],
-  "Offset": 0
+  Offset: 0,
 }
 ```
 
@@ -163,7 +163,7 @@ The tickers endpoint returns the latest price for all trading pairs.
 
 Params:
 
-* symbols *mandatory* - a base64 encoded list of symbols for which the ticker should be returned.
+- symbols _mandatory_ - a base64 encoded list of symbols for which the ticker should be returned.
 
 Maximum 20 symbols. Watch out for overflow of the URL in certain browsers: The symbol strings are quite long, so most likely the queries should be limited to 10 symbols or even less
 
@@ -180,34 +180,34 @@ Returns:
 
 ```json
 {
-    "Tickers": {
-        "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs": {
-            "OpenTime": 1723084712,
-            "CloseTime": 1723171112,
-            "OpenPrice": 0.17726004,
-            "HighPrice": 3135.5825912454534,
-            "LowPrice": 0.1730303609235772,
-            "LastPrice": 0.1783099502981715,
-            "FirstPrice": 0.1730303609235772,
-            "Volume": 170639.98819271981,
-            "InvertedVolume": 30319.373563999994,
-            "Inverted": false
-        }
-    },
-    "USDTickers": {
-        "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs": {
-            "OpenTime": 1723084712,
-            "CloseTime": 1723171112,
-            "OpenPrice": 1.24082028,
-            "HighPrice": 21949.078138718174,
-            "LowPrice": 1.2112125264650404,
-            "LastPrice": 1.2481696520872005,
-            "FirstPrice": 1.2112125264650404,
-            "Volume": 24377.141170388546,
-            "InvertedVolume": 212235.61494799994,
-            "Inverted": false
-        }
+  "Tickers": {
+    "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs": {
+      "OpenTime": 1723084712,
+      "CloseTime": 1723171112,
+      "OpenPrice": 0.17726004,
+      "HighPrice": 3135.5825912454534,
+      "LowPrice": 0.1730303609235772,
+      "LastPrice": 0.1783099502981715,
+      "FirstPrice": 0.1730303609235772,
+      "Volume": 170639.98819271981,
+      "InvertedVolume": 30319.373563999994,
+      "Inverted": false
     }
+  },
+  "USDTickers": {
+    "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs": {
+      "OpenTime": 1723084712,
+      "CloseTime": 1723171112,
+      "OpenPrice": 1.24082028,
+      "HighPrice": 21949.078138718174,
+      "LowPrice": 1.2112125264650404,
+      "LastPrice": 1.2481696520872005,
+      "FirstPrice": 1.2112125264650404,
+      "Volume": 24377.141170388546,
+      "InvertedVolume": 212235.61494799994,
+      "Inverted": false
+    }
+  }
 }
 ```
 
@@ -218,44 +218,44 @@ Returns a list of currencies.
 
 ```json5
 {
-    "Currencies": [
-        {
-            "Denom": {
-                "Currency": "ATOM",
-                "Issuer": "cosmoshub-4",
-                "Precision": 6,
-                "IsIBC": false,
-                "Denom": "uatom",
-                "Name": "Cosmos",
-                "Description": "Cosmos Hub native token",
-                "Icon": "https://cosmos.network/logo.png"
-            },
-            "SendCommission": {
-                "Value": 1,
-                "Exp": -2
-            },
-            "BurnRate": {
-                "Value": 1,
-                "Exp": -3
-            },
-            "InitialAmount": {
-                "Value": 1000000,
-                "Exp": 0
-            },
-            "Chain": "cosmoshub-4",
-            "OriginChain": "cosmoshub-4",
-            "ChainSupply": "100000000",
-            "Description": "Cosmos Hub native token",
-            "SkipDisplay": false,
-            "MetaData": {
-                "Network": 1,
-                "UpdatedAt": "2023-10-01T12:00:00Z",
-                "CreatedAt": "2020-01-01T00:00:00Z"
-            }
-        },
-        //...
-    ],
-    "Offset": 0
+  Currencies: [
+    {
+      Denom: {
+        Currency: "ATOM",
+        Issuer: "cosmoshub-4",
+        Precision: 6,
+        IsIBC: false,
+        Denom: "uatom",
+        Name: "Cosmos",
+        Description: "Cosmos Hub native token",
+        Icon: "https://cosmos.network/logo.png",
+      },
+      SendCommission: {
+        Value: 1,
+        Exp: -2,
+      },
+      BurnRate: {
+        Value: 1,
+        Exp: -3,
+      },
+      InitialAmount: {
+        Value: 1000000,
+        Exp: 0,
+      },
+      Chain: "cosmoshub-4",
+      OriginChain: "cosmoshub-4",
+      ChainSupply: "100000000",
+      Description: "Cosmos Hub native token",
+      SkipDisplay: false,
+      MetaData: {
+        Network: 1,
+        UpdatedAt: "2023-10-01T12:00:00Z",
+        CreatedAt: "2020-01-01T00:00:00Z",
+      },
+    },
+    //...
+  ],
+  Offset: 0,
 }
 ```
 
@@ -293,6 +293,23 @@ The call takes a POST:
 
 The response is a transaction that needs to be signed and submitted to the blockchain.
 
+Below is a matrix of possible values for the order object before it can be successfully submitted using `/order/submit`.
+
+| Parameter/Feature | Limit Order                                                         | Market Order                              |
+| ----------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| **price**         | Specified by trader (exponential notation eg. 1e-3)                 | Not specified (empty string/nil)          |
+| **timeInForce**   | TIME_IN_FORCE_GTC (1)                                               | TIME_IN_FORCE_UNSPECIFIED (0)             |
+|                   | TIME_IN_FORCE_IOC (2)                                               |                                           |
+|                   | TIME_IN_FORCE_FOK (3)                                               |                                           |
+| **goodTil**       | {goodTilBlockTime: Date Object, goodTilBlockHeight: 0} or undefined | undefined                                 |
+| **baseDenom**     | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
+| **quoteDenom**    | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
+| **quantity**      | string (eg. 10000)                                                  | string (eg. 10000)                        |
+| **side**          | SIDE_BUY (1 or 2)                                                   | SIDE_BUY (1 or 2)                         |
+| **type**          | ORDER_TYPE_LIMIT (1)                                                | ORDER_TYPE_MARKET (2)                     |
+| **sender**        | string (wallet address eg."devcore123..")                           | string (wallet address eg."devcore123..") |
+| **id**            | string (user defined id eg."1234-abcd..")                           | string (user defined id eg."1234-abcd..") |
+
 Example call:
 
 ```bash
@@ -317,7 +334,7 @@ Example response:
 
 ```json
 {
-  "TXBytes":"CvwBCvkBChwvY29yZXVtLmRleC52MS5Nc2dQbGFjZU9yZGVyEtgBCi5kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzEAEaBnN0cmluZyI8ZGV4dGVzdGRlbm9tNS1kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzKjxkZXh0ZXN0ZGVub205LWRldmNvcmUxcDBlZHp5enBhenB0Njh2ZHJqeTIwYzQybHZ3c2pwdmZ6YWh5Z3MyBTI1ZS0yOgoxMDAwMDAwMDAwQAFKCwjoBxIGCMCv9MYGEgISAA=="
+  "TXBytes": "CvwBCvkBChwvY29yZXVtLmRleC52MS5Nc2dQbGFjZU9yZGVyEtgBCi5kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzEAEaBnN0cmluZyI8ZGV4dGVzdGRlbm9tNS1kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzKjxkZXh0ZXN0ZGVub205LWRldmNvcmUxcDBlZHp5enBhenB0Njh2ZHJqeTIwYzQybHZ3c2pwdmZ6YWh5Z3MyBTI1ZS0yOgoxMDAwMDAwMDAwQAFKCwjoBxIGCMCv9MYGEgISAA=="
 }
 ```
 
@@ -366,8 +383,8 @@ Response:
 
 Params:
 
-- `symbol` *required* - symbol for which order book should be returned. NOTE: `symbol` should be urlsafe encoded.
-- `account` *optional* - account address for which the orderbook should be returned
+- `symbol` _required_ - symbol for which order book should be returned. NOTE: `symbol` should be urlsafe encoded.
+- `account` _optional_ - account address for which the orderbook should be returned
 
 Symbol is defined as `denom1_denom2` where `denom1` and `denom2` are the denom strings of the two assets in the trading pair.
 
@@ -378,26 +395,26 @@ Sample return:
 
 ```json5
 {
-    "Buy": [
-        {
-            "Price": "3140",
-            "HumanReadablePrice": "3140",
-            "Amount": "2272",
-            "SymbolAmount": "0.002272",
-            "Sequence": 41567,
-            "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac"
-        }
-    ],
-    "Sell": [
-        {
-            "Price": "3360",
-            "HumanReadablePrice": "3360",
-            "Amount": "2071",
-            "SymbolAmount": "0.002071",
-            "Sequence": 41760,
-            "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac"
-        }
-    ]
+  Buy: [
+    {
+      Price: "3140",
+      HumanReadablePrice: "3140",
+      Amount: "2272",
+      SymbolAmount: "0.002272",
+      Sequence: 41567,
+      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
+    },
+  ],
+  Sell: [
+    {
+      Price: "3360",
+      HumanReadablePrice: "3360",
+      Amount: "2071",
+      SymbolAmount: "0.002071",
+      Sequence: 41760,
+      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
+    },
+  ],
 }
 ```
 
@@ -406,23 +423,24 @@ Sample return:
 Returns the assets for a certain account.
 
 Params:
-- `address` *required* - the address of the account for which the assets should be returned.
+
+- `address` _required_ - the address of the account for which the assets should be returned.
 
 Sample return:
 
 ```json5
 [
-    {
-        "Denom": "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        "Amount": "1000000000000",
-        "SymbolAmount": "1000.0000"
-    },
-    {
-        "Denom": "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        "Amount": "1000000000000",
-        "SymbolAmount": "1000.0000"
-    },
-    //...
+  {
+    Denom: "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    Amount: "1000000000000",
+    SymbolAmount: "1000.0000",
+  },
+  {
+    Denom: "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    Amount: "1000000000000",
+    SymbolAmount: "1000.0000",
+  },
+  //...
 ]
 ```
 
@@ -481,10 +499,7 @@ The HTTP configuration is configured in a json array which depending on usage mi
   "HTTP": {
     "port": ":8080",
     "cors": {
-      "allowedOrigins": [
-        "http://localhost:3000",
-        "http://localhost:3001"
-      ]
+      "allowedOrigins": ["http://localhost:3000", "http://localhost:3001"]
     },
     "timeouts": {
       "read": "10s",

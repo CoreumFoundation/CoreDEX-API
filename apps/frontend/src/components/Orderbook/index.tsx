@@ -81,7 +81,7 @@ export default function Orderbook({
       Method: Method.ORDERBOOK,
       ID: market.pair_symbol,
     }),
-    [market.pair_symbol]
+    [market.pair_symbol, network]
   );
   console.log(market);
   // useWebSocket(subscription, handleOrderbookUpdate);
@@ -218,13 +218,13 @@ export default function Orderbook({
         </div>
         
         <div class="inline-item">
-          <p class="inline-label">Sum (${
+          <p class="inline-item-label">Sum (${
             market.counter.Denom.Name
           }):</p> ${toFixedDown(totalVolume, 12)}
         </div>
         
         <div class="inline-item">
-          <p class="inline-label">Total Volume:</p> ${toFixedDown(sum, 12)}
+          <p class="inline-item-label">Total Amount:</p> ${toFixedDown(sum, 12)}
         </div>
       </div>
     `;
@@ -253,6 +253,7 @@ export default function Orderbook({
       el.classList.remove("hovered-buy", "hovered-sell");
     });
   }, []);
+
   const renderOrderRow = (
     order: OrderbookRecord,
     index: number,
@@ -306,7 +307,7 @@ export default function Orderbook({
       </div>
     );
   };
-
+  // console.log(orderbook);
   return (
     <div className="orderbook-container" ref={componentRef}>
       <div className="orderbook-body">

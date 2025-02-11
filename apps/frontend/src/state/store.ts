@@ -104,13 +104,12 @@ export const useStore = create<State>((set) => ({
         Name: "DexTestDenom1",
         Description: "Dex Test Denom",
       },
-
       Description: "Dex Test Denom",
     },
     pair_symbol:
       "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
     reversed_pair_symbol:
-      "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygsdextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
   },
   setMarket: (market: Market) => {
     set({ market: market });

@@ -34,6 +34,7 @@
       width: 100%;
       padding: 0px 16px 12px;
       display: grid;
+      column-gap: 8px;
       grid-template-columns: 1fr 1fr 1fr;
       & > div:last-child {
         text-align: right;
@@ -106,6 +107,7 @@
           background-color: #222222;
           &:hover {
             border-top: #666666 1px dashed;
+            margin-top: -1px;
           }
         }
         &.hovered-sell {
@@ -113,6 +115,7 @@
           background-color: #222222;
           &:hover {
             border-bottom: #666666 1px dashed;
+            margin-bottom: -1px;
           }
         }
         .orderbook-numbers-wrapper {
@@ -120,6 +123,7 @@
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
           padding: 0 16px;
+          column-gap: 8px;
           & > p {
             text-align: right;
           }

@@ -36,23 +36,23 @@
     display: flex;
     align-items: center;
     width: 100%;
-    transition: all 0.3s ease-in-out;
     border: 1px solid #1b1d23;
     border-radius: 10px;
     max-height: 40px;
     font-weight: 300;
     width: 100%;
     background: none;
-    border: none;
+    border: 1px solid #1b1d23;
     background-color: transparent;
     line-height: 1.5;
     color: #eee;
     font-family: "Noto Sans";
+    transition: all 0.3s ease-in-out;
 
     &:focus,
     &:focus-within,
     &:active {
-      border: 1px solid var(--Primary-Green, #25d695);
+      border: 1px solid #25d695;
     }
     &--large {
       padding: 12px 16px;

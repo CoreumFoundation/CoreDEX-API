@@ -134,24 +134,20 @@ const Header = () => {
           ]}
           value={network.toUpperCase()}
           image="/trade/images/connect.svg"
+          onClick={(item) => {
+            if (item === CoreumNetwork.MAINNET.toUpperCase()) {
+              console.log("Switching to Mainnet");
+              setNetwork(CoreumNetwork.MAINNET);
+            } else if (item === CoreumNetwork.TESTNET.toUpperCase()) {
+              console.log("Switching to Testnet");
+              setNetwork(CoreumNetwork.TESTNET);
+            } else {
+              console.log("Switching to Devnet");
+              setNetwork(CoreumNetwork.DEVNET);
+            }
+          }}
           renderItem={(item) => (
-            <div
-              className="network-item"
-              onClick={() => {
-                if (item === CoreumNetwork.MAINNET.toUpperCase()) {
-                  console.log("Switching to Mainnet");
-                  setNetwork(CoreumNetwork.MAINNET);
-                } else if (item === CoreumNetwork.TESTNET.toUpperCase()) {
-                  console.log("Switching to Testnet");
-                  setNetwork(CoreumNetwork.TESTNET);
-                } else {
-                  console.log("Switching to Devnet");
-                  setNetwork(CoreumNetwork.DEVNET);
-                }
-              }}
-            >
-              {item.toUpperCase()}
-            </div>
+            <div className="network-item">{item.toUpperCase()}</div>
           )}
         />
 

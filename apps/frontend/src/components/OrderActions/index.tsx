@@ -5,8 +5,9 @@ import {
   TradeType,
   OrderbookAction,
   WalletAsset,
-  TIME_IN_FORCE_STRING,
-  TIME_SELECTION,
+  TimeInForceString,
+  TimeSelection,
+  TimeInForceStringToEnum,
 } from "@/types/market";
 import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
@@ -25,7 +26,13 @@ import {
 import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
 import Dropdown, { DropdownVariant } from "../Dropdown";
+import { DatetimePicker } from "../DatetimePicker";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import advancedFormat from "dayjs/plugin/advancedFormat";
 
+dayjs.extend(utc);
+dayjs.extend(advancedFormat);
 BigNumber.config({ DECIMAL_PLACES: 30, EXPONENTIAL_AT: 0 });
 
 const OrderActions = ({
@@ -45,12 +52,15 @@ const OrderActions = ({
   const [baseBalance, setBaseBalance] = useState<string>("0");
   const [counterBalance, setCounterBalance] = useState<string>("0");
   const [advSettingsOpen, setAdvSetting] = useState<boolean>(false);
-  const [timeInForce, setTimeInForce] = useState<TIME_IN_FORCE_STRING>(
-    TIME_IN_FORCE_STRING.goodTilCancel
+  const [timeInForce, setTimeInForce] = useState<TimeInForceString>(
+    TimeInForceString.goodTilCancel
   );
-  const [timeToCancel, setTimeToCancel] = useState<TIME_SELECTION>(
-    TIME_SELECTION["5M"]
+  const [timeToCancel, setTimeToCancel] = useState<TimeSelection>(
+    TimeSelection["5M"]
   );
+  const [expirationTime, setExpirationTime] = useState<Date>();
+
+  const [customTime, setCustomTime] = useState<string>("");
 
   useEffect(() => {
     fetchWalletAssets();
@@ -119,6 +129,50 @@ const OrderActions = ({
     }
   }, [volume, limitPrice, orderbook, tradeType, orderType]);
 
+  useEffect(() => {
+    const tomorrow = dayjs.utc().add(1, "days");
+
+    tomorrow.second(0);
+    tomorrow.minute(0);
+    tomorrow.hour(12);
+
+    setCustomTime(new Date(tomorrow.format()).toString());
+  }, []);
+
+  useEffect(() => {
+    if (timeInForce === TimeInForceString.goodTilTime) {
+      let now = dayjs.utc();
+
+      switch (timeToCancel) {
+        case TimeSelection["5M"]:
+          now = dayjs.utc().add(5, "minutes");
+          break;
+        case TimeSelection["15M"]:
+          now = dayjs.utc().add(15, "minutes");
+          break;
+        case TimeSelection["30M"]:
+          now = dayjs.utc().add(30, "minutes");
+          break;
+        case TimeSelection["1H"]:
+          now = dayjs.utc().add(1, "hour");
+          break;
+        case TimeSelection["6H"]:
+          now = dayjs.utc().add(6, "hours");
+          break;
+        case TimeSelection["12H"]:
+          now = dayjs.utc().add(12, "hours");
+          break;
+        case TimeSelection["1D"]:
+          now = dayjs.utc().add(1, "day");
+          break;
+        case TimeSelection.CUSTOM:
+          now = dayjs.utc(customTime);
+          break;
+      }
+      setExpirationTime(now.toDate());
+    }
+  }, [timeInForce, timeToCancel, customTime]);
+
   const fetchWalletAssets = async () => {
     if (!wallet?.address) return;
     try {
@@ -134,7 +188,7 @@ const OrderActions = ({
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
-  function formatPriceForRegex(value: BigNumber): string {
+  const formatPriceForRegex = (value: BigNumber): string => {
     let [mantissa, exponent = ""] = value.toExponential().split("e");
     exponent = exponent.replace(/^\+/, "");
 
@@ -168,7 +222,7 @@ const OrderActions = ({
     }
 
     return result;
-  }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -181,37 +235,29 @@ const OrderActions = ({
         id: crypto.randomUUID(),
         baseDenom: market.base.Denom.Denom,
         quoteDenom: market.counter.Denom.Denom,
-        ...(tradeType === TradeType.LIMIT
-          ? {
-              price: formatPriceForRegex(
-                BigNumber(limitPrice).dividedBy(
-                  BigNumber(10).pow(
-                    market.counter.Denom.Denom === "udevcore"
-                      ? 6
-                      : market.counter.Denom.Precision
-                  )
-                )
-              ),
-            }
-          : { price: "" }),
-        quantity: BigNumber(volume)
-          .multipliedBy(
-            BigNumber(10).pow(
-              market.counter.Denom.Denom === "udevcore"
-                ? 6
-                : market.counter.Denom.Precision
-            )
-          )
-          .toFixed(0),
+        price:
+          tradeType === TradeType.LIMIT
+            ? formatPriceForRegex(BigNumber(limitPrice))
+            : "",
+        quantity: volume,
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
-        goodTil: undefined,
+        goodTil:
+          tradeType === TradeType.LIMIT &&
+          timeInForce === TimeInForceString.goodTilTime
+            ? {
+                goodTilBlockTime: expirationTime,
+                goodTilBlockHeight: 0,
+              }
+            : undefined,
         timeInForce:
           tradeType === TradeType.LIMIT
-            ? TimeInForce.TIME_IN_FORCE_GTC
+            ? (TimeInForceStringToEnum[timeInForce] as any)
             : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
+
+      console.log("ORDER", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -231,6 +277,9 @@ const OrderActions = ({
           -4
         )}`,
       });
+
+      setTimeInForce(TimeInForceString.goodTilCancel);
+      setTimeToCancel(TimeSelection["5M"]);
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
       pushNotification({
@@ -240,6 +289,7 @@ const OrderActions = ({
       throw e;
     }
   };
+
   return (
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
@@ -322,6 +372,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={13}
+                  adornmentRight={market.counter.Denom.Currency}
                 />
 
                 <div className="advanced-settings-header">
@@ -357,44 +408,46 @@ const OrderActions = ({
                       <Dropdown
                         variant={DropdownVariant.OUTLINED}
                         items={(
-                          Object.keys(TIME_IN_FORCE_STRING) as Array<
-                            keyof typeof TIME_IN_FORCE_STRING
+                          Object.keys(TimeInForceString) as Array<
+                            keyof typeof TimeInForceString
                           >
-                        ).map((key) => [TIME_IN_FORCE_STRING[key]])}
+                        ).map((key) => [TimeInForceString[key]])}
                         value={timeInForce}
-                        renderItem={(item) => (
-                          <div
-                            className="network-item"
-                            onClick={() => {
-                              setTimeInForce(item[0] as TIME_IN_FORCE_STRING);
-                            }}
-                          >
-                            {item}
-                          </div>
-                        )}
+                        onClick={(item) => {
+                          setTimeInForce(item[0] as TimeInForceString);
+                        }}
+                        renderItem={(item) => <div>{item}</div>}
                       />
 
-                      {timeInForce === TIME_IN_FORCE_STRING.goodTilTime && (
+                      {timeInForce === TimeInForceString.goodTilTime && (
                         <Dropdown
                           variant={DropdownVariant.OUTLINED}
                           items={(
-                            Object.keys(TIME_SELECTION) as Array<
-                              keyof typeof TIME_SELECTION
+                            Object.keys(TimeSelection) as Array<
+                              keyof typeof TimeSelection
                             >
-                          ).map((key) => [TIME_SELECTION[key]])}
+                          ).map((key) => [TimeSelection[key]])}
                           value={timeToCancel}
-                          renderItem={(item) => (
-                            <div
-                              className="network-item"
-                              onClick={() => {
-                                setTimeToCancel(item[0] as TIME_SELECTION);
-                              }}
-                            >
-                              {item}
-                            </div>
-                          )}
+                          onClick={(item) => {
+                            setTimeToCancel(item[0] as TimeSelection);
+                          }}
+                          renderItem={(item) => <div>{item}</div>}
                         />
                       )}
+
+                      {timeInForce === TimeInForceString.goodTilTime &&
+                        timeToCancel === TimeSelection.CUSTOM && (
+                          <DatetimePicker
+                            selectedDate={customTime}
+                            onChange={(val: any) => {
+                              setCustomTime(val);
+                            }}
+                            width={"100%"}
+                            minDate={
+                              new Date(dayjs.utc().add(1, "day").format())
+                            }
+                          />
+                        )}
                     </div>
                   </div>
                 </div>
@@ -424,7 +477,7 @@ const OrderActions = ({
 
         <div className="order-bottom">
           <div className="order-total">
-            <p className="order-total-label">Total Cost:</p>
+            <p className="order-total-label">Total:</p>
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}
