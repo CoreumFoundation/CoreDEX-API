@@ -1,0 +1,77 @@
+
+volumes:
+  mysql_data:
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+  store:
+    image: store:latest
+    container_name: store
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_CONFIG: "{\"Username\": \"testuser\",\"Password\": \"password\",\"Host\": \"mysql\",\"Port\": 3306,\"Database\": \"friendly_dex\"}"
+      LOG_LEVEL: "info"
+      GRPC_PORT: ":50051"
+    ports:
+      - "50051:50051"
+    entrypoint: ["./wait-for-it.sh", "mysql:3306", "-t", "30", "--", "./app"]
+
+  api-server:
+    image: api-server:latest
+    container_name: api-server
+    depends_on:
+      - store
+    environment:
+      NETWORKS: "{\"Node\": [{\"Network\": \"devnet\",\"GRPCHost\": \"full-node.devnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.devnet-1.coreum.dev:26657\"}]}"
+      STATE_STORE: "store:50051"
+      TRADE_STORE: "store:50051"
+      OHLC_STORE: "store:50051"
+      ORDER_STORE: "store:50051"
+      CURRENCY_STORE: "store:50051"
+      LOG_LEVEL: "info"
+      HTTP_CONFIG: "{\"port\": \":8080\",\"cors\": {\"allowedOrigins\":[\"http://localhost:3000\",\"http://localhost:3001\"]},\"timeouts\": {\"read\": \"10s\",\"write\": \"10s\",\"idle\": \"10s\",\"shutdown\": \"10s\"}}"
+      BASE_COIN: "{\"BaseCoin\":[{\"Network\": \"mainnet\",\"Coin\": \"ucore\"},{\"Network\": \"testnet\",\"Coin\": \"utestcore\"},{\"Network\": \"devnet\",\"Coin\": \"udevcore\"}]}"
+      BASE_USDC: "{\"BaseCoin\":[{\"Network\": \"mainnet\",\"Coin\": \"uusdc-E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D\"}]}"
+    ports:
+      - "8080:8080"
+    entrypoint: ["./wait-for-it.sh", "store:50051", "-t", "60", "--", "./app"]
+
+
+  data-aggregator:
+    image: data-aggregator:latest
+    container_name: data-aggregator
+    depends_on:
+      - store
+    environment:
+      NETWORKS: "{\"Node\": [{\"Network\": \"devnet\",\"GRPCHost\": \"full-node.devnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.devnet-1.coreum.dev:26657\"}]}"
+      STATE_STORE: "store:50051"
+      TRADE_STORE: "store:50051"
+      OHLC_STORE: "store:50051"
+      ORDER_STORE: "store:50051"
+      CURRENCY_STORE: "store:50051"
+      LOG_LEVEL: "info"
+    entrypoint: ["./wait-for-it.sh", "store:50051", "-t", "60", "--", "./app"]
+
+  frontend:
+    image: frontend:latest
+    container_name: frontend
+    depends_on:
+      - store
+      - api-server
+    environment:
+      VITE_ENV_BASE_API: "http://localhost:8080/api"
+      VITE_ENV_WS: "ws://localhost:8080/api/ws"
+      VITE_MODE: "development"
+    ports:
+      - "3000:80"

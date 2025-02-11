@@ -30,6 +30,7 @@ OrderFee,
 MetaData, 
 TXID, 
 BlockHeight,
+OrderStatus,
 Network `
 
 type Application struct {
@@ -95,6 +96,14 @@ func (a *Application) initDB() {
 	if err != nil {
 		logger.Fatalf("Error creating historical table OrderDataHistory: %v", err)
 	}
+	// Add the OrderStatus INT column (ignore error if it already exists)
+	a.client.Client.Exec(`ALTER TABLE OrderData ADD COLUMN OrderStatus INT`)
+	a.client.Client.Exec(`ALTER TABLE OrderDataHistory ADD COLUMN OrderStatus INT`)
+	// Replace the trigger with the new one
+	_, err = a.client.Client.Exec(`DROP TRIGGER IF EXISTS after_order_update`)
+	if err != nil {
+		logger.Fatalf("Error dropping trigger after_order_update: %v", err)
+	}
 	_, err = a.client.Client.Exec(`
 	CREATE TRIGGER IF NOT EXISTS after_order_update
 	AFTER UPDATE ON OrderData
@@ -118,6 +127,7 @@ func (a *Application) initDB() {
 			NEW.MetaData,
 			NEW.TXID,
 			NEW.BlockHeight,
+			NEW.OrderStatus,
 			NEW.Network
 		);
 	END;`)
@@ -161,7 +171,7 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 
 	queryBuilder.WriteString(`
             SELECT ` + OrderDataFields + `
-            FROM Order 
+            FROM OrderData 
             WHERE Network=?
         `)
 	args = append(args, filter.Network)
@@ -208,6 +218,10 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 	if filter.Side != nil && *filter.Side != 0 {
 		queryBuilder.WriteString(" AND Side=?")
 		args = append(args, *filter.Side)
+	}
+	if filter.OrderStatus != nil && *filter.OrderStatus != 0 {
+		queryBuilder.WriteString(" AND OrderStatus=?")
+		args = append(args, *filter.OrderStatus)
 	}
 	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
 	queryBuilder.WriteString(" LIMIT 100")
@@ -289,7 +303,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
         VALUES (?, ?, ?, ?, ?,
 			    ?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
-				?, ?, ?) 
+				?, ?, ?, ?) 
         ON DUPLICATE KEY UPDATE Account=?, 
 		Price=?, 
 		RemainingQuantity=?,
@@ -297,6 +311,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		MetaData=?, 
 		TXID=?, 
 		BlockHeight=?,
+		OrderStatus=?,
 		OrderFee=?`,
 		in.Account,
 		in.Type,
@@ -315,7 +330,9 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		metaData,
 		*in.TXID,
 		in.BlockHeight,
+		in.OrderStatus,
 		in.MetaData.Network,
+
 		in.Account,
 		in.Price,
 		remainingQuantity,
@@ -323,6 +340,7 @@ func (a *Application) Upsert(in *ordergrpc.Order) error {
 		metaData,
 		*in.TXID,
 		in.BlockHeight,
+		in.OrderStatus,
 		in.OrderFee)
 	if err != nil {
 		logger.Errorf("Error upserting order %s-%d-%s: %v", in.OrderID, in.Sequence, in.MetaData.Network.String(), err)
@@ -350,6 +368,7 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 	metaData := make([]byte, 0)
 	quantity := make([]byte, 0)
 	remainingQuantity := make([]byte, 0)
+	var orderStatus sql.NullInt64
 	var network int // Dummy variable to scan into
 
 	err := b.Scan(
@@ -370,11 +389,16 @@ func mapToOrder(b *sql.Rows) (*ordergrpc.Order, error) {
 		&metaData,
 		&order.TXID,
 		&order.BlockHeight,
+		&orderStatus,
 		&network,
 	)
 	if err != nil {
 		return nil, err
 	}
+	if orderStatus.Valid {
+		order.OrderStatus = ordergrpc.OrderStatus(orderStatus.Int64)
+	}
+
 	json.Unmarshal(baseDenom, &order.BaseDenom)
 	json.Unmarshal(quoteDenom, &order.QuoteDenom)
 	json.Unmarshal(goodTil, &order.GoodTil)

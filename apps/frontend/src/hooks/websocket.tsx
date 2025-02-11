@@ -6,7 +6,7 @@ import {
 } from "../services/websocket";
 
 const WEBSOCKET_URL =
-  import.meta.env.VITE_MODE === "development"
+  import.meta.env.VITE_ENV_MODE === "development"
     ? import.meta.env.VITE_ENV_WS
     : (window as any).COREUM.env.VITE_ENV_WS;
 

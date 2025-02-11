@@ -36,4 +36,5 @@ message Filter {
     optional denom.Denom Denom2 = 8;
     optional orderproperties.Side Side = 9;
     optional int64 Offset = 10;
+    optional OrderStatus OrderStatus = 11;
 }

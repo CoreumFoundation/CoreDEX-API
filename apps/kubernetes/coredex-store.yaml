@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredex-store
+  labels:
+    app: coredex-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredex-store
+  template:
+    metadata:
+      labels:
+        app: coredex-store
+    spec:
+      containers:
+      - name: coredex-store
+        image: {{ images.coredex_store[1] }}:{{ images.coredex_store[0] }}  # Replace with your Docker image
+        imagePullPolicy: Always
+        env:
+        - name: MYSQL_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-store-config
+              key: MYSQL_CONFIG
+        - name: LOG_LEVEL
+          value: "debug"
+        - name: GRPC_PORT
+          value: ":50051"
+        ports:
+        - containerPort: 50051  # Replace with the port your app uses
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredex-store
+  labels:
+    app: coredex-store
+spec:
+  selector:
+    app: coredex-store
+  ports:
+  - port: 50051  # Replace with the port your app uses
+    targetPort: 50051
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredex-store-config
+data:
+  MYSQL_CONFIG: |-
+    {"Username": "{your user}}","Password": "{your password}","Host": "{your mysql host}","Port": 20184,"Database": "friendly_dex"}

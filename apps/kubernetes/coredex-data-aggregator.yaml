@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredex-data-aggregator
+  labels:
+    app: coredex-data-aggregator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredex-data-aggregator
+  template:
+    metadata:
+      labels:
+        app: coredex-data-aggregator
+    spec:
+      containers:
+      - name: coredex-data-aggregator
+        image: {{ images.coredex_data_aggregator[1] }}:{{ images.coredex_data_aggregator[0] }}  # Replace with your Docker image
+        imagePullPolicy: Always
+        env:
+        - name: NETWORKS
+          valueFrom:
+            configMapKeyRef:
+              name: coredex-data-aggregator-config
+              key: NETWORKS
+        - name: STATE_STORE
+          value: "coredex-store:50051"
+        - name: TRADE_STORE
+          value: "coredex-store:50051"
+        - name: OHLC_STORE
+          value: "coredex-store:50051"
+        - name: ORDER_STORE
+          value: "coredex-store:50051"
+        - name: CURRENCY_STORE
+          value: "coredex-store:50051"
+        - name: LOG_LEVEL
+          value: "debug"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredex-data-aggregator-config
+data:
+  NETWORKS: |-
+    {"Node":[{"Network": "devnet","GRPCHost":"full-node.devnet-1.coreum.dev:9090","RPCHost":"https://full-node.devnet-1.coreum.dev:26657"}]}

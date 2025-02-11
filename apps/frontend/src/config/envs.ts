@@ -28,7 +28,7 @@ export const getAppEnv = () => {
   const env: { [key: string]: string } = {};
   const prefix = "VITE_";
   const config =
-    (import.meta as any).env.VITE_MODE === "development"
+    (import.meta as any).env.VITE_ENV_MODE === "development"
       ? (import.meta as any).env
       : (window as any).ATG.env;
 

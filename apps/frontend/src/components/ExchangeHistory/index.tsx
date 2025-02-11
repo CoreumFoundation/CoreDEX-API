@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
-import { getTrades } from "@/services/general";
+import { getTrades } from "@/services/api";
 import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { SIDE_BUY, TradeHistoryResponse } from "@/types/market";

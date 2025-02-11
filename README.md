@@ -4,9 +4,9 @@
 
 The Coreum DEX is a permissionless, fee-free exchange with an ***organic order book*** designed for RWAs. Build trading interfaces using the CoreDEX APi pre-built extenstions for compliance and increased security.
 
-| Quick Setup | Custom Trading Logic | Developer Ready API |
-|-|-|-|
-| Get started in under 15 minutes with minimal technical overhead   | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions   | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints   |
+| Quick Setup                                                     | Custom Trading Logic                                                                                      | Developer Ready API                                                                                                         |
+|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Get started in under 15 minutes with minimal technical overhead | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints |
 
 
 ## About the CoreDEX API
@@ -34,6 +34,14 @@ The data-aggregator is a single instance and is build such that it will, in case
 The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling would require this.
 
 ## Installation and running of the CoreDEX API
+
+There are 3 provided methods of running the Friendly DEX:
+
+* Localhost with handy shell start scripts: Good for development and testing
+* Docker-compose: Good for testing and development
+* Kubernetes example deployment files: Handy for production
+
+### Get up and running on localhost
 
 Getting the CoreDEX running on your local (unix or linux) system takes just a few minutes.
 
@@ -94,11 +102,26 @@ You should see the following processes:
 The configuration provided uses the devnet public node of the Coreum blockchain. While there is a public node for Coreum available, that node does not have a guaranteed performance and the installation of a local node is recommended.
 See the [Coreum](https://docs.coreum.dev/docs/become-validator/run-full-node) for more information on how to install a local node.
 
-## Running the CoreDEX API on VMs, Kubernetes or other cloud services
+### Running the Friendly DEX with Docker-compose
+
+There is a docker compose file, `docker-compose.yml`, in the root of the project. This file can be used to start the CoreDEX API in a docker environment.
+
+***Important***:
+To use the docker compose environment, edit the folder `mysql-init/init-databases.sql` to set the block height to start from.
+Once that has been done, the start script can be run:
+
+```bash
+./bin/start-docker-compose.sh
+```
+
+The script, `./bin/stop-docker-compose.sh`, can be used to stop the docker-compose environment. This script will remove the volumes (e.g. reset the database), so depending on your use case you might want to just shutdown with `docker compose down`.
+
+### Running the Friendly DEX on VMs, Kubernetes or other cloud services
 
 The architecture of the CoreDEX API such that it is horizontally scalable. Setup deployments such that:
 
 * API Server and store are in stateless deployments, scale 1 to n
+* Store can be a stateless deployment, scale 1 to n
 * Data aggregator can be in stateless or stateful, scale 1 max
 
 CPU and memory expectations:
@@ -118,6 +141,8 @@ docker build -t data-aggregator -f Dockerfile.data-aggregator .
 docker build -t store -f Dockerfile.store .
 docker build -t frontend -f Dockerfile.frontend .
 ```
+
+There are also sample deployment files for Kubernetes in the `apps/kubernetes` directory.
 
 ## Application documentation
 
