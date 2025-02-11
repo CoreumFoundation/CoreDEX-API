@@ -4,9 +4,9 @@
 
 The Coreum DEX is a permissionless, fee-free exchange with an ***organic order book*** designed for RWAs. Build trading interfaces using the CoreDEX APi pre-built extenstions for compliance and increased security.
 
-| Quick Setup | Custom Trading Logic | Developer Ready API |
-|-|-|-|
-| Get started in under 15 minutes with minimal technical overhead   | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions   | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints   |
+| Quick Setup                                                     | Custom Trading Logic                                                                                      | Developer Ready API                                                                                                         |
+|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Get started in under 15 minutes with minimal technical overhead | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints |
 
 
 ## About the CoreDEX API
