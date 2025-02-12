@@ -10,11 +10,7 @@ import {
 } from "@/types/market";
 import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
-
-const API_URL =
-  import.meta.env.VITE_ENV_MODE === "development"
-    ? import.meta.env.VITE_ENV_BASE_API
-    : (window as any).COREUM.env.VITE_ENV_BASE_API;
+import { BASE_API_URL } from "@/config/envs";
 
 export const getOHLC = async (
   symbol: string,
@@ -31,7 +27,7 @@ export const getOHLC = async (
 
   const response = await request(
     {},
-    `${API_URL}/ohlc?${params}`,
+    `${BASE_API_URL}/ohlc?${params}`,
     APIMethod.GET
   );
 
@@ -57,7 +53,7 @@ export const getTrades = async (
 
   const response = await request(
     {},
-    `${API_URL}/trades?${params}`,
+    `${BASE_API_URL}/trades?${params}`,
     APIMethod.GET
   );
 
@@ -77,7 +73,7 @@ export const getTickers = async (
 
   const response = await request(
     {},
-    `${API_URL}/tickers?${params}`,
+    `${BASE_API_URL}/tickers?${params}`,
     APIMethod.GET
   );
 
@@ -91,7 +87,11 @@ export const getTickers = async (
 export const getCurrencies = async (): Promise<
   AxiosResponse<CurrencyResponse>
 > => {
-  const response = await request({}, `${API_URL}/currencies`, APIMethod.GET);
+  const response = await request(
+    {},
+    `${BASE_API_URL}/currencies`,
+    APIMethod.GET
+  );
 
   if (!response.data) {
     throw new Error("No data received from Currencies API");
@@ -103,7 +103,7 @@ export const getCurrencies = async (): Promise<
 export const createOrder = async (order: CreateOrder) => {
   const response = await request(
     order,
-    `${API_URL}/order/create`,
+    `${BASE_API_URL}/order/create`,
     APIMethod.POST
   );
 
@@ -117,7 +117,7 @@ export const createOrder = async (order: CreateOrder) => {
 export const submitOrder = async (order: { TX: string }) => {
   const response = await request(
     order,
-    `${API_URL}/order/submit`,
+    `${BASE_API_URL}/order/submit`,
     APIMethod.POST
   );
 
@@ -139,7 +139,7 @@ export const getOrderbook = async (
 
   const response = await request(
     {},
-    `${API_URL}/order/orderbook?${params}`,
+    `${BASE_API_URL}/order/orderbook?${params}`,
     APIMethod.GET
   );
 
@@ -159,7 +159,7 @@ export const getWalletAssets = async (
 
   const response = await request(
     {},
-    `${API_URL}/wallet/assets?${params}`,
+    `${BASE_API_URL}/wallet/assets?${params}`,
     APIMethod.GET
   );
 
@@ -179,7 +179,7 @@ export const cancelOrder = async (
       Sender: address,
       OrderID: id,
     },
-    `${API_URL}/order/cancel`,
+    `${BASE_API_URL}/order/cancel`,
     APIMethod.POST
   );
 
