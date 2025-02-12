@@ -145,7 +145,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 		tStart := time.Now()
 		bhr, err := txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 		if err != nil && strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height") {
-			for strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height") {
+			for err != nil && strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height") {
 				<-time.After(r.BlockProductionTime)
 				bhr, err = txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 			}
@@ -195,7 +195,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	go func(m *sync.Mutex) {
 		br, err := rpcClient.BlockResults(ctx, &currentHeight)
 		if err != nil && strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") {
-			for strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") {
+			for err != nil && strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") {
 				<-time.After(r.BlockProductionTime)
 				br, err = rpcClient.BlockResults(ctx, &currentHeight)
 			}

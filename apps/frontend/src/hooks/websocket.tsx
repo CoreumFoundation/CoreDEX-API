@@ -4,18 +4,14 @@ import {
   Subscription,
   WebSocketMessage,
 } from "../services/websocket";
-
-const WEBSOCKET_URL =
-  import.meta.env.VITE_ENV_MODE === "development"
-    ? import.meta.env.VITE_ENV_WS
-    : (window as any).COREUM.env.VITE_ENV_WS;
+import { WS_URL } from "@/config/envs";
 
 export const useWebSocket = (
   subscription: Subscription,
   callback: (message: WebSocketMessage) => void
 ) => {
   useEffect(() => {
-    wsManager.connect(WEBSOCKET_URL);
+    wsManager.connect(WS_URL);
 
     const handler = (message: WebSocketMessage) => {
       if (!message.Subscription) return;
