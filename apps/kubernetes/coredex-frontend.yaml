@@ -26,7 +26,6 @@ deployment:
 env:
   VITE_ENV_BASE_API: https://coredex.test.coreum.dev/api
   VITE_ENV_WS: wss://coredex.test.coreum.dev/api/ws
-  VITE_ENV_MODE: development
   VITE_ALLOWED_HOST: coredex.test.coreum.dev
 
 serviceAccount:
