@@ -59,15 +59,32 @@ interface SubscriptionConfig {
 }
 
 export enum UpdateStrategy {
-  REPLACE = "REPLACE",
-  APPEND = "APPEND",
+  REPLACE = "REPLACE", // replaces state
+  MERGE = "MERGE", // adds new data to beginning of state
+  APPEND = "APPEND", // adds new data to end of state
 }
 
 const updateFunctions: Record<UpdateStrategy, UpdateFunction> = {
   [UpdateStrategy.REPLACE]: (_prev: any, newContent: any) => newContent,
+  [UpdateStrategy.MERGE]: (prev: any, newContent: any) => {
+    const prevArr = Array.isArray(prev) ? prev : [];
+    if (Array.isArray(newContent) && newContent.length === 0) {
+      return prevArr;
+    }
+    if (Array.isArray(newContent)) {
+      return [...newContent, ...prevArr];
+    }
+    return [newContent, ...prevArr];
+  },
   [UpdateStrategy.APPEND]: (prev: any, newContent: any) => {
-    const arr = Array.isArray(prev) ? prev : [];
-    return [...arr, newContent];
+    const prevArr = Array.isArray(prev) ? prev : [];
+    if (Array.isArray(newContent) && newContent.length === 0) {
+      return prevArr;
+    }
+    if (Array.isArray(newContent)) {
+      return [...prevArr, ...newContent];
+    }
+    return [...prevArr, newContent];
   },
 };
 
@@ -206,7 +223,7 @@ class WebSocketManager {
       const config = this.subscriptions.get(key);
       if (!config) return;
       const newContent = JSON.parse(message.Subscription.Content);
-      const prevState = this.stateStore.get(key) || null;
+      const prevState = this.stateStore.get(key) || [];
       const newState = config.updateFn
         ? config.updateFn(prevState, newContent)
         : newContent;
@@ -220,6 +237,11 @@ class WebSocketManager {
 
   private getSubscriptionKey(sub: Subscription): string {
     return `${sub.Network}-${sub.Method}-${sub.ID}`;
+  }
+
+  public setInitialState(subscription: Subscription, initialData: any) {
+    const key = this.getSubscriptionKey(subscription);
+    this.stateStore.set(key, initialData);
   }
 
   public close() {

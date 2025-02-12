@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
@@ -7,10 +7,13 @@ import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
 import { useWebSocket } from "@/hooks/websocket";
 import { SideBuy, TradeHistoryResponse } from "@/types/market";
 import "./exchange-history.scss";
+import { UpdateStrategy, wsManager } from "@/services/websocket-refactor";
 
 const ExchangeHistory = () => {
-  const { market, setExchangeHistory, exchangeHistory, network } = useStore();
+  const { market, network } = useStore();
   const historyRef = useRef<HTMLDivElement>(null);
+  const [exchangeHistory, setExchangeHistory] =
+    useState<TradeHistoryResponse | null>(null);
 
   useEffect(() => {
     const fetchExchangeHistory = async () => {
@@ -22,6 +25,8 @@ const ExchangeHistory = () => {
         if (response.status === 200) {
           const data = response.data;
           setExchangeHistory(data);
+
+          wsManager.setInitialState(subscription, data);
         }
       } catch (e) {
         console.log("ERROR GETTING EXCHANGE HISTORY DATA >>", e);
@@ -31,33 +36,28 @@ const ExchangeHistory = () => {
     fetchExchangeHistory();
   }, [market.pair_symbol]);
 
-  // const handleExchangeHistoryUpdate = useCallback(
-  //   (message: WebSocketMessage) => {
-  //     const data = message.Subscription?.Content;
+  const subscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.TRADES_FOR_SYMBOL,
+      ID: market.pair_symbol,
+    }),
+    [market.pair_symbol, network]
+  );
 
-  //     if (data.length > 0) {
-  //       if (exchangeHistory) {
-  //         const updatedHistory: TradeHistoryResponse =
-  //           exchangeHistory.concat(data);
-  //         setExchangeHistory(updatedHistory);
-  //       } else {
-  //         setExchangeHistory(data);
-  //       }
-  //     }
-  //   },
-  //   [setExchangeHistory]
-  // );
+  const handler = (data: any) => {
+    console.log("exchange history tick");
+    setExchangeHistory(data);
+  };
 
-  // const subscription = useMemo(
-  //   () => ({
-  //     Network: NetworkToEnum(network),
-  //     Method: Method.TRADES_FOR_SYMBOL,
-  //     ID: market.pair_symbol,
-  //   }),
-  //   [market.pair_symbol, network]
-  // );
-
-  // useWebSocket(subscription, handleExchangeHistoryUpdate);
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
+    });
+    return () => {
+      wsManager.unsubscribe(subscription, setExchangeHistory);
+    };
+  }, [subscription]);
 
   return (
     <div className="exchange-history-container">
@@ -85,7 +85,7 @@ const ExchangeHistory = () => {
                   <FormatNumber number={trade.SymbolAmount} />
                 </div>
                 <div className="exchange-history-body-value time">
-                  {dayjs(trade.BlockTime.seconds).format("HH:mm:ss")}
+                  {dayjs.unix(trade.BlockTime.seconds).format("HH:mm:ss")}
                 </div>
               </div>
             );
