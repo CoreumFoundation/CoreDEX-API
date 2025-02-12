@@ -58,3 +58,7 @@ jobs:
           tags: |
             ${{ env.ORG }}/${{ matrix.application }}:latest
             ${{ env.ORG }}/${{ matrix.application }}:${{ env.SHA8 }}
+
+      - name: Update Deployment
+        run: |-
+          curl -v -u "${{ secrets.KEEL_USERNAME }}:${{ secrets.KEEL_PASSWORD }}" -X POST https://keel.devnet-1.coreum.dev/v1/webhooks/native  -H "Content-Type: application/json" -d "{\"name\": \"${{ env.ORG }}/${{ matrix.application }}\", \"tag\": \"${{ env.SHA8 }}\"}"
