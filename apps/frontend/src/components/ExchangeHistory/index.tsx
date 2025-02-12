@@ -31,33 +31,33 @@ const ExchangeHistory = () => {
     fetchExchangeHistory();
   }, [market.pair_symbol]);
 
-  const handleExchangeHistoryUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      const data = message.Subscription?.Content;
+  // const handleExchangeHistoryUpdate = useCallback(
+  //   (message: WebSocketMessage) => {
+  //     const data = message.Subscription?.Content;
 
-      if (data.length > 0) {
-        if (exchangeHistory) {
-          const updatedHistory: TradeHistoryResponse =
-            exchangeHistory.concat(data);
-          setExchangeHistory(updatedHistory);
-        } else {
-          setExchangeHistory(data);
-        }
-      }
-    },
-    [setExchangeHistory]
-  );
+  //     if (data.length > 0) {
+  //       if (exchangeHistory) {
+  //         const updatedHistory: TradeHistoryResponse =
+  //           exchangeHistory.concat(data);
+  //         setExchangeHistory(updatedHistory);
+  //       } else {
+  //         setExchangeHistory(data);
+  //       }
+  //     }
+  //   },
+  //   [setExchangeHistory]
+  // );
 
-  const subscription = useMemo(
-    () => ({
-      Network: NetworkToEnum(network),
-      Method: Method.TRADES_FOR_SYMBOL,
-      ID: market.pair_symbol,
-    }),
-    [market.pair_symbol, network]
-  );
+  // const subscription = useMemo(
+  //   () => ({
+  //     Network: NetworkToEnum(network),
+  //     Method: Method.TRADES_FOR_SYMBOL,
+  //     ID: market.pair_symbol,
+  //   }),
+  //   [market.pair_symbol, network]
+  // );
 
-  useWebSocket(subscription, handleExchangeHistoryUpdate);
+  // useWebSocket(subscription, handleExchangeHistoryUpdate);
 
   return (
     <div className="exchange-history-container">

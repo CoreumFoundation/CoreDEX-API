@@ -4,11 +4,19 @@ import { useStore } from "@/state/store";
 import { TooltipPosition, useTooltip } from "@/hooks";
 import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
-import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";
+import {
+  OrderType,
+  OrderbookAction,
+  OrderbookRecord,
+  OrderbookResponse,
+} from "@/types/market";
 import { getOrderbook } from "@/services/api";
-import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
-import { wsManager, Subscription } from "@/services/websocket-refactor";
+import {
+  wsManager,
+  UpdateStrategy,
+  NetworkToEnum,
+  Method,
+} from "@/services/websocket-refactor";
 
 import "./orderbook.scss";
 
@@ -24,33 +32,37 @@ export default function Orderbook({
   setOrderbookAction: (action: OrderbookAction) => void;
 }) {
   const { market, network } = useStore();
-  const [orderbook, setOrderbook] = useState<any>(null);
+  const { showTooltip, hideTooltip } = useTooltip();
 
+  const [orderbook, setOrderbook] = useState<OrderbookResponse | null>(null);
   const [spread, setSpread] = useState<BigNumber>(new BigNumber(0));
   const [topBuyVolume, setTopBuyVolume] = useState<number>(0);
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
-
-  // tooltip state
-  const { showTooltip, hideTooltip } = useTooltip();
-  const [leftPos, _] = useState<number>(0);
-  const [orderbookType, __] = useState<ORDERBOOK_TYPE>(ORDERBOOK_TYPE.BOTH);
   const componentRef = useRef<HTMLDivElement>(null);
 
   // note: because we want Sells to display as descending, we reverse the order
   // we have to do some index manipulation to maintain proper hover and tooltip
-  // in calcaulteGroupData and renderOrderRow
+  // in calculateGroupData and renderOrderRow
   // the alternative is to reverse the Sell array before setting in state but that
   // would require a lot of array manipulation on every message
 
-  const replaceState = (_prev: any, newContent: any) => newContent;
+  const subscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.ORDERBOOK,
+      ID: market.pair_symbol,
+    }),
+    [market.pair_symbol, network]
+  );
 
   useEffect(() => {
-    wsManager.subscribe(subscription, setOrderbook, replaceState);
-
+    wsManager.connected().then(() => {
+      wsManager.subscribe(subscription, setOrderbook, UpdateStrategy.REPLACE);
+    });
     return () => {
       wsManager.unsubscribe(subscription, setOrderbook);
     };
-  }, [wsManager]);
+  }, [subscription]);
 
   useEffect(() => {
     const fetchOrderbook = async () => {
@@ -68,27 +80,9 @@ export default function Orderbook({
     fetchOrderbook();
   }, [market.base, market.counter]);
 
-  const handleOrderbookUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      setOrderbook(message.Subscription?.Content);
-    },
-    [setOrderbook]
-  );
-
-  const subscription = useMemo(
-    () => ({
-      Network: NetworkToEnum(network),
-      Method: Method.ORDERBOOK,
-      ID: market.pair_symbol,
-    }),
-    [market.pair_symbol, network]
-  );
-  console.log(market);
-  // useWebSocket(subscription, handleOrderbookUpdate);
-
   // calculate spread
   useEffect(() => {
-    if (!orderbook) return;
+    if (!orderbook || !orderbook.Buy || !orderbook.Sell) return;
 
     const calculateSpread = () => {
       const bestBid = orderbook.Buy[0]?.HumanReadablePrice;
@@ -232,7 +226,7 @@ export default function Orderbook({
       showTooltip(
         e.currentTarget,
         tooltipContent,
-        leftPos >= 245 ? TooltipPosition.LEFT : TooltipPosition.RIGHT,
+        TooltipPosition.RIGHT,
         "204px"
       );
     },
@@ -243,7 +237,6 @@ export default function Orderbook({
       market.counter,
       showTooltip,
       hideTooltip,
-      leftPos,
     ]
   );
 
@@ -307,7 +300,7 @@ export default function Orderbook({
       </div>
     );
   };
-  // console.log(orderbook);
+
   return (
     <div className="orderbook-container" ref={componentRef}>
       <div className="orderbook-body">
@@ -327,18 +320,16 @@ export default function Orderbook({
             </div>
 
             <div className="orderbook-sections">
-              {(orderbookType === ORDERBOOK_TYPE.BUY ||
-                orderbookType === ORDERBOOK_TYPE.BOTH) && (
-                <div
-                  className="orderbook-wrapper"
-                  style={{ flexDirection: "column-reverse" }}
-                  id="buys_ob"
-                >
-                  {orderbook.Buy.slice(0, 50).map((buy, i) =>
+              <div
+                className="orderbook-wrapper"
+                style={{ flexDirection: "column-reverse" }}
+                id="buys_ob"
+              >
+                {orderbook.Buy &&
+                  orderbook.Buy.slice(0, 50).map((buy, i) =>
                     renderOrderRow(buy, i, ORDERBOOK_TYPE.BUY)
                   )}
-                </div>
-              )}
+              </div>
 
               {spread && (
                 <div className="orderbook-spread">
@@ -347,12 +338,11 @@ export default function Orderbook({
                 </div>
               )}
 
-              {(orderbookType === ORDERBOOK_TYPE.SELL ||
-                orderbookType === ORDERBOOK_TYPE.BOTH) && (
-                <div className="orderbook-wrapper" id="sells_ob">
-                  {/* reverse, create array of original indices, take top 5, 
+              <div className="orderbook-wrapper" id="sells_ob">
+                {/* reverse, create array of original indices, take top 5, 
                   then map back to data to maintain proper hover and tooltip */}
-                  {orderbook.Sell.map((_, idx) => idx)
+                {orderbook.Sell &&
+                  orderbook.Sell.map((_, idx) => idx)
                     .slice(0, 50)
                     .reverse()
                     .map((originalIndex) => {
@@ -363,8 +353,7 @@ export default function Orderbook({
                         ORDERBOOK_TYPE.SELL
                       );
                     })}
-                </div>
-              )}
+              </div>
             </div>
           </>
         ) : (

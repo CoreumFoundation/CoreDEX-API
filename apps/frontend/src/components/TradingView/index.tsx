@@ -72,7 +72,7 @@ const TradingView = ({ height }: { height: number | string }) => {
     },
     [setLastUpdate]
   );
-  useWebSocket(ohlcSubscription, handleDataFeedUpdate);
+  // useWebSocket(ohlcSubscription, handleDataFeedUpdate);
 
   useEffect(() => {
     mountChart();

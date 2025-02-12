@@ -1,4 +1,3 @@
-// websocket.ts
 import { CoreumNetwork } from "coreum-js-nightly";
 
 export enum Action {
@@ -44,46 +43,50 @@ export interface Subscription {
   Content?: any;
 }
 
-/**
- * The message that comes over the WebSocket.
- */
 export interface WebSocketMessage {
   Action: Action;
   Subscription?: Subscription;
 }
 
-/**
- * A handler that is called when a message for a subscription is received.
- * The `data` parameter is the updated state (after applying the update logic).
- */
 export type MessageHandler = (data: any) => void;
 
-/**
- * A function that defines how to update state.
- * It receives the current state (which can be null on first call)
- * and the new message content, then returns the new state.
- */
 export type UpdateFunction = (prevState: any, newContent: any) => any;
 
 interface SubscriptionConfig {
   subscription: Subscription;
   handlers: MessageHandler[];
-  updateFn?: UpdateFunction; // If provided, use this to merge new messages into the state.
+  updateFn?: UpdateFunction;
 }
+
+export enum UpdateStrategy {
+  REPLACE = "REPLACE",
+  APPEND = "APPEND",
+}
+
+const updateFunctions: Record<UpdateStrategy, UpdateFunction> = {
+  [UpdateStrategy.REPLACE]: (_prev: any, newContent: any) => newContent,
+  [UpdateStrategy.APPEND]: (prev: any, newContent: any) => {
+    const arr = Array.isArray(prev) ? prev : [];
+    return [...arr, newContent];
+  },
+};
 
 class WebSocketManager {
   private static instance: WebSocketManager;
   private ws: WebSocket | null = null;
   private isConnected = false;
+  private connectedPromise: Promise<void>;
+  private connectedResolver!: () => void;
   private pendingSubscriptions: SubscriptionConfig[] = [];
   private pendingUnsubscriptions: Subscription[] = [];
-
-  // A mapping from subscription key to a subscription config (handlers and update function)
   private subscriptions: Map<string, SubscriptionConfig> = new Map();
-  // Internal state per subscription key.
   private stateStore: Map<string, any> = new Map();
 
-  private constructor() {}
+  private constructor() {
+    this.connectedPromise = new Promise((resolve) => {
+      this.connectedResolver = resolve;
+    });
+  }
 
   public static getInstance(): WebSocketManager {
     if (!WebSocketManager.instance) {
@@ -109,18 +112,22 @@ class WebSocketManager {
     this.isConnected = true;
     console.log("WebSocket connected");
 
-    // Send all pending subscriptions.
+    if (this.connectedResolver) {
+      this.connectedResolver();
+    }
+
     this.pendingSubscriptions.forEach((config) => {
+      console.log(
+        "Sending pending subscription for key:",
+        this.getSubscriptionKey(config.subscription)
+      );
       this.sendSubscription(config.subscription);
-      // Also store the subscription in our active registry.
-      const key = this.getSubscriptionKey(config.subscription);
-      this.subscriptions.set(key, config);
+      this.subscriptions.set(
+        this.getSubscriptionKey(config.subscription),
+        config
+      );
     });
     this.pendingSubscriptions = [];
-
-    // Process pending unsubscriptions.
-    this.pendingUnsubscriptions.forEach((sub) => this.sendUnsubscription(sub));
-    this.pendingUnsubscriptions = [];
   }
 
   private sendSubscription(subscription: Subscription) {
@@ -142,24 +149,24 @@ class WebSocketManager {
   }
 
   /**
-   * Subscribe with a subscription object, a message handler, and optionally an update function.
+   * Subscribe with a subscription object, a message handler, and optionally an update strategy.
    *
-   * The update function determines how new messages modify the current state.
+   * The update strategy determines how new messages modify the current state.
    * For example, an orderbook update may simply replace the state,
    * while an OHLC subscription may append new data to the existing state.
    */
   public subscribe(
     subscription: Subscription,
     handler: MessageHandler,
-    updateFn?: UpdateFunction
+    strategy: UpdateStrategy
   ) {
     const key = this.getSubscriptionKey(subscription);
     let config = this.subscriptions.get(key);
+    const updateFn = updateFunctions[strategy];
+
     if (config) {
-      // If a config already exists, simply add the handler.
       config.handlers.push(handler);
     } else {
-      // Otherwise, create a new config.
       config = { subscription, handlers: [handler], updateFn };
       this.subscriptions.set(key, config);
     }
@@ -171,15 +178,11 @@ class WebSocketManager {
     }
   }
 
-  /**
-   * Unsubscribe a particular handler for the given subscription.
-   */
   public unsubscribe(subscription: Subscription, handler: MessageHandler) {
     const key = this.getSubscriptionKey(subscription);
     const config = this.subscriptions.get(key);
     if (config) {
       config.handlers = config.handlers.filter((h) => h !== handler);
-      // If no more handlers are registered for this subscription, remove it completely.
       if (config.handlers.length === 0) {
         this.subscriptions.delete(key);
         if (this.isConnected) {
@@ -187,16 +190,11 @@ class WebSocketManager {
         } else {
           this.pendingUnsubscriptions.push(subscription);
         }
-        // Optionally remove the state.
         this.stateStore.delete(key);
       }
     }
   }
 
-  /**
-   * Handle an incoming message. If it includes a subscription,
-   * update the internal state (using the update function if provided) and notify the handlers.
-   */
   private handleMessage(data: string) {
     try {
       if (data === "Connected") return;
@@ -204,20 +202,16 @@ class WebSocketManager {
       if (!message.Subscription) return;
 
       const key = this.getSubscriptionKey(message.Subscription);
+
       const config = this.subscriptions.get(key);
       if (!config) return;
-
-      // Get the new content from the incoming message.
-      const newContent = message.Subscription.Content;
-
-      // Update state if an update function is provided, otherwise simply replace.
+      const newContent = JSON.parse(message.Subscription.Content);
       const prevState = this.stateStore.get(key) || null;
       const newState = config.updateFn
         ? config.updateFn(prevState, newContent)
         : newContent;
       this.stateStore.set(key, newState);
 
-      // Notify all handlers with the updated state.
       config.handlers.forEach((handler) => handler(newState));
     } catch (error) {
       console.error("Error handling message:", error, "Raw data:", data);
@@ -234,6 +228,10 @@ class WebSocketManager {
     this.pendingSubscriptions = [];
     this.pendingUnsubscriptions = [];
     this.stateStore.clear();
+  }
+
+  public connected(): Promise<void> {
+    return this.connectedPromise;
   }
 }
 

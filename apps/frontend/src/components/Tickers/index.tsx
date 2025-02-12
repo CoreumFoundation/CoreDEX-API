@@ -53,7 +53,7 @@ const Tickers = () => {
     [market.pair_symbol, network]
   );
 
-  useWebSocket(subscription, handleTickerUpdate);
+  // useWebSocket(subscription, handleTickerUpdate);
 
   useEffect(() => {
     if (tickers) {

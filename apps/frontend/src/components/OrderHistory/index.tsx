@@ -181,8 +181,8 @@ const OrderHistory = () => {
     [market.pair_symbol, wallet?.address, network]
   );
 
-  useWebSocket(orderHistorySubscription, handleOrderHistory);
-  useWebSocket(openOrderSubscription, handleOpenOrders);
+  // useWebSocket(orderHistorySubscription, handleOrderHistory);
+  // useWebSocket(openOrderSubscription, handleOpenOrders);
 
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
