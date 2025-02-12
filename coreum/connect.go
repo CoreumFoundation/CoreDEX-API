@@ -232,7 +232,8 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	if currentHeight%100 == 0 {
 		if previousHeight != 0 {
 			channelCapacity := 100 - 100*float64(len(r.ProcessBlockChannel))/1000 // Percentage of channel capacity used: capacity is 1000
-			logger.Infof("TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
+			logger.Infof("Blockheight %d. TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
+				currentHeight,
 				time.Since(measureTotalThroughputTime).Seconds(),
 				currentHeight-previousHeight,
 				measureBlockLoadTime.Sub(measureTotalThroughputTime).Seconds(),

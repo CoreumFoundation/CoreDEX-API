@@ -24,7 +24,7 @@ set_host_coreum() {
 
 # Function for GET /ohlc
 get_ohlc() {
-    local symbol="dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
     local periods=("1m" "3m" "5m" "15m" "30m" "1h" "3h" "6h" "12h" "1d" "3d" "1w")
 
     # Calculate 'to' as the current time and 'from' as 24 hours before 'to'
@@ -36,6 +36,7 @@ get_ohlc() {
 
     # Iterate over periods and make the API call for each
     for period in "${periods[@]}"; do
+        echo "Calling API for OHLC with period ${period}"
         curl "$HOST/ohlc?symbol=${encoded_symbol}&period=${period}&from=${from}&to=${to}" \
             --header "Network: devnet"
         echo -e "\n"
@@ -43,8 +44,8 @@ get_ohlc() {
 }
 
 get_trades_with_account() {
-    local symbol="dextestdenom8-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom3-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
-    local account="devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc"
+    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local account="devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
     local to=1734462880
     local from=$((to - 86400))
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
@@ -56,7 +57,7 @@ get_trades_with_account() {
 }
 
 get_trades_without_account() {
-    local symbol="dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
     local to=$(date +%s)
     local from=$((to - 86400))
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
@@ -69,7 +70,7 @@ get_trades_without_account() {
 
 # Function for GET /tickers
 get_tickers() {
-    local symbols=("dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs")
+    local symbols=("dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs")
     local json_symbols=$(printf '%s\n' "${symbols[@]}" | jq -R . | jq -s .)
     local encoded_symbols=$(echo -n "$json_symbols" | base64)
 
@@ -140,7 +141,7 @@ get_order_orderbook() {
     echo "Calling GET /order/orderbook"
     # Add your curl or wget command here
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
 }
 
 # Function for GET /order/orderbook
@@ -148,13 +149,13 @@ get_order_orderbook_for_account() {
     echo "Calling GET /order/orderbook"
     # Add your curl or wget command here
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&account=devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc"
+    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&account=devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
 }
 
 get_wallet_assets() {
     echo "Calling GET /wallet/assets"
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/wallet/assets?address=devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    -X "GET" "${HOST}/wallet/assets?address=devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
 }
 
 post_order_cancel() {
