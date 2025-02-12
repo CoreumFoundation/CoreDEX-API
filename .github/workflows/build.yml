@@ -13,18 +13,12 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-          applications: [
+          application: [
             "api-server",
             "data-aggregator",
             "frontend",
             "store",
           ]
-          include:
-            - application: "lint"
-            - application: "data-aggregator"
-            - application: "frontend"
-            - application: "store"
-
 
     name: Setup, Build, Publish, Webhook
     runs-on: ubuntu-22.04
