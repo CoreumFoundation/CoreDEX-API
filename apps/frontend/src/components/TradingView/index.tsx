@@ -62,11 +62,6 @@ const TradingView = ({ height }: { height: number | string }) => {
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
-        // console.log(
-        //   "UPDATED OHLC MSG",
-        //   dayjs.unix(message.Subscription.Content[0][0]).toDate()
-        // );
-        console.log(message.Subscription.Content);
         setLastUpdate(message.Subscription.Content);
       }
     },
@@ -207,7 +202,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     setResolution(resolvedRes);
 
     if (dataFeed) {
-      dataFeed.reset();
       dataFeed.subscriptions.forEach((sub) => {
         dataFeed.unsubscribeBars(sub.key);
         dataFeed.subscribeBars(
