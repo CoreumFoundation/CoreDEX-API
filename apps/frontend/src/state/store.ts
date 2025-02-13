@@ -3,7 +3,6 @@ import { Client, CoreumNetwork } from "coreum-js-nightly";
 import {
   Market,
   OrderbookResponse,
-  Ticker,
   TickerResponse,
   Token,
   TradeHistoryResponse,

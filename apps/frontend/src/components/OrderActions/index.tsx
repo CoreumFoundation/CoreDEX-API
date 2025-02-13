@@ -60,7 +60,7 @@ const OrderActions = ({
   );
   const [expirationTime, setExpirationTime] = useState<Date>();
   const [customTime, setCustomTime] = useState<string>("");
-  const [blockHeight, setBlockHeight] = useState<string>("0");
+  const [blockHeight, setBlockHeight] = useState<number>(0);
 
   useEffect(() => {
     fetchWalletAssets();
@@ -445,7 +445,7 @@ const OrderActions = ({
                                 maxLength={16}
                                 placeholder="Block Height"
                                 type={InputType.NUMBER}
-                                onValueChange={(val: string) => {
+                                onValueChange={(val: any) => {
                                   setBlockHeight(val);
                                 }}
                                 value={blockHeight}
