@@ -59,8 +59,8 @@ const OrderActions = ({
     TimeSelection["5M"]
   );
   const [expirationTime, setExpirationTime] = useState<Date>();
-
   const [customTime, setCustomTime] = useState<string>("");
+  const [blockHeight, setBlockHeight] = useState<number>(0);
 
   useEffect(() => {
     fetchWalletAssets();
@@ -246,7 +246,7 @@ const OrderActions = ({
           timeInForce === TimeInForceString.goodTilTime
             ? {
                 goodTilBlockTime: expirationTime,
-                goodTilBlockHeight: 0,
+                goodTilBlockHeight: blockHeight,
               }
             : undefined,
         timeInForce:
@@ -256,8 +256,6 @@ const OrderActions = ({
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
-
-      console.log("ORDER", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -354,7 +352,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={13}
+                  decimals={market.base.Denom.Precision}
                   adornmentRight={market.base.Denom.Currency}
                 />
                 <Input
@@ -371,7 +369,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={13}
+                  decimals={market.counter.Denom.Precision}
                   adornmentRight={market.counter.Denom.Currency}
                 />
 
@@ -420,34 +418,49 @@ const OrderActions = ({
                       />
 
                       {timeInForce === TimeInForceString.goodTilTime && (
-                        <Dropdown
-                          variant={DropdownVariant.OUTLINED}
-                          items={(
-                            Object.keys(TimeSelection) as Array<
-                              keyof typeof TimeSelection
-                            >
-                          ).map((key) => [TimeSelection[key]])}
-                          value={timeToCancel}
-                          onClick={(item) => {
-                            setTimeToCancel(item[0] as TimeSelection);
-                          }}
-                          renderItem={(item) => <div>{item}</div>}
-                        />
-                      )}
-
-                      {timeInForce === TimeInForceString.goodTilTime &&
-                        timeToCancel === TimeSelection.CUSTOM && (
-                          <DatetimePicker
-                            selectedDate={customTime}
-                            onChange={(val: any) => {
-                              setCustomTime(val);
-                            }}
-                            width={"100%"}
-                            minDate={
-                              new Date(dayjs.utc().add(1, "day").format())
+                        <>
+                          <Dropdown
+                            variant={DropdownVariant.OUTLINED}
+                            items={Object.keys(TimeSelection).map((key) => [
+                              TimeSelection[key as keyof typeof TimeSelection],
+                            ])}
+                            value={timeToCancel}
+                            onClick={(item) =>
+                              setTimeToCancel(item[0] as TimeSelection)
                             }
+                            renderItem={(item) => <div>{item}</div>}
                           />
-                        )}
+
+                          {timeToCancel === TimeSelection.CUSTOM && (
+                            <div className="good-til-time-selectors">
+                              <DatetimePicker
+                                selectedDate={customTime}
+                                onChange={(val: any) => setCustomTime(val)}
+                                width="100%"
+                                minDate={
+                                  new Date(dayjs.utc().add(1, "day").format())
+                                }
+                              />
+                              <Input
+                                maxLength={16}
+                                placeholder="Block Height"
+                                type={InputType.NUMBER}
+                                onValueChange={(val: any) => {
+                                  setBlockHeight(val);
+                                }}
+                                value={blockHeight}
+                                inputName="limit-price"
+                                label="Block Height"
+                                customCss={{
+                                  fontSize: 14,
+                                }}
+                                inputWrapperClassname="order-input"
+                                decimals={0}
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -532,18 +545,16 @@ const OrderActions = ({
         <p className="title">Assets</p>
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
-          <p className="balance-value">
-            {Number(baseBalance).toLocaleString()}
-          </p>
+
+          <FormatNumber number={baseBalance} />
         </div>
 
         <div className="balance-row">
           <p className="balance-label">
             {market.counter.Denom.Currency} Balance
           </p>
-          <p className="balance-value">
-            {Number(counterBalance).toLocaleString()}
-          </p>
+
+          <FormatNumber number={counterBalance} />
         </div>
       </div>
     </div>

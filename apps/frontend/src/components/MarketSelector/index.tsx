@@ -53,7 +53,6 @@ const MarketSelector = () => {
 
   return (
     <div className="market-selector-container" ref={ref}>
-      {/* Market Label Button */}
       <div
         className="market-label"
         onClick={() => {

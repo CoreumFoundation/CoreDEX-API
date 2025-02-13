@@ -144,8 +144,8 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	go func(m *sync.Mutex) {
 		tStart := time.Now()
 		bhr, err := txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
-		if err != nil && strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height") {
-			for err != nil && strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height") {
+		if isBlockWithTxEndErr(err) {
+			for isBlockWithTxEndErr(err) {
 				<-time.After(r.BlockProductionTime)
 				bhr, err = txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 			}
@@ -194,8 +194,8 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	// Querying block results from Tendermint to get block events
 	go func(m *sync.Mutex) {
 		br, err := rpcClient.BlockResults(ctx, &currentHeight)
-		if err != nil && strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") {
-			for err != nil && strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") {
+		if isBlockResultEndErr(err) {
+			for isBlockResultEndErr(err) {
 				<-time.After(r.BlockProductionTime)
 				br, err = rpcClient.BlockResults(ctx, &currentHeight)
 			}
@@ -254,4 +254,13 @@ func hash(txRaw []byte) string {
 	h := sha256.New()
 	h.Write(txRaw)
 	return strings.ToUpper(fmt.Sprintf("%x", h.Sum(nil)))
+}
+
+func isBlockWithTxEndErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "height must not be less than 1 or greater than the current height")
+}
+
+func isBlockResultEndErr(err error) bool {
+	return err != nil && (strings.Contains(err.Error(), "must be less than or equal to the current blockchain height") ||
+		strings.Contains(err.Error(), "could not find results for height"))
 }
