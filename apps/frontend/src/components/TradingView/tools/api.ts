@@ -94,8 +94,19 @@ export class CoreumDataFeed {
     if (periodParams.firstDataRequest) periodParams.to = Date.now() / 1000;
     getBars(symbolInfo.id, resolution, periodParams.from, periodParams.to)
       .then((bars) => {
+        const sortedBars = bars
+          .map((el) => ({
+            time: el.time,
+            close: el.close,
+            open: el.open,
+            high: el.high,
+            low: el.low,
+            volume: el.volume,
+          }))
+          .sort((a, b) => a.time - b.time);
+
         const uniqueBars = [];
-        for (let bar of bars) {
+        for (let bar of sortedBars) {
           if (
             uniqueBars.length === 0 ||
             uniqueBars[uniqueBars.length - 1].time !== bar.time
@@ -103,6 +114,7 @@ export class CoreumDataFeed {
             uniqueBars.push(bar);
           }
         }
+
         onHistoryCallback(uniqueBars, { noData: uniqueBars.length === 0 });
       })
       .catch((err) => {

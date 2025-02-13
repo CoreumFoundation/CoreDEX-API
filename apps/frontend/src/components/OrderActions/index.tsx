@@ -354,7 +354,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={13}
+                  decimals={market.base.Denom.Precision}
                   adornmentRight={market.base.Denom.Currency}
                 />
                 <Input
@@ -371,7 +371,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={13}
+                  decimals={market.counter.Denom.Precision}
                   adornmentRight={market.counter.Denom.Currency}
                 />
 
