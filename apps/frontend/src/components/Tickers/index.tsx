@@ -14,6 +14,11 @@ import "./tickers.scss";
 const Tickers = () => {
   const { market, network, tickers, setTickers } = useStore();
   const [change, setChange] = useState<number>(0);
+  const [lastPrice, setLastPrice] = useState<number>(0);
+  const [volume, setVolume] = useState<number>(0);
+  const [invertedVolume, setInvertedVolume] = useState<number>(0);
+  const [highPrice, setHighPrice] = useState<number>(0);
+  const [lowPrice, setLowPrice] = useState<number>(0);
 
   // initial tickers
   useEffect(() => {
@@ -37,6 +42,17 @@ const Tickers = () => {
     fetchTickers();
   }, [market.pair_symbol]);
 
+  useEffect(() => {
+    if (!tickers || !tickers.Tickers || !tickers.Tickers[market.pair_symbol])
+      return;
+
+    setLastPrice(tickers.Tickers[market.pair_symbol].LastPrice);
+    setVolume(tickers.Tickers[market.pair_symbol].Volume);
+    setInvertedVolume(tickers.Tickers[market.pair_symbol].Invertedvolume);
+    setHighPrice(tickers.Tickers[market.pair_symbol].HighPrice);
+    setLowPrice(tickers.Tickers[market.pair_symbol].LowPrice);
+  }, [tickers, market]);
+
   const subscription = useMemo(
     () => ({
       Network: NetworkToEnum(network),
@@ -56,21 +72,20 @@ const Tickers = () => {
   }, [subscription]);
 
   useEffect(() => {
-    if (tickers) {
-      const { OpenPrice, LastPrice } = tickers.Tickers[market.pair_symbol];
-      const difference = Number(LastPrice) - Number(OpenPrice);
-      const change = 100 * (difference / Number(OpenPrice));
-      setChange(change);
-    }
-  }, [tickers, market]);
+    if (!tickers || !tickers.Tickers || !tickers.Tickers[market.pair_symbol])
+      return;
 
+    const { OpenPrice, LastPrice } = tickers.Tickers[market.pair_symbol];
+    const difference = Number(LastPrice) - Number(OpenPrice);
+    const change = 100 * (difference / Number(OpenPrice));
+    setChange(change);
+  }, [tickers, market]);
+  console.log(tickers);
   return (
     <div className="tickers-container">
       <div className="price-container">
         <div className="price">
-          <FormatNumber
-            number={tickers ? tickers.Tickers[market.pair_symbol].LastPrice : 0}
-          />
+          <FormatNumber number={lastPrice} />
         </div>
         <div
           className={`change ${Number(change) > 0 ? "positive" : "negative"}`}
@@ -83,38 +98,28 @@ const Tickers = () => {
       <div className="volume-base">
         <div className="label">{`24h Volume (${market.base.Denom.Name})`}</div>
         <div className="volume">
-          <FormatNumber
-            number={tickers ? tickers.Tickers[market.pair_symbol].Volume : 0}
-          />
+          <FormatNumber number={volume} />
         </div>
       </div>
 
       <div className="volume-counter">
         <div className="label">{`24h Volume (${market.counter.Denom.Name})`}</div>
         <div className="volume">
-          <FormatNumber
-            number={
-              tickers ? tickers.Tickers[market.pair_symbol].Invertedvolume : 0
-            }
-          />
+          <FormatNumber number={invertedVolume} />
         </div>
       </div>
 
       <div className="high">
         <div className="label">{`24h High`}</div>
         <div className="volume">
-          <FormatNumber
-            number={tickers ? tickers.Tickers[market.pair_symbol].HighPrice : 0}
-          />
+          <FormatNumber number={highPrice} />
         </div>
       </div>
 
       <div className="low">
         <div className="label">{`24h Low`}</div>
         <div className="volume">
-          <FormatNumber
-            number={tickers ? tickers.Tickers[market.pair_symbol].LowPrice : 0}
-          />
+          <FormatNumber number={lowPrice} />
         </div>
       </div>
     </div>

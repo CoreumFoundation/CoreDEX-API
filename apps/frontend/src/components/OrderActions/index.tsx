@@ -59,8 +59,8 @@ const OrderActions = ({
     TimeSelection["5M"]
   );
   const [expirationTime, setExpirationTime] = useState<Date>();
-
   const [customTime, setCustomTime] = useState<string>("");
+  const [blockHeight, setBlockHeight] = useState<string>("0");
 
   useEffect(() => {
     fetchWalletAssets();
@@ -246,7 +246,7 @@ const OrderActions = ({
           timeInForce === TimeInForceString.goodTilTime
             ? {
                 goodTilBlockTime: expirationTime,
-                goodTilBlockHeight: 0,
+                goodTilBlockHeight: blockHeight,
               }
             : undefined,
         timeInForce:
@@ -256,8 +256,6 @@ const OrderActions = ({
       };
 
       const orderMessage = DEX.PlaceOrder(orderCreate);
-
-      console.log("ORDER", orderMessage);
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -420,34 +418,49 @@ const OrderActions = ({
                       />
 
                       {timeInForce === TimeInForceString.goodTilTime && (
-                        <Dropdown
-                          variant={DropdownVariant.OUTLINED}
-                          items={(
-                            Object.keys(TimeSelection) as Array<
-                              keyof typeof TimeSelection
-                            >
-                          ).map((key) => [TimeSelection[key]])}
-                          value={timeToCancel}
-                          onClick={(item) => {
-                            setTimeToCancel(item[0] as TimeSelection);
-                          }}
-                          renderItem={(item) => <div>{item}</div>}
-                        />
-                      )}
-
-                      {timeInForce === TimeInForceString.goodTilTime &&
-                        timeToCancel === TimeSelection.CUSTOM && (
-                          <DatetimePicker
-                            selectedDate={customTime}
-                            onChange={(val: any) => {
-                              setCustomTime(val);
-                            }}
-                            width={"100%"}
-                            minDate={
-                              new Date(dayjs.utc().add(1, "day").format())
+                        <>
+                          <Dropdown
+                            variant={DropdownVariant.OUTLINED}
+                            items={Object.keys(TimeSelection).map((key) => [
+                              TimeSelection[key as keyof typeof TimeSelection],
+                            ])}
+                            value={timeToCancel}
+                            onClick={(item) =>
+                              setTimeToCancel(item[0] as TimeSelection)
                             }
+                            renderItem={(item) => <div>{item}</div>}
                           />
-                        )}
+
+                          {timeToCancel === TimeSelection.CUSTOM && (
+                            <div className="good-til-time-selectors">
+                              <DatetimePicker
+                                selectedDate={customTime}
+                                onChange={(val: any) => setCustomTime(val)}
+                                width="100%"
+                                minDate={
+                                  new Date(dayjs.utc().add(1, "day").format())
+                                }
+                              />
+                              <Input
+                                maxLength={16}
+                                placeholder="Block Height"
+                                type={InputType.NUMBER}
+                                onValueChange={(val: string) => {
+                                  setBlockHeight(val);
+                                }}
+                                value={blockHeight}
+                                inputName="limit-price"
+                                label="Block Height"
+                                customCss={{
+                                  fontSize: 14,
+                                }}
+                                inputWrapperClassname="order-input"
+                                decimals={0}
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
