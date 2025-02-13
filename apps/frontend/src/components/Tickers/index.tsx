@@ -10,12 +10,10 @@ import {
   Method,
 } from "@/services/websocket-refactor";
 import "./tickers.scss";
-import { TickerResponse } from "@/types/market";
 
 const Tickers = () => {
-  const { market, network } = useStore();
+  const { market, network, tickers, setTickers } = useStore();
   const [change, setChange] = useState<number>(0);
-  const [tickers, setTickers] = useState<TickerResponse | null>(null);
 
   // initial tickers
   useEffect(() => {

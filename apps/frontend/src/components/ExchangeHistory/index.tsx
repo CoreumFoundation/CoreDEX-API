@@ -10,10 +10,8 @@ import "./exchange-history.scss";
 import { UpdateStrategy, wsManager } from "@/services/websocket-refactor";
 
 const ExchangeHistory = () => {
-  const { market, network } = useStore();
+  const { market, network, exchangeHistory, setExchangeHistory } = useStore();
   const historyRef = useRef<HTMLDivElement>(null);
-  const [exchangeHistory, setExchangeHistory] =
-    useState<TradeHistoryResponse | null>(null);
 
   useEffect(() => {
     const fetchExchangeHistory = async () => {
@@ -46,7 +44,6 @@ const ExchangeHistory = () => {
   );
 
   const handler = (data: any) => {
-    console.log("exchange history tick");
     setExchangeHistory(data);
   };
 

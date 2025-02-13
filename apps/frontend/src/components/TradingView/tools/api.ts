@@ -45,12 +45,14 @@ export class CoreumDataFeed {
   ) {
     setTimeout(() => {
       const ticker = useStore.getState().tickers;
+      const market = useStore.getState().market;
 
-      if (ticker && ticker.LastPrice) {
+      if (ticker && ticker.Tickers[market.pair_symbol].LastPrice) {
+        const tick = ticker.Tickers[market.pair_symbol]
         const zeros = () => {
           let string = "";
-          const decimalLength = String(ticker.LastPrice).includes(".")
-            ? String(ticker.LastPrice).split(".")[1].length
+          const decimalLength = String(tick.LastPrice).includes(".")
+            ? String(tick.LastPrice).split(".")[1].length
             : 10;
 
           const len = decimalLength < 15 ? decimalLength : 15;
@@ -69,7 +71,7 @@ export class CoreumDataFeed {
           has_weekly_and_monthly: true,
           supported_resolutions: SUPPORTED_RESOLUTIONS,
           pricescale:
-            ticker && Number(ticker.LastPrice) < 0.000001
+            ticker && Number(tick.LastPrice) < 0.000001
               ? Number(`1${zeros()}`)
               : 1000000,
           minmov: 1,

@@ -68,19 +68,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     [setLastUpdate]
   );
 
-  // useEffect(() => {
-  //   wsManager.connected().then(() => {
-  //     wsManager.subscribe(
-  //       ohlcSubscription,
-  //       handleDataFeedUpdate,
-  //       UpdateStrategy.APPEND
-  //     );
-  //   });
-  //   return () => {
-  //     wsManager.unsubscribe(ohlcSubscription, setLastUpdate);
-  //   };
-  // }, [ohlcSubscription]);
-
   useEffect(() => {
     mountChart();
 
@@ -173,7 +160,7 @@ const TradingView = ({ height }: { height: number | string }) => {
     setDataFeed(dataFeedInstance);
 
     const widgetOptions = {
-      debug: true, // TV logs
+      // debug: true, // TV logs
       symbol: symbol.name,
       datafeed: dataFeedInstance,
       height: height,

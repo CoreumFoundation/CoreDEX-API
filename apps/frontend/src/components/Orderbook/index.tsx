@@ -31,10 +31,9 @@ export default function Orderbook({
 }: {
   setOrderbookAction: (action: OrderbookAction) => void;
 }) {
-  const { market, network } = useStore();
+  const { market, network, orderbook, setOrderbook, tickers } = useStore();
   const { showTooltip, hideTooltip } = useTooltip();
 
-  const [orderbook, setOrderbook] = useState<OrderbookResponse | null>(null);
   const [spread, setSpread] = useState<BigNumber>(new BigNumber(0));
   const [topBuyVolume, setTopBuyVolume] = useState<number>(0);
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
