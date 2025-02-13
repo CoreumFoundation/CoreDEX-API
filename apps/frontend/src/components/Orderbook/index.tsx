@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import BigNumber from "bignumber.js";
 import { useStore } from "@/state/store";
-import { TooltipPosition, useTooltip } from "@/hooks";
+import { useTooltip, TooltipPosition } from "@/hooks";
 import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";

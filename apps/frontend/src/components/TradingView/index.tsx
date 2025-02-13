@@ -62,6 +62,7 @@ const TradingView = ({ height }: { height: number | string }) => {
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
       if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
+        console.log(message.Subscription.Content);
         setLastUpdate(message.Subscription.Content);
       }
     },

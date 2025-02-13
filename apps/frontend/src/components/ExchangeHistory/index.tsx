@@ -85,7 +85,7 @@ const ExchangeHistory = () => {
                   <FormatNumber number={trade.SymbolAmount} />
                 </div>
                 <div className="exchange-history-body-value time">
-                  {dayjs(trade.BlockTime.seconds).format("HH:mm:ss")}
+                  {dayjs.unix(trade.BlockTime.seconds).format("h:mm A")}
                 </div>
               </div>
             );
