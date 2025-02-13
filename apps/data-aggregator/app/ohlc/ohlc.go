@@ -131,6 +131,7 @@ func (a *Application) calculateOHLCS(inputTrades map[string][]*tradegrpc.Trade) 
 				}
 				ohlc.NumberOfTrades++
 				ohlc.Volume += trade.Amount.Float64()
+				ohlc.QuoteVolume += trade.Amount.Mul(trade.Price)
 				ohlc.MetaData.UpdatedAt = timestamppb.Now()
 				ohlc.MetaData.Network = trade.MetaData.Network
 			}
