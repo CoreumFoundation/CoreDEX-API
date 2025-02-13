@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
-import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
-import { SideBuy, TradeHistoryResponse } from "@/types/market";
+import { SideBuy } from "@/types/market";
 import "./exchange-history.scss";
+import {
+  UpdateStrategy,
+  wsManager,
+  Method,
+  NetworkToEnum,
+} from "@/services/websocket";
 
 const ExchangeHistory = () => {
-  const { market, setExchangeHistory, exchangeHistory, network } = useStore();
+  const { market, network, exchangeHistory, setExchangeHistory } = useStore();
   const historyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,31 +26,16 @@ const ExchangeHistory = () => {
         if (response.status === 200) {
           const data = response.data;
           setExchangeHistory(data);
+
+          wsManager.setInitialState(subscription, data);
         }
       } catch (e) {
         console.log("ERROR GETTING EXCHANGE HISTORY DATA >>", e);
-        setExchangeHistory(null);
+        setExchangeHistory([]);
       }
     };
     fetchExchangeHistory();
   }, [market.pair_symbol]);
-
-  const handleExchangeHistoryUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      const data = message.Subscription?.Content;
-
-      if (data.length > 0) {
-        if (exchangeHistory) {
-          const updatedHistory: TradeHistoryResponse =
-            exchangeHistory.concat(data);
-          setExchangeHistory(updatedHistory);
-        } else {
-          setExchangeHistory(data);
-        }
-      }
-    },
-    [setExchangeHistory]
-  );
 
   const subscription = useMemo(
     () => ({
@@ -57,7 +46,18 @@ const ExchangeHistory = () => {
     [market.pair_symbol, network]
   );
 
-  useWebSocket(subscription, handleExchangeHistoryUpdate);
+  const handler = (data: any) => {
+    setExchangeHistory(data);
+  };
+
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
+    });
+    return () => {
+      wsManager.unsubscribe(subscription, handler);
+    };
+  }, [subscription]);
 
   return (
     <div className="exchange-history-container">
@@ -85,7 +85,7 @@ const ExchangeHistory = () => {
                   <FormatNumber number={trade.SymbolAmount} />
                 </div>
                 <div className="exchange-history-body-value time">
-                  {dayjs(trade.BlockTime.seconds).format("HH:mm:ss")}
+                  {dayjs.unix(trade.BlockTime.seconds).format("h:mm A")}
                 </div>
               </div>
             );

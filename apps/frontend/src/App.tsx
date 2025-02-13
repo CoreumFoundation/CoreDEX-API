@@ -1,8 +1,9 @@
 import { RouterProvider } from "react-router-dom";
 import router from "./router";
-
 import { Toaster } from "./components/Toaster";
 import { useEffect } from "react";
+import { wsManager } from "./services/websocket";
+import { WS_URL } from "./config/envs";
 
 function App() {
   useEffect(() => {
@@ -21,6 +22,10 @@ function App() {
       .catch((error) => {
         console.error("Error fetching build version:", error);
       });
+  }, []);
+
+  useEffect(() => {
+    wsManager.connect(WS_URL);
   }, []);
 
   return (

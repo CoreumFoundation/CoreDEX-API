@@ -3,7 +3,7 @@ import { Client, CoreumNetwork } from "coreum-js-nightly";
 import {
   Market,
   OrderbookResponse,
-  Ticker,
+  TickerResponse,
   Token,
   TradeHistoryResponse,
   TransformedOrder,
@@ -34,12 +34,12 @@ export type State = {
   setOpenOrders: (openOrders: TransformedOrder[] | null) => void;
   loginModal: boolean;
   setLoginModal: (loginModal: boolean) => void;
-  tickers: Ticker | null;
-  setTickers: (tickers: Ticker | null) => void;
+  tickers: TickerResponse | null;
+  setTickers: (tickers: TickerResponse | null) => void;
   chartPeriod: string;
   setChartPeriod: (period: string) => void;
-  exchangeHistory: TradeHistoryResponse | null;
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | null) => void;
+  exchangeHistory: TradeHistoryResponse | [];
+  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => void;
   orderHistory: TradeHistoryResponse | null;
   setOrderHistory: (orderHistory: TradeHistoryResponse | null) => void;
 };
@@ -119,7 +119,7 @@ export const useStore = create<State>((set) => ({
     set({ currencies: currencies });
   },
   tickers: null,
-  setTickers: (tickers: Ticker | null) => {
+  setTickers: (tickers: TickerResponse | null) => {
     set({ tickers: tickers });
   },
   orderbook: null,
@@ -138,12 +138,12 @@ export const useStore = create<State>((set) => ({
   setLoginModal: (loginModal: boolean) => {
     set({ loginModal: loginModal });
   },
-  chartPeriod: "1W",
+  chartPeriod: "1",
   setChartPeriod: (period: string) => {
     set({ chartPeriod: period });
   },
-  exchangeHistory: null,
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | null) => {
+  exchangeHistory: [],
+  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => {
     set({ exchangeHistory: exchangeHistory });
   },
 }));

@@ -212,6 +212,12 @@
                   color: #868991;
                 }
               }
+
+              .good-til-time-selectors {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+              }
               .dropdown-list {
                 max-height: 180px;
               }

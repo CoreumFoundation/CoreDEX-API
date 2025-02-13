@@ -87,7 +87,7 @@ func testTickerSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TICKER,
-			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -136,7 +136,7 @@ func testOrderbookSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_ORDERBOOK,
-			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -161,7 +161,7 @@ func testOrderbookForSymbolAndAccountSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
-			ID:      "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -186,7 +186,7 @@ func testOHLCSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_OHLC,
-			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_1m",
+			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_1m",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -199,7 +199,7 @@ func testTradesForSymbol(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_SYMBOL,
-			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -225,7 +225,7 @@ func testTradesForAccountAndSymbol(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL,
-			ID:      "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import themes from "./tools/theme";
 import { widget as Widget } from "../../vendor/tradingview/charting_library";
 import { CoreumDataFeed } from "./tools/api";
@@ -6,15 +6,14 @@ import { DEFAULT_CONFIGS, getOverrides } from "./tools/config";
 import { useSaveAndClear, useMountChart } from "@/hooks";
 import { useStore } from "@/state/store";
 import "./tradingview.scss";
-import {
-  Action,
-  Method,
-  NetworkToEnum,
-  WebSocketMessage,
-} from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
 import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
+import {
+  Method,
+  NetworkToEnum,
+  UpdateStrategy,
+  wsManager,
+} from "@/services/websocket";
 // import dayjs from "dayjs";
 
 declare global {
@@ -59,20 +58,18 @@ const TradingView = ({ height }: { height: number | string }) => {
     };
   }, [market, chartPeriod]);
 
-  const handleDataFeedUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
-        // console.log(
-        //   "UPDATED OHLC MSG",
-        //   dayjs.unix(message.Subscription.Content[0][0]).toDate()
-        // );
-        console.log(message.Subscription.Content);
-        setLastUpdate(message.Subscription.Content);
-      }
-    },
-    [setLastUpdate]
-  );
-  useWebSocket(ohlcSubscription, handleDataFeedUpdate);
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        ohlcSubscription,
+        setLastUpdate,
+        UpdateStrategy.APPEND
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(ohlcSubscription, setLastUpdate);
+    };
+  }, [ohlcSubscription]);
 
   useEffect(() => {
     mountChart();
@@ -125,7 +122,7 @@ const TradingView = ({ height }: { height: number | string }) => {
         close: newTick.close,
         high: Math.max(lastBar.high, newTick.high),
         low: Math.min(lastBar.low, newTick.low),
-        volume: newTick.volume,
+        volume: newTick.volume + lastBar.volume,
       };
       sub.lastBar = updatedBar;
       sub.onRealtimeCallback(updatedBar);
@@ -207,7 +204,6 @@ const TradingView = ({ height }: { height: number | string }) => {
     setResolution(resolvedRes);
 
     if (dataFeed) {
-      dataFeed.reset();
       dataFeed.subscriptions.forEach((sub) => {
         dataFeed.unsubscribeBars(sub.key);
         dataFeed.subscribeBars(

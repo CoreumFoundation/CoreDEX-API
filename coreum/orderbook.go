@@ -219,5 +219,42 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 		orderBookOrders.Buy = orderBookOrders.Buy[0:limit]
 	}
 
+	// Orders are aggregated by price so that only one record exists for a given price (can reduce the number of records to be displayed)
+	// This is done by summing up the quantities of orders with the same price
+	orderBookOrders.Sell = aggregateOrders(orderBookOrders.Sell)
+	orderBookOrders.Buy = aggregateOrders(orderBookOrders.Buy)
 	return orderBookOrders, nil
+}
+
+func aggregateOrders(orders []*OrderBookOrder) []*OrderBookOrder {
+	aggregatedOrders := make([]*OrderBookOrder, 0)
+	if len(orders) == 0 {
+		return aggregatedOrders
+	}
+	aggregatedOrders = append(aggregatedOrders, orders[0])
+	for i := 1; i < len(orders); i++ {
+		if orders[i].priceDec.Equal(orders[i-1].priceDec) {
+			s, err := decimal.NewFromString(orders[i].Amount)
+			if err != nil {
+				continue
+			}
+			r, err := decimal.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].Amount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].Amount = s.Add(r).String()
+			s, err = decimal.NewFromString(orders[i].SymbolAmount)
+			if err != nil {
+				continue
+			}
+			r, err = decimal.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount = s.Add(r).String()
+		} else {
+			aggregatedOrders = append(aggregatedOrders, orders[i])
+		}
+	}
+	return aggregatedOrders
 }
