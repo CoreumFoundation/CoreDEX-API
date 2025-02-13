@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import themes from "./tools/theme";
 import { widget as Widget } from "../../vendor/tradingview/charting_library";
 import { CoreumDataFeed } from "./tools/api";
@@ -6,16 +6,14 @@ import { DEFAULT_CONFIGS, getOverrides } from "./tools/config";
 import { useSaveAndClear, useMountChart } from "@/hooks";
 import { useStore } from "@/state/store";
 import "./tradingview.scss";
-
 import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
 import {
   Method,
   NetworkToEnum,
   UpdateStrategy,
-  WebSocketMessage,
   wsManager,
-} from "@/services/websocket-refactor";
+} from "@/services/websocket";
 // import dayjs from "dayjs";
 
 declare global {

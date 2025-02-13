@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
-import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
-import { SideBuy, TradeHistoryResponse } from "@/types/market";
+import { SideBuy } from "@/types/market";
 import "./exchange-history.scss";
-import { UpdateStrategy, wsManager } from "@/services/websocket-refactor";
+import {
+  UpdateStrategy,
+  wsManager,
+  Method,
+  NetworkToEnum,
+} from "@/services/websocket";
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
@@ -28,7 +31,7 @@ const ExchangeHistory = () => {
         }
       } catch (e) {
         console.log("ERROR GETTING EXCHANGE HISTORY DATA >>", e);
-        setExchangeHistory(null);
+        setExchangeHistory([]);
       }
     };
     fetchExchangeHistory();

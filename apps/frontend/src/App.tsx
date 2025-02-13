@@ -2,7 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "./router";
 import { Toaster } from "./components/Toaster";
 import { useEffect } from "react";
-import { wsManager } from "./services/websocket-refactor";
+import { wsManager } from "./services/websocket";
 import { WS_URL } from "./config/envs";
 
 function App() {

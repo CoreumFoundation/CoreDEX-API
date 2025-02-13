@@ -4,7 +4,6 @@ import {
   OrderbookRecord,
   OrderbookResponse,
   SideBuy,
-  TradeHistoryResponse,
   TransformedOrder,
 } from "@/types/market";
 import { useStore } from "@/state/store";
@@ -15,15 +14,18 @@ import {
   getTrades,
   submitOrder,
 } from "@/services/api";
-import { Method, NetworkToEnum, WebSocketMessage } from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
-import { UpdateStrategy, wsManager } from "@/services/websocket-refactor";
+import {
+  UpdateStrategy,
+  wsManager,
+  Method,
+  NetworkToEnum,
+} from "@/services/websocket";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -143,12 +145,12 @@ const OrderHistory = () => {
     wsManager.connected().then(() => {
       wsManager.subscribe(
         orderHistorySubscription,
-        handleOrderHistory,
-        UpdateStrategy.REPLACE
+        setOrderHistory,
+        UpdateStrategy.MERGE
       );
     });
     return () => {
-      wsManager.unsubscribe(orderHistorySubscription, handleOrderHistory);
+      wsManager.unsubscribe(orderHistorySubscription, setOrderHistory);
     };
   }, [orderHistorySubscription]);
 
@@ -179,22 +181,6 @@ const OrderHistory = () => {
       ].sort((a, b) => a.Sequence - b.Sequence);
     },
     []
-  );
-
-  const handleOrderHistory = useCallback(
-    (message) => {
-      console.log(message);
-      // if (data.length > 0) {
-      //   if (orderHistory) {
-      //     const updatedHistory: TradeHistoryResponse =
-      //       orderHistory.concat(data);
-      //     setOrderHistory(updatedHistory);
-      //   } else {
-      //     setOrderHistory(data);
-      //   }
-      // }
-    },
-    [setOpenOrders]
   );
 
   const handleOpenOrders = useCallback(

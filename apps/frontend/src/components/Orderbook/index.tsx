@@ -4,20 +4,14 @@ import { useStore } from "@/state/store";
 import { useTooltip, TooltipPosition } from "@/hooks";
 import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
-import {
-  OrderType,
-  OrderbookAction,
-  OrderbookRecord,
-  OrderbookResponse,
-} from "@/types/market";
+import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
 import {
   wsManager,
   UpdateStrategy,
   NetworkToEnum,
   Method,
-} from "@/services/websocket-refactor";
-
+} from "@/services/websocket";
 import "./orderbook.scss";
 
 enum ORDERBOOK_TYPE {

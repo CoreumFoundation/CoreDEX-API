@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTickers } from "@/services/api";
-
 import {
   wsManager,
   UpdateStrategy,
   NetworkToEnum,
   Method,
-} from "@/services/websocket-refactor";
+} from "@/services/websocket";
 import "./tickers.scss";
 
 const Tickers = () => {
