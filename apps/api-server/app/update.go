@@ -334,7 +334,7 @@ func (app *Application) updateOrderbook(_ context.Context, subscription *updatep
 		wg.Done()
 		return
 	}
-	orders, err := app.Order.OrderBookRelevantOrders(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, 50)
+	orders, err := app.Order.OrderBookRelevantOrders(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, 50, true)
 	if err != nil {
 		logger.Errorf("Error getting orderbook orders: %v", err)
 		wg.Done()
@@ -365,7 +365,7 @@ func (app *Application) updateOrderbookForSymbolAndAccount(_ context.Context, su
 		wg.Done()
 		return
 	}
-	orders, err := app.Order.OrderBookRelevantOrdersForAccount(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, account, 20)
+	orders, err := app.Order.OrderBookRelevantOrdersForAccount(subscription.Network, denoms.Denom1.Denom, denoms.Denom2.Denom, account)
 	if err != nil {
 		logger.Errorf("Error getting orderbook orders: %v", err)
 		wg.Done()
@@ -488,5 +488,4 @@ func (app *Application) writeMessage(ws *websocket.Conn, subscription *updatepro
 		app.Close(ws)
 		return
 	}
-	logger.Infof("Sending %v to listener: %s %s %s %s,%s", m, subscription.Method, subscription.ID, subscription.Network, ws.LocalAddr().String(), ws.RemoteAddr().String())
 }

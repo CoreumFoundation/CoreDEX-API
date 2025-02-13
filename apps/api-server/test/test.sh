@@ -72,8 +72,14 @@ get_trades_without_account() {
 get_tickers() {
     local symbols=("dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs")
     local json_symbols=$(printf '%s\n' "${symbols[@]}" | jq -R . | jq -s .)
-    local encoded_symbols=$(echo -n "$json_symbols" | base64)
-
+    local encoded_symbols=""
+    if base64 --help 2>&1 | grep -q -- "-w"; then
+        # GNU base64 (Linux)
+        encoded_symbols=$(echo -n "$json_symbols" | base64 -w 0)
+    else
+        # BSD base64 (macOS)
+        encoded_symbols=$(echo -n "$json_symbols" | base64 | tr -d '\n')
+    fi
     echo "Calling API for tickers"
     curl -H "Network: devnet" \
          -X "GET" "${HOST}/tickers?symbols=${encoded_symbols}"

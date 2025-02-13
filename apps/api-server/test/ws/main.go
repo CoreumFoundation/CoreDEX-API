@@ -8,6 +8,7 @@ import (
 	nethttp "net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -33,6 +34,7 @@ func main() {
 		fmt.Println("5) Test Trades for Symbol")
 		fmt.Println("6) Test Trades for Account")
 		fmt.Println("7) Test Trades for Account and Symbol")
+		fmt.Println("8) Events stream (select one or more options first) (Use CTRL+C to exit, or wait 100s)")
 
 		reader := bufio.NewReader(os.Stdin)
 		input, err := reader.ReadString('\n')
@@ -65,6 +67,8 @@ func main() {
 			testTradesForAccount(c)
 		case 7:
 			testTradesForAccountAndSymbol(c)
+		case 8:
+			testEventsStream(c)
 		default:
 			fmt.Println("Invalid choice. Please enter a number between 1 and 7.")
 		}
@@ -98,6 +102,10 @@ func testTickerSubscription(c *websocket.Conn) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling content: %v", err)
 	}
+	if tickerdata.Tickers == nil || tickerdata.USDTickers == nil {
+		log.Printf("Tickers are nil")
+		return
+	}
 	log.Printf("Tickers cur-cur: %+v", *tickerdata.Tickers)
 	log.Printf("Tickers USD: %+v", *tickerdata.USDTickers)
 }
@@ -106,6 +114,7 @@ func sendToSocket(c *websocket.Conn, msg *updateproto.Subscribe) *updateproto.Su
 	c.WriteJSON(msg)
 	var respBytes []byte
 	// Wait for a response on the message:
+	m := &updateproto.Subscribe{}
 	for {
 		messageType, p, err := c.ReadMessage()
 		if err != nil {
@@ -116,17 +125,20 @@ func sendToSocket(c *websocket.Conn, msg *updateproto.Subscribe) *updateproto.Su
 				continue
 			}
 		}
+		// Since we opened the socket just once, we now can have multiple messages incoming based on the users actions.
+		// We want to get the message related to the subscription we just made so we need to decode the message and check the ID.
 		respBytes = p
-		break // Exit the loop
+		m = &updateproto.Subscribe{}
+		err = json.Unmarshal(respBytes, &m)
+		if err != nil {
+			log.Fatalf("Error unmarshalling message: %v", err)
+		}
+		if m.Subscription.ID == msg.Subscription.ID && m.Subscription.Method == msg.Subscription.Method {
+			break
+		}
 	}
 	// Output the message:
 	log.Printf("Received message: %s", string(respBytes))
-	// Decode the message into the proto:
-	m := &updateproto.Subscribe{}
-	err := json.Unmarshal(respBytes, &m)
-	if err != nil {
-		log.Fatalf("Error unmarshalling message: %v", err)
-	}
 	return m
 }
 
@@ -212,7 +224,7 @@ func testTradesForAccount(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT,
-			ID:      "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc",
+			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -225,9 +237,29 @@ func testTradesForAccountAndSymbol(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL,
-			ID:      "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
 			Network: metadata.Network_DEVNET,
 		},
 	}
 	sendToSocket(c, msg)
+}
+
+func testEventsStream(c *websocket.Conn) {
+	log.Printf("Testing events stream")
+	tStart := time.Now()
+	for {
+		messageType, p, err := c.ReadMessage()
+		if err != nil {
+			log.Fatalf("Error reading message: %v", err)
+		}
+		if messageType == websocket.TextMessage {
+			if string(p) == "Connected" {
+				continue
+			}
+		}
+		log.Printf("Received message: %s", string(p))
+		if time.Since(tStart) > 100*time.Second {
+			break
+		}
+	}
 }

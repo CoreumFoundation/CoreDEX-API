@@ -137,7 +137,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 }
 
 // QueryOrderBookRelevantOrders returns orders inside an order book around the spread.
-func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, denom1Precision, denom2Precision int64, limit uint64) (orders *OrderBookOrders, err error) {
+func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, denom1Precision, denom2Precision int64, limit uint64, aggregate bool) (orders *OrderBookOrders, err error) {
 	orderBookOrders := &OrderBookOrders{
 		Buy:  make([]*OrderBookOrder, 0),
 		Sell: make([]*OrderBookOrder, 0),
@@ -218,7 +218,9 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 	if uint64(len(orderBookOrders.Buy)) > limit {
 		orderBookOrders.Buy = orderBookOrders.Buy[0:limit]
 	}
-
+	if !aggregate {
+		return orderBookOrders, nil
+	}
 	// Orders are aggregated by price so that only one record exists for a given price (can reduce the number of records to be displayed)
 	// This is done by summing up the quantities of orders with the same price
 	orderBookOrders.Sell = aggregateOrders(orderBookOrders.Sell)
