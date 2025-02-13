@@ -545,18 +545,16 @@ const OrderActions = ({
         <p className="title">Assets</p>
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
-          <p className="balance-value">
-            {Number(baseBalance).toLocaleString()}
-          </p>
+
+          <FormatNumber number={baseBalance} />
         </div>
 
         <div className="balance-row">
           <p className="balance-label">
             {market.counter.Denom.Currency} Balance
           </p>
-          <p className="balance-value">
-            {Number(counterBalance).toLocaleString()}
-          </p>
+
+          <FormatNumber number={counterBalance} />
         </div>
       </div>
     </div>

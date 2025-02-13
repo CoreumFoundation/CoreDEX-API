@@ -23,6 +23,7 @@ import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
+import { UpdateStrategy, wsManager } from "@/services/websocket-refactor";
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
@@ -107,6 +108,50 @@ const OrderHistory = () => {
     fetchOpenOrders();
   }, [market.pair_symbol, wallet]);
 
+  const openOrderSubscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
+      ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
+    }),
+    [market.pair_symbol, wallet?.address, network]
+  );
+
+  const orderHistorySubscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.TRADES_FOR_ACCOUNT_AND_SYMBOL,
+      ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
+    }),
+    [market.pair_symbol, wallet]
+  );
+
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        openOrderSubscription,
+        handleOpenOrders,
+        UpdateStrategy.REPLACE
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(openOrderSubscription, handleOpenOrders);
+    };
+  }, [openOrderSubscription]);
+
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        orderHistorySubscription,
+        handleOrderHistory,
+        UpdateStrategy.REPLACE
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(orderHistorySubscription, handleOrderHistory);
+    };
+  }, [orderHistorySubscription]);
+
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
       const transformSide = (
@@ -137,52 +182,28 @@ const OrderHistory = () => {
   );
 
   const handleOrderHistory = useCallback(
-    (message: WebSocketMessage) => {
-      const data = message.Subscription?.Content;
-      if (data.length > 0) {
-        if (orderHistory) {
-          const updatedHistory: TradeHistoryResponse =
-            orderHistory.concat(data);
-          setOrderHistory(updatedHistory);
-        } else {
-          setOrderHistory(data);
-        }
-      }
+    (message) => {
+      console.log(message);
+      // if (data.length > 0) {
+      //   if (orderHistory) {
+      //     const updatedHistory: TradeHistoryResponse =
+      //       orderHistory.concat(data);
+      //     setOrderHistory(updatedHistory);
+      //   } else {
+      //     setOrderHistory(data);
+      //   }
+      // }
     },
     [setOpenOrders]
   );
 
-  const orderHistorySubscription = useMemo(
-    () => ({
-      Network: NetworkToEnum(network),
-      Method: Method.TRADES_FOR_ACCOUNT_AND_SYMBOL,
-      ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
-    }),
-    [market.pair_symbol, wallet]
-  );
-
   const handleOpenOrders = useCallback(
-    (message: WebSocketMessage) => {
-      const data = message.Subscription?.Content;
-      if (data) {
-        const updatedHistory = transformOrderbook(data);
-        setOpenOrders(updatedHistory);
-      }
+    (message: OrderbookResponse) => {
+      const updatedHistory = transformOrderbook(message);
+      setOpenOrders(updatedHistory);
     },
     [setOpenOrders, transformOrderbook]
   );
-
-  const openOrderSubscription = useMemo(
-    () => ({
-      Network: NetworkToEnum(network),
-      Method: Method.ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
-      ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
-    }),
-    [market.pair_symbol, wallet?.address, network]
-  );
-
-  // useWebSocket(orderHistorySubscription, handleOrderHistory);
-  // useWebSocket(openOrderSubscription, handleOpenOrders);
 
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
@@ -377,9 +398,10 @@ const OrderHistory = () => {
                           className="total"
                         />
                         <p className="date">
-                          {new Date(
-                            order.BlockTime.seconds * 1000
-                          ).toLocaleString()}
+                          {"BlockTime" in order &&
+                            new Date(
+                              order.BlockTime.seconds * 1000
+                            ).toLocaleString()}
                         </p>
 
                         <svg

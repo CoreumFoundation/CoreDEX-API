@@ -39,8 +39,8 @@ export type State = {
   setTickers: (tickers: TickerResponse | null) => void;
   chartPeriod: string;
   setChartPeriod: (period: string) => void;
-  exchangeHistory: TradeHistoryResponse | null;
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | null) => void;
+  exchangeHistory: TradeHistoryResponse | [];
+  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => void;
   orderHistory: TradeHistoryResponse | null;
   setOrderHistory: (orderHistory: TradeHistoryResponse | null) => void;
 };
@@ -143,8 +143,8 @@ export const useStore = create<State>((set) => ({
   setChartPeriod: (period: string) => {
     set({ chartPeriod: period });
   },
-  exchangeHistory: null,
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | null) => {
+  exchangeHistory: [],
+  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => {
     set({ exchangeHistory: exchangeHistory });
   },
 }));

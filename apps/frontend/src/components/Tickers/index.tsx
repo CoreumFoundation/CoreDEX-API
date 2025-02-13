@@ -80,7 +80,7 @@ const Tickers = () => {
     const change = 100 * (difference / Number(OpenPrice));
     setChange(change);
   }, [tickers, market]);
-  console.log(tickers);
+
   return (
     <div className="tickers-container">
       <div className="price-container">

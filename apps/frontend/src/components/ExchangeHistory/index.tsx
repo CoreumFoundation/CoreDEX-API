@@ -52,7 +52,7 @@ const ExchangeHistory = () => {
       wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
     });
     return () => {
-      wsManager.unsubscribe(subscription, setExchangeHistory);
+      wsManager.unsubscribe(subscription, handler);
     };
   }, [subscription]);
 
