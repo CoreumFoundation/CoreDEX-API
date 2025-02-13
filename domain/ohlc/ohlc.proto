@@ -22,6 +22,7 @@ message OHLC {
     int64 NumberOfTrades = 8;
     Period Period = 9;
     optional double USDValue = 10;
+    double QuoteVolume = 11;
     metadata.MetaData MetaData = 20;
     google.protobuf.Timestamp OpenTime = 21; // When was the open time record created: Used for out of order trade processing
     google.protobuf.Timestamp CloseTime = 22; // When was the close time record created: Used for out of order trade processing

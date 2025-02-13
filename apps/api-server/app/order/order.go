@@ -81,7 +81,7 @@ func (a *Application) SubmitTx(network metadata.Network, rawTx []byte) (*sdk.TxR
 	return client.BroadcastRawTx(context.Background(), a.TxEncoder[network].clientContext, rawTx)
 }
 
-func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, denom2 string, limit int) (*coreum.OrderBookOrders, error) {
+func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, denom2 string, limit int, aggregate bool) (*coreum.OrderBookOrders, error) {
 	ctx := context.Background()
 	denom1Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
 		Network: network,
@@ -106,11 +106,11 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		denom2Precision = int64(*denom2Currency.Denom.Precision)
 	}
 
-	return a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit))
+	return a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
 }
 
-func (a *Application) OrderBookRelevantOrdersForAccount(network metadata.Network, denom1, denom2, account string, limit int) (*coreum.OrderBookOrders, error) {
-	relevantOrdersForAllAccounts, err := a.OrderBookRelevantOrders(network, denom1, denom2, 100) // Get more orders so that we can retrieve all potential orders for this account
+func (a *Application) OrderBookRelevantOrdersForAccount(network metadata.Network, denom1, denom2, account string) (*coreum.OrderBookOrders, error) {
+	relevantOrdersForAllAccounts, err := a.OrderBookRelevantOrders(network, denom1, denom2, 100, false) // Get more orders so that we can retrieve all potential orders for this account
 	if err != nil {
 		return nil, err
 	}

@@ -191,7 +191,6 @@ Returns:
       "FirstPrice": 0.1730303609235772,
       "Volume": 170639.98819271981,
       "InvertedVolume": 30319.373563999994,
-      "Inverted": false
     }
   },
   "USDTickers": {
@@ -205,7 +204,6 @@ Returns:
       "FirstPrice": 1.2112125264650404,
       "Volume": 24377.141170388546,
       "InvertedVolume": 212235.61494799994,
-      "Inverted": false
     }
   }
 }
