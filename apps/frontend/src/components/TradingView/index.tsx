@@ -6,15 +6,16 @@ import { DEFAULT_CONFIGS, getOverrides } from "./tools/config";
 import { useSaveAndClear, useMountChart } from "@/hooks";
 import { useStore } from "@/state/store";
 import "./tradingview.scss";
-import {
-  Action,
-  Method,
-  NetworkToEnum,
-  WebSocketMessage,
-} from "@/services/websocket";
-import { useWebSocket } from "@/hooks/websocket";
+
 import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
+import {
+  Method,
+  NetworkToEnum,
+  UpdateStrategy,
+  WebSocketMessage,
+  wsManager,
+} from "@/services/websocket-refactor";
 // import dayjs from "dayjs";
 
 declare global {
@@ -61,14 +62,24 @@ const TradingView = ({ height }: { height: number | string }) => {
 
   const handleDataFeedUpdate = useCallback(
     (message: WebSocketMessage) => {
-      if (message.Action === Action.RESPONSE && message.Subscription?.Content) {
-        console.log(message.Subscription.Content);
-        setLastUpdate(message.Subscription.Content);
-      }
+      console.log(message);
+      setLastUpdate(message);
     },
     [setLastUpdate]
   );
-  // useWebSocket(ohlcSubscription, handleDataFeedUpdate);
+
+  // useEffect(() => {
+  //   wsManager.connected().then(() => {
+  //     wsManager.subscribe(
+  //       ohlcSubscription,
+  //       handleDataFeedUpdate,
+  //       UpdateStrategy.APPEND
+  //     );
+  //   });
+  //   return () => {
+  //     wsManager.unsubscribe(ohlcSubscription, setLastUpdate);
+  //   };
+  // }, [ohlcSubscription]);
 
   useEffect(() => {
     mountChart();
@@ -121,7 +132,7 @@ const TradingView = ({ height }: { height: number | string }) => {
         close: newTick.close,
         high: Math.max(lastBar.high, newTick.high),
         low: Math.min(lastBar.low, newTick.low),
-        volume: newTick.volume,
+        volume: newTick.volume + lastBar.volume,
       };
       sub.lastBar = updatedBar;
       sub.onRealtimeCallback(updatedBar);
@@ -162,7 +173,7 @@ const TradingView = ({ height }: { height: number | string }) => {
     setDataFeed(dataFeedInstance);
 
     const widgetOptions = {
-      // debug: true, // TV logs
+      debug: true, // TV logs
       symbol: symbol.name,
       datafeed: dataFeedInstance,
       height: height,
