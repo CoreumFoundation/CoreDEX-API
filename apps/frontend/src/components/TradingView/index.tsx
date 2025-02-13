@@ -60,13 +60,18 @@ const TradingView = ({ height }: { height: number | string }) => {
     };
   }, [market, chartPeriod]);
 
-  const handleDataFeedUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      console.log(message);
-      setLastUpdate(message);
-    },
-    [setLastUpdate]
-  );
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        ohlcSubscription,
+        setLastUpdate,
+        UpdateStrategy.APPEND
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(ohlcSubscription, setLastUpdate);
+    };
+  }, [ohlcSubscription]);
 
   useEffect(() => {
     mountChart();
