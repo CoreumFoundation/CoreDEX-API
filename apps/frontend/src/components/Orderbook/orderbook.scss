@@ -134,14 +134,14 @@
             font-family: "Noto Sans";
             font-size: 12px;
             font-style: normal;
-            font-weight: 400;
+            font-weight: 500;
             line-height: 18px; /* 150% */
             letter-spacing: 0.4px;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
             &.price-buys {
-              color: #de0f3e;
+              color: #ff7386;
             }
             &.price-sells {
               color: #25d695;

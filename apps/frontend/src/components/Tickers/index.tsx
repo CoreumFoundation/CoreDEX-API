@@ -60,10 +60,12 @@ const Tickers = () => {
     }),
     [market.pair_symbol, network]
   );
-
+  const test = (mst) => {
+    console.log(mst);
+  };
   useEffect(() => {
     wsManager.connected().then(() => {
-      wsManager.subscribe(subscription, setTickers, UpdateStrategy.REPLACE);
+      wsManager.subscribe(subscription, test, UpdateStrategy.REPLACE);
     });
     return () => {
       wsManager.unsubscribe(subscription, setTickers);

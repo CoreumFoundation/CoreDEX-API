@@ -132,7 +132,7 @@ export type ChartSubscription = {
 export type BarSymbolInfo = {
   id: string;
   name: string;
-  exchange: string;
+  exchange?: string;
   session: string;
   timezone: string;
   has_intraday: boolean;

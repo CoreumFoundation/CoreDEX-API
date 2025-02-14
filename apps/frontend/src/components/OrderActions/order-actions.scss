@@ -225,7 +225,6 @@
                 @extend %label;
                 color: #eee;
                 width: 100%;
-                padding: 8px 16px;
                 font-weight: 400;
               }
             }
@@ -387,7 +386,7 @@
       &.switch-sell {
         background: rgba(222, 15, 62, 0.1);
         & > p {
-          color: #de0f3e;
+          color: #ff7386;
         }
       }
     }
