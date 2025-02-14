@@ -94,7 +94,7 @@ func validateTradeParams(query url.Values) (*tradegrpc.Filter, error) {
 		}
 		tf.To = timestamppb.New(time.Unix(t, 0))
 	}
-	if tf.From.AsTime().After(tf.To.AsTime()) {
+	if !tf.From.AsTime().After(tf.To.AsTime()) {
 		return nil, handler.NewAPIError(422, "from.after.to")
 	}
 	// Limit interval to 24hrs max to prevent overflows (in all reasonable scenarios)
