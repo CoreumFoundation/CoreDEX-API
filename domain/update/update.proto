@@ -34,4 +34,5 @@ enum Method {
     TICKER = 5; // ID: {denom1}_{denom2}
     ORDERBOOK = 6; // ID: {denom1}_{denom2}
     ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT = 7; // ID: {account}_{denom1}_{denom2}
+    WALLET = 8; // ID: {account}
 }
