@@ -11,15 +11,16 @@ import {
   Method,
   NetworkToEnum,
 } from "@/services/websocket";
+import duration from "dayjs/plugin/duration";
+dayjs.extend(duration);
 
-const FIVE_MINUTES = 4 * 24 * 60 * 60;
-const TEST = 3 * 24 * 60 * 60;
+const ONE_MINUTE = dayjs.duration(1, "minutes").asSeconds();
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
   const [timeRange, setTimeRange] = useState({
-    from: 1736187913,
-    to: 1736274295,
+    from: dayjs().subtract(3, "day").subtract(5, "minutes").unix(),
+    to: dayjs().subtract(3, "day").unix(),
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -30,7 +31,7 @@ const ExchangeHistory = () => {
       const { from, to } = timeRange;
 
       try {
-        const response = await getTrades(market.pair_symbol, to, from);
+        const response = await getTrades(market.pair_symbol, from, to);
         if (response.status === 200) {
           const data = response.data;
           setExchangeHistory(data);
@@ -67,74 +68,70 @@ const ExchangeHistory = () => {
     };
   }, [subscription]);
 
-  // useEffect(() => {
-  //   if (!historyRef.current) return;
+  useEffect(() => {
+    if (!historyRef.current) return;
+    const container = historyRef.current;
 
-  //   const handleScroll = async () => {
-  //     const container = historyRef.current;
-  //     if (!container) return;
+    const handleScroll = async () => {
+      const threshold = 50;
+      if (
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - threshold
+      ) {
+        if (exchangeHistory && exchangeHistory.length > 0 && !isFetchingMore) {
+          setIsFetchingMore(true);
+          const distanceFromBottom =
+            container.scrollHeight -
+            container.scrollTop -
+            container.clientHeight;
 
-  //     // Check if user has scrolled to the bottom (within a small threshold)
-  //     const threshold = 50; // pixels from the bottom
-  //     if (
-  //       container.scrollTop + container.clientHeight >=
-  //       container.scrollHeight - threshold
-  //     ) {
-  //       if (exchangeHistory && exchangeHistory.length > 0) {
-  //         // Capture the current scroll height before loading more
-  //         const oldScrollHeight = container.scrollHeight;
+          await loadOlderHistory();
 
-  //         // Calculate new boundaries based on timeRange
-  //         const newFrom = timeRange.to; // current oldest timestamp
-  //         const newTo = newFrom - FIVE_MINUTES; // 5 minutes older
+          requestAnimationFrame(() => {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop =
+              newScrollHeight - container.clientHeight - distanceFromBottom;
+            setIsFetchingMore(false);
+          });
+        }
+      }
+    };
 
-  //         // Load older history and wait for it to finish
-  //         await loadOlderHistory(newTo, newFrom);
-
-  //         // After the new data is rendered, compute the change in scroll height.
-  //         const newScrollHeight = container.scrollHeight;
-  //         const deltaHeight = newScrollHeight - oldScrollHeight;
-
-  //         // Adjust scrollTop by adding the delta so that the user's view stays at the same item.
-  //         container.scrollTop = container.scrollTop + deltaHeight;
-  //       }
-  //     }
-  //   };
-
-  //   const container = historyRef.current;
-  //   container.addEventListener("scroll", handleScroll);
-
-  //   return () => {
-  //     container.removeEventListener("scroll", handleScroll);
-  //   };
-  // }, [exchangeHistory, timeRange, market.pair_symbol]);
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [exchangeHistory, timeRange, market.pair_symbol, isFetchingMore]);
 
   const mergeUniqueTrades = (
     prevHistory: TradeRecord[],
     newTrades: TradeRecord[]
   ): TradeRecord[] => {
     const merged = [...prevHistory, ...newTrades];
-
+    // Filter duplicates by TXID
     const unique = merged.filter(
       (trade, index, self) =>
         index === self.findIndex((t) => t.TXID === trade.TXID)
     );
-    return unique;
+    return unique.sort((a, b) => b.BlockTime.seconds - a.BlockTime.seconds);
   };
 
-  const loadOlderHistory = async (newTo: number, newFrom: number) => {
+  const loadOlderHistory = async () => {
     try {
-      const response = await getTrades(market.pair_symbol, newTo, newFrom);
+      const currentOldest = timeRange.from;
+      const newFrom = currentOldest - ONE_MINUTE;
+      const response = await getTrades(
+        market.pair_symbol,
+        newFrom,
+        currentOldest
+      );
       if (response.status === 200) {
         const olderData = response.data;
-
-        // Get the previous state from the store (using useStore.getState())
         const prevHistory = exchangeHistory || [];
         const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
-
         wsManager.setInitialState(subscription, mergedHistory);
         setExchangeHistory(mergedHistory);
-        setTimeRange({ ...timeRange, to: newTo });
+        setTimeRange((prev) => ({ ...prev, from: newFrom }));
       }
     } catch (e) {
       console.log("ERROR FETCHING OLDER HISTORY >>", e);
