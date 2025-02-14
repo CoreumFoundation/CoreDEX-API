@@ -97,6 +97,8 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					go app.updateOrderbook(ctx, subscription, &wg)
 				case updateproto.Method_ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT:
 					go app.updateOrderbookForSymbolAndAccount(ctx, subscription, &wg)
+				case updateproto.Method_WALLET:
+					go app.updateWallet(subscription, &wg)
 				default:
 					wg.Done()
 				}
@@ -374,6 +376,23 @@ func (app *Application) updateOrderbookForSymbolAndAccount(_ context.Context, su
 	b, err := json.Marshal(orders)
 	if err != nil {
 		logger.Errorf("Error marshalling orderbook orders: %v", err)
+		wg.Done()
+		return
+	}
+	subscription.Content = string(b)
+	wg.Done()
+}
+
+func (app *Application) updateWallet(subscription *updateproto.Subscription, wg *sync.WaitGroup) {
+	wallet, err := app.Order.WalletAssets(subscription.Network, subscription.ID)
+	if err != nil {
+		logger.Errorf("Error getting wallet: %v", err)
+		wg.Done()
+		return
+	}
+	b, err := json.Marshal(wallet)
+	if err != nil {
+		logger.Errorf("Error marshalling wallet: %v", err)
 		wg.Done()
 		return
 	}

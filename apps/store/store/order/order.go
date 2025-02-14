@@ -177,11 +177,11 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 	args = append(args, filter.Network)
 	if filter.From != nil && filter.From.AsTime().Unix() > 0 {
 		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) >= ?")
-		args = append(args, filter.From.AsTime())
+		args = append(args, filter.From.AsTime().Unix())
 	}
 	if filter.To != nil && filter.To.AsTime().Unix() > 0 {
 		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) < ?")
-		args = append(args, filter.To.AsTime())
+		args = append(args, filter.To.AsTime().Unix())
 	}
 	if filter.Account != nil && *filter.Account != "" {
 		queryBuilder.WriteString(" AND Account=?")
@@ -224,11 +224,6 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 		args = append(args, *filter.OrderStatus)
 	}
 	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
-	queryBuilder.WriteString(" LIMIT 100")
-	if filter.Offset != nil && *filter.Offset != 0 {
-		queryBuilder.WriteString(" OFFSET ?")
-		args = append(args, *filter.Offset)
-	}
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {

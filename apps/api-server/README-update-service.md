@@ -104,14 +104,16 @@ There are several subscriptions possible, and all have their respective key form
 
 * `OHLC`: `denom-issuer_denom2-issuer2_period`
 * `TRADES`: See trades paragraph
-* `TICKERS`: `denom-issuer_denom2-issuer2`
+* `TICKER`: `denom-issuer_denom2-issuer2`
 * `ORDERBOOK`: See order book paragraph
+* `WALLET`: `account`
 
 Where:
 
 * `denom-issuer` is the denomination and issuer of the first currency
 * `denom2-issuer2` is the denomination and issuer of the second currency
 * `period` is the period for the OHLC data (1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M)
+* `account` is the account address
 
 #### OHLC
 
