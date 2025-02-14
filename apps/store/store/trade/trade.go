@@ -245,6 +245,7 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
+		logger.Errorf("Error querying trades: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
