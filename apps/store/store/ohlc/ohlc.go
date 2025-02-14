@@ -19,7 +19,8 @@ Open,
 High, 
 Low, 
 Close, 
-Volume, 
+Volume,
+QuoteVolume,
 NumberOfTrades, 
 Period,
 PeriodStr,
@@ -67,6 +68,7 @@ func (a *Application) initDB() {
 	if err != nil {
 		logger.Fatalf("Error creating OHLC table: %v", err)
 	}
+	a.client.Client.Exec(`ALTER TABLE OHLC ADD COLUMN QuoteVolume DOUBLE`)
 }
 
 func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
@@ -85,13 +87,14 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 	periodStr := in.Period.ToString()
 	// Use the mysql client to insert the provided data into the table OHLC
 	_, err = a.client.Client.Exec(`INSERT INTO OHLC ( `+OHLCDataFields+` 
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
 	ON DUPLICATE KEY UPDATE 
 		Open=?, 
 		High=?, 
 		Low=?, 
 		Close=?, 
-		Volume=?, 
+		Volume=?,
+		QuoteVolume=?,
 		NumberOfTrades=?, 
 		USDValue=?, 
 		MetaData=?, 
@@ -104,6 +107,7 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 		in.Low,
 		in.Close,
 		in.Volume,
+		in.QuoteVolume,
 		in.NumberOfTrades,
 		period,
 		periodStr,
@@ -116,6 +120,7 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 		in.Low,
 		in.Close,
 		in.Volume,
+		in.QuoteVolume,
 		in.NumberOfTrades,
 		in.USDValue,
 		metaData,
@@ -283,6 +288,7 @@ func mapToOHLC(rows *sql.Rows) (*ohlcgrpc.OHLC, error) {
 	var timestamp, openTime, closeTime string
 	var metaData, period []byte
 	var periodStr string // Part of fields for querying, however (by design) not in the OHLC struct
+	var quoteVolume sql.NullFloat64
 
 	err := rows.Scan(
 		&ohlc.Symbol,
@@ -292,6 +298,7 @@ func mapToOHLC(rows *sql.Rows) (*ohlcgrpc.OHLC, error) {
 		&ohlc.Low,
 		&ohlc.Close,
 		&ohlc.Volume,
+		&quoteVolume,
 		&ohlc.NumberOfTrades,
 		&period,
 		&periodStr,
@@ -313,6 +320,9 @@ func mapToOHLC(rows *sql.Rows) (*ohlcgrpc.OHLC, error) {
 	}
 	if err := json.Unmarshal(period, &ohlc.Period); err != nil {
 		return nil, err
+	}
+	if quoteVolume.Valid {
+		ohlc.QuoteVolume = quoteVolume.Float64
 	}
 
 	return &ohlc, nil

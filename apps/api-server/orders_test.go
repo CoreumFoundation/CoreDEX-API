@@ -53,7 +53,7 @@ func TestOrders(t *testing.T) {
 	}
 
 	app := order.NewApplicationWithClients(currencyService)
-	orders, err := app.OrderBookRelevantOrders(metadata.Network_DEVNET, "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs", "udevcore", 20)
+	orders, err := app.OrderBookRelevantOrders(metadata.Network_DEVNET, "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs", "udevcore", 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}

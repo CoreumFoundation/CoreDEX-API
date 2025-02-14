@@ -212,6 +212,7 @@ func (fa *App) CreateOrder(
 		msgIssue,
 	)
 	if err != nil {
+		slog.Error("broadcastTX", slog.String("account", msgIssue.Sender), slog.String("denom", msgIssue.Coin.Denom), slog.String("Error:", err.Error()))
 		return err
 	}
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/shopspring/decimal"
 	sdecimal "github.com/shopspring/decimal"
 )
 
@@ -51,7 +50,7 @@ func FromDec(d sdecimal.Decimal) *Decimal {
 
 // Non-lossless method to handle values with many decimals
 // Returns lossless if the value fits in an int64 and remainder is of 10^x
-func ToBigInt(dec decimal.Decimal) (int64, int32) {
+func ToBigInt(dec sdecimal.Decimal) (int64, int32) {
 	bigValue := dec.BigInt()
 	// Convert the bigInt to a string
 	bigStr := bigValue.String()
@@ -62,7 +61,7 @@ func ToBigInt(dec decimal.Decimal) (int64, int32) {
 	if exponent < 0 {
 		return bigValue.Int64(), 0
 	}
-	d, _ := decimal.NewFromString(bigStr[:maxInt64StrLen])
+	d, _ := sdecimal.NewFromString(bigStr[:maxInt64StrLen])
 	// Check if all the values in the bigStr are less than the max int64 value
 	// Where we break if the value of MaxInt64 is larger than the value of bigStr
 	if len(bigStr) >= maxInt64StrLen {
@@ -84,7 +83,7 @@ func ToBigInt(dec decimal.Decimal) (int64, int32) {
 					break
 				}
 				exponent++
-				d, _ = decimal.NewFromString(bigStr[:maxInt64StrLen-1])
+				d, _ = sdecimal.NewFromString(bigStr[:maxInt64StrLen-1])
 				return d.CoefficientInt64(), int32(exponent)
 			}
 		}
@@ -96,5 +95,10 @@ func ToBigInt(dec decimal.Decimal) (int64, int32) {
 
 func (d *Decimal) Float64() float64 {
 	f, _ := sdecimal.New(d.Value, d.Exp).Float64()
+	return f
+}
+
+func (d *Decimal) Mul(d2 float64) float64 {
+	f, _ := sdecimal.New(d.Value, d.Exp).Mul(sdecimal.NewFromFloat(d2)).Float64()
 	return f
 }

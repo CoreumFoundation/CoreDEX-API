@@ -260,13 +260,13 @@ func (s *httpServer) getOrders() handler.Handler {
 		account := q.Get("account")
 		var res *coreum.OrderBookOrders
 		if account == "" {
-			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, limit)
+			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, limit, true)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
 			}
 		} else {
-			res, err = s.app.Order.OrderBookRelevantOrdersForAccount(network, denoms.Denom1.Denom, denoms.Denom2.Denom, account, limit)
+			res, err = s.app.Order.OrderBookRelevantOrdersForAccount(network, denoms.Denom1.Denom, denoms.Denom2.Denom, account)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return err

@@ -78,6 +78,29 @@ func validateTradeParams(query url.Values) (*tradegrpc.Filter, error) {
 		From: timestamppb.New(time.Unix(afterID, 0)),
 		To:   timestamppb.New(time.Unix(beforeID, 0)),
 	}
+	from := query.Get("from")
+	if from != "" {
+		fr, err := strconv.ParseInt(from, 10, 64)
+		if err != nil {
+			return nil, handler.NewAPIError(422, "from.invalid")
+		}
+		tf.From = timestamppb.New(time.Unix(fr, 0))
+	}
+	to := query.Get("to")
+	if to != "" {
+		t, err := strconv.ParseInt(to, 10, 64)
+		if err != nil {
+			return nil, handler.NewAPIError(422, "to.invalid")
+		}
+		tf.To = timestamppb.New(time.Unix(t, 0))
+	}
+	if tf.From.AsTime().After(tf.To.AsTime()) {
+		return nil, handler.NewAPIError(422, "from.after.to")
+	}
+	// Limit interval to 24hrs max to prevent overflows (in all reasonable scenarios)
+	if tf.To.AsTime().Sub(tf.From.AsTime()) > 24*time.Hour {
+		return nil, handler.NewAPIError(422, "interval.too.long")
+	}
 	if account != "" {
 		tf.Account = &account
 	}
