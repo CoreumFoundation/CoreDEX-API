@@ -192,11 +192,6 @@ func (a *Application) get(filter *ohlcgrpc.OHLCFilter, backFill bool) ([]*ohlcgr
 		queryBuilder.WriteString(" ORDER BY Timestamp DESC LIMIT 1")
 	}
 
-	logger.Infof("Query: %s", queryBuilder.String())
-	// output the args to the log:
-	for i, arg := range args {
-		logger.Infof("Arg %d: %v", i, arg)
-	}
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
 		return nil, err

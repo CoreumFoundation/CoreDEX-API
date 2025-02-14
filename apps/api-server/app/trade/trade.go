@@ -36,12 +36,7 @@ func NewApplication() *Application {
 
 // The trades list consists of trades that are filled and cancelled.
 // Cancelled trades are in the order data, while executed trades are in the trade data. Both need to be combined.
-/*
-TODO: This does not entirely work with the offset: We need to iterate for the offset which is inefficient
-Required improvment is 2 offsets for trades and orders so that we can iterate over the trades and orders separately and merge them
-on the fly. It is for example possible that the order offset for cancels retrieves a much longer history than the trade offset would do
-(or vice versa)
-*/
+// Infinite scroll is done by using the from/to avoiding offset and data join issues
 func (app *Application) GetTrades(ctx context.Context, filter *tradegrpc.Filter) (*Trades, error) {
 	trades, err := app.getTrades(ctx, filter)
 	if err != nil {

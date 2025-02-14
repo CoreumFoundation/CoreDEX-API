@@ -242,13 +242,10 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 		}
 	}
 	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
-	if filter.Offset != nil && *filter.Offset != 0 {
-		queryBuilder.WriteString(" OFFSET ?")
-		args = append(args, *filter.Offset)
-	}
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
+		logger.Errorf("Error querying trades: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
