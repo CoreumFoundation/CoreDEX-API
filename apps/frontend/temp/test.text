@@ -1,3 +1,0 @@
-curl 'http://localhost:8080/api/trades?symbol=dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&from=1736187913&to=1736274313' \
---header 'Network: devnet' 
-
