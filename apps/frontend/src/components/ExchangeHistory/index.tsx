@@ -12,13 +12,14 @@ import {
   NetworkToEnum,
 } from "@/services/websocket";
 
-const FIVE_MINUTES = 1 * 60;
+const FIVE_MINUTES = 4 * 24 * 60 * 60;
+const TEST = 3 * 24 * 60 * 60;
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
   const [timeRange, setTimeRange] = useState({
-    from: Math.floor(Date.now() / 1000),
-    to: Math.floor(Date.now() / 1000) - FIVE_MINUTES,
+    from: 1736187913,
+    to: 1736274295,
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
