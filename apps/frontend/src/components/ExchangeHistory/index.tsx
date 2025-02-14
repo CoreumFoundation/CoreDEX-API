@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
-import { SideBuy } from "@/types/market";
+import { SideBuy, TradeRecord } from "@/types/market";
 import "./exchange-history.scss";
 import {
   UpdateStrategy,
@@ -12,14 +12,21 @@ import {
   NetworkToEnum,
 } from "@/services/websocket";
 
+const FIVE_MINUTES = 1 * 60;
+
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
+  const [timeRange, setTimeRange] = useState({
+    from: Math.floor(Date.now() / 1000),
+    to: Math.floor(Date.now() / 1000) - FIVE_MINUTES,
+  });
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchExchangeHistory = async () => {
-      const from = new Date().getTime();
-      const to = from - 86400000; //  1 day ago
+      const { from, to } = timeRange;
 
       try {
         const response = await getTrades(market.pair_symbol, to, from);
@@ -35,7 +42,7 @@ const ExchangeHistory = () => {
       }
     };
     fetchExchangeHistory();
-  }, [market.pair_symbol]);
+  }, [market.pair_symbol, timeRange]);
 
   const subscription = useMemo(
     () => ({
@@ -58,6 +65,80 @@ const ExchangeHistory = () => {
       wsManager.unsubscribe(subscription, handler);
     };
   }, [subscription]);
+
+  // useEffect(() => {
+  //   if (!historyRef.current) return;
+
+  //   const handleScroll = async () => {
+  //     const container = historyRef.current;
+  //     if (!container) return;
+
+  //     // Check if user has scrolled to the bottom (within a small threshold)
+  //     const threshold = 50; // pixels from the bottom
+  //     if (
+  //       container.scrollTop + container.clientHeight >=
+  //       container.scrollHeight - threshold
+  //     ) {
+  //       if (exchangeHistory && exchangeHistory.length > 0) {
+  //         // Capture the current scroll height before loading more
+  //         const oldScrollHeight = container.scrollHeight;
+
+  //         // Calculate new boundaries based on timeRange
+  //         const newFrom = timeRange.to; // current oldest timestamp
+  //         const newTo = newFrom - FIVE_MINUTES; // 5 minutes older
+
+  //         // Load older history and wait for it to finish
+  //         await loadOlderHistory(newTo, newFrom);
+
+  //         // After the new data is rendered, compute the change in scroll height.
+  //         const newScrollHeight = container.scrollHeight;
+  //         const deltaHeight = newScrollHeight - oldScrollHeight;
+
+  //         // Adjust scrollTop by adding the delta so that the user's view stays at the same item.
+  //         container.scrollTop = container.scrollTop + deltaHeight;
+  //       }
+  //     }
+  //   };
+
+  //   const container = historyRef.current;
+  //   container.addEventListener("scroll", handleScroll);
+
+  //   return () => {
+  //     container.removeEventListener("scroll", handleScroll);
+  //   };
+  // }, [exchangeHistory, timeRange, market.pair_symbol]);
+
+  const mergeUniqueTrades = (
+    prevHistory: TradeRecord[],
+    newTrades: TradeRecord[]
+  ): TradeRecord[] => {
+    const merged = [...prevHistory, ...newTrades];
+
+    const unique = merged.filter(
+      (trade, index, self) =>
+        index === self.findIndex((t) => t.TXID === trade.TXID)
+    );
+    return unique;
+  };
+
+  const loadOlderHistory = async (newTo: number, newFrom: number) => {
+    try {
+      const response = await getTrades(market.pair_symbol, newTo, newFrom);
+      if (response.status === 200) {
+        const olderData = response.data;
+
+        // Get the previous state from the store (using useStore.getState())
+        const prevHistory = exchangeHistory || [];
+        const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
+
+        wsManager.setInitialState(subscription, mergedHistory);
+        setExchangeHistory(mergedHistory);
+        setTimeRange({ ...timeRange, to: newTo });
+      }
+    } catch (e) {
+      console.log("ERROR FETCHING OLDER HISTORY >>", e);
+    }
+  };
 
   return (
     <div className="exchange-history-container">
@@ -90,6 +171,7 @@ const ExchangeHistory = () => {
               </div>
             );
           })}
+          <div ref={sentinelRef} style={{ height: "1px" }}></div>
         </div>
       ) : (
         <div className="no-data-container">
