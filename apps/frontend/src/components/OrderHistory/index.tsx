@@ -1,14 +1,27 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import {
   OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
   SideBuy,
+  TradeRecord,
   TransformedOrder,
 } from "@/types/market";
 import { useStore } from "@/state/store";
 import { FormatNumber } from "../FormatNumber";
-import { getOrderbook, getTrades, submitOrder } from "@/services/api";
+import {
+  cancelOrder,
+  getOrderbook,
+  getTrades,
+  submitOrder,
+} from "@/services/api";
 import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
@@ -21,13 +34,15 @@ import {
   Method,
   NetworkToEnum,
 } from "@/services/websocket";
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
+import debounce from "lodash/debounce";
+dayjs.extend(duration);
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
   ORDER_HISTORY: "ORDER_HISTORY",
 };
-
-const FIVE_MINUTES = 5 * 60;
 
 const OrderHistory = () => {
   const {
@@ -42,11 +57,17 @@ const OrderHistory = () => {
     coreum,
   } = useStore();
 
+  const ONE_MINUTE = dayjs.duration(1, "minutes").asSeconds();
+
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
+  // an initial window of 5 minutes
   const [timeRange, setTimeRange] = useState({
-    from: Math.floor(Date.now() / 1000),
-    to: Math.floor(Date.now() / 1000) - FIVE_MINUTES,
+    from: dayjs().subtract(4, "day").subtract(5, "minutes").unix(),
+    to: dayjs().subtract(4, "day").unix(),
   });
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const historyRef = useRef<HTMLDivElement>(null);
 
   const resolveOrderStatus = (status: OrderHistoryStatus) => {
     switch (status) {
@@ -72,14 +93,14 @@ const OrderHistory = () => {
       try {
         const response = await getTrades(
           market.pair_symbol,
-          to,
           from,
+          to,
           wallet?.address
         );
         if (response.status === 200) {
           const data = response.data;
-          setOrderHistory(data);
           wsManager.setInitialState(orderHistorySubscription, data);
+          setOrderHistory(data);
         }
       } catch (e) {
         console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
@@ -87,12 +108,13 @@ const OrderHistory = () => {
       }
     };
     fetchExchangeHistory();
-  }, [market.pair_symbol, wallet, timeRange]);
+  }, [market.pair_symbol, wallet]);
 
   // fetch open orders filtered from orderbook. transform to formatted data
   useEffect(() => {
     const fetchOpenOrders = async () => {
       try {
+        if (!wallet?.address) return;
         const response = await getOrderbook(
           market.pair_symbol,
           wallet?.address
@@ -100,6 +122,7 @@ const OrderHistory = () => {
         const data = response.data;
         if (data) {
           const openOrders = transformOrderbook(data);
+          console.log(openOrders);
           setOpenOrders(openOrders);
         }
       } catch (e) {
@@ -155,6 +178,84 @@ const OrderHistory = () => {
     };
   }, [orderHistorySubscription]);
 
+  const mergeUniqueTrades = (
+    prevHistory: TradeRecord[],
+    newTrades: TradeRecord[]
+  ): TradeRecord[] => {
+    const filteredNew = newTrades.filter(
+      (trade) => !prevHistory.some((prev) => prev.TXID === trade.TXID)
+    );
+    return [...prevHistory, ...filteredNew];
+  };
+
+  const loadOlderHistory = async (): Promise<number> => {
+    try {
+      const currentOldest = timeRange.from;
+      const newFrom = currentOldest - ONE_MINUTE;
+      const response = await getTrades(
+        market.pair_symbol,
+        newFrom,
+        currentOldest
+      );
+      if (response.status === 200) {
+        const olderData = response.data;
+        if (!olderData || olderData.length === 0) {
+          setHasMore(false);
+          return 0;
+        }
+        const prevHistory = orderHistory || [];
+        const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
+        wsManager.setInitialState(orderHistorySubscription, mergedHistory);
+        setOrderHistory(mergedHistory);
+        setTimeRange((prev) => ({ ...prev, from: newFrom }));
+        return olderData.length;
+      }
+    } catch (e) {
+      console.log("ERROR FETCHING OLDER HISTORY >>", e);
+    }
+    return 0;
+  };
+
+  useLayoutEffect(() => {
+    if (!historyRef.current) return;
+    const container = historyRef.current;
+
+    const handleScroll = async () => {
+      const threshold = 50;
+      if (
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - threshold
+      ) {
+        if (
+          orderHistory &&
+          orderHistory.length > 0 &&
+          !isFetchingMore &&
+          hasMore
+        ) {
+          setIsFetchingMore(true);
+          const previousScrollTop = container.scrollTop;
+          const previousScrollHeight = container.scrollHeight;
+
+          await loadOlderHistory();
+
+          requestAnimationFrame(() => {
+            const newScrollHeight = container.scrollHeight;
+            const delta = newScrollHeight - previousScrollHeight;
+            container.scrollTop = previousScrollTop - delta;
+            setIsFetchingMore(false);
+          });
+        }
+      }
+    };
+
+    const debouncedHandleScroll = debounce(handleScroll, 300);
+    container.addEventListener("scroll", debouncedHandleScroll);
+    return () => {
+      container.removeEventListener("scroll", debouncedHandleScroll);
+      debouncedHandleScroll.cancel();
+    };
+  }, [orderHistory, timeRange, market.pair_symbol, isFetchingMore, hasMore]);
+
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
       const transformSide = (
@@ -184,27 +285,6 @@ const OrderHistory = () => {
     []
   );
 
-  const loadOlderHistory = async () => {
-    try {
-      const newFrom = timeRange.to; // current oldest timestamp
-      const newTo = newFrom - FIVE_MINUTES; // load another 5 minutes older
-      const response = await getTrades(market.pair_symbol, newTo, newFrom);
-      if (response.status === 200) {
-        const olderData = response.data;
-
-        // Get the previous state from the store (using useStore.getState())
-        const prevHistory = orderHistory || [];
-        const mergedHistory = [...prevHistory, ...olderData];
-
-        wsManager.setInitialState(orderHistorySubscription, mergedHistory);
-        setOrderHistory(mergedHistory);
-        setTimeRange({ ...timeRange, to: newTo });
-      }
-    } catch (e) {
-      console.log("ERROR FETCHING OLDER HISTORY >>", e);
-    }
-  };
-
   const handleOpenOrders = useCallback(
     (message: OrderbookResponse) => {
       const updatedHistory = transformOrderbook(message);
@@ -216,33 +296,37 @@ const OrderHistory = () => {
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
     try {
-      const orderCancel: MsgCancelOrder = {
-        sender: wallet.address,
-        id: id,
-      };
+      const data = await cancelOrder(wallet.address, id);
 
-      const cancelMessage = DEX.CancelOrder(orderCancel);
-      const signedTx = await coreum?.signTx([cancelMessage]);
-      const encodedTx = TxRaw.encode(signedTx!).finish();
-      const base64Tx = fromByteArray(encodedTx);
-      const submitResponse = await submitOrder({ TX: base64Tx });
+      if (data) {
+        const orderCancel: MsgCancelOrder = {
+          sender: wallet.address,
+          id: id,
+        };
 
-      if (submitResponse.status !== 200) {
+        const cancelMessage = DEX.CancelOrder(orderCancel);
+        const signedTx = await coreum?.signTx([cancelMessage]);
+        const encodedTx = TxRaw.encode(signedTx!).finish();
+        const base64Tx = fromByteArray(encodedTx);
+        const submitResponse = await submitOrder({ TX: base64Tx });
+
+        if (submitResponse.status !== 200) {
+          pushNotification({
+            type: "error",
+            message: "There was an issue cancelling your order",
+          });
+          throw new Error("Error submitting order");
+        }
+
+        const txHash = submitResponse.data.TXHash;
         pushNotification({
-          type: "error",
-          message: "There was an issue cancelling your order",
+          type: "success",
+          message: `Order Cancelled! TXHash: ${txHash.slice(
+            0,
+            6
+          )}...${txHash.slice(-4)}`,
         });
-        throw new Error("Error submitting order");
       }
-
-      const txHash = submitResponse.data.TXHash;
-      pushNotification({
-        type: "success",
-        message: `Order Cancelled! TXHash: ${txHash.slice(
-          0,
-          6
-        )}...${txHash.slice(-4)}`,
-      });
     } catch (e: any) {
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
