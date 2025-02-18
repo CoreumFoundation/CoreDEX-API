@@ -192,11 +192,6 @@ func (a *Application) get(filter *ohlcgrpc.OHLCFilter, backFill bool) ([]*ohlcgr
 		queryBuilder.WriteString(" ORDER BY Timestamp DESC LIMIT 1")
 	}
 
-	logger.Infof("Query: %s", queryBuilder.String())
-	// output the args to the log:
-	for i, arg := range args {
-		logger.Infof("Arg %d: %v", i, arg)
-	}
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
 		return nil, err
@@ -244,7 +239,7 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 	if len(filter.Periods) > 0 {
 		for i, period := range filter.Periods {
 			if i == 0 {
-				queryBuilder.WriteString(" AND ( PeriodStr = ? AND Timestamp = ? )")
+				queryBuilder.WriteString(" AND (( PeriodStr = ? AND Timestamp = ? )")
 			}
 			if i > 0 {
 				queryBuilder.WriteString(" OR ( PeriodStr = ? AND Timestamp = ? )")
@@ -252,7 +247,14 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 			args = append(args, period.Period.ToString())
 			args = append(args, period.Timestamp.AsTime())
 		}
+		queryBuilder.WriteString(")")
 	}
+	// output the query and args to the log
+	for i, arg := range args {
+		logger.Infof("arg %d: %v", i, arg)
+	}
+	logger.Infof("query: %s", queryBuilder.String())
+
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
 		return nil, err

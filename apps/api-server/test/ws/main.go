@@ -34,7 +34,8 @@ func main() {
 		fmt.Println("5) Test Trades for Symbol")
 		fmt.Println("6) Test Trades for Account")
 		fmt.Println("7) Test Trades for Account and Symbol")
-		fmt.Println("8) Events stream (select one or more options first) (Use CTRL+C to exit, or wait 100s)")
+		fmt.Println("8) Test Wallet")
+		fmt.Println("9) Events stream (select one or more options first) (Use CTRL+C to exit, or wait 100s)")
 
 		reader := bufio.NewReader(os.Stdin)
 		input, err := reader.ReadString('\n')
@@ -68,6 +69,8 @@ func main() {
 		case 7:
 			testTradesForAccountAndSymbol(c)
 		case 8:
+			testWallet(c)
+		case 9:
 			testEventsStream(c)
 		default:
 			fmt.Println("Invalid choice. Please enter a number between 1 and 7.")
@@ -238,6 +241,19 @@ func testTradesForAccountAndSymbol(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL,
 			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+			Network: metadata.Network_DEVNET,
+		},
+	}
+	sendToSocket(c, msg)
+}
+
+func testWallet(c *websocket.Conn) {
+	log.Printf("Testing wallet")
+	msg := &updateproto.Subscribe{
+		Action: updateproto.Action_SUBSCRIBE,
+		Subscription: &updateproto.Subscription{
+			Method:  updateproto.Method_WALLET,
+			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
 			Network: metadata.Network_DEVNET,
 		},
 	}

@@ -57,7 +57,7 @@ func symbol(trade *tradegrpc.Trade) string {
 }
 
 // Retrieve OHLCs for the given symbol
-func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[*ohlcgrpc.Period]*ohlcgrpc.OHLC {
+func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[string]*ohlcgrpc.OHLC {
 	// The ohlc PeriodsList contains all the periods in the stored notation
 	// These periods represent the buckets which need to be calculated
 	pb := make([]*ohlcgrpc.PeriodBucket, 0)
@@ -81,14 +81,14 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 		o.OHLCs = make([]*ohlcgrpc.OHLC, 0)
 	}
 	// Process the return ohlcs into a map of ohlc period:
-	m := make(map[*ohlcgrpc.Period]*ohlcgrpc.OHLC)
+	m := make(map[string]*ohlcgrpc.OHLC)
 	for _, ohlc := range o.OHLCs {
-		m[ohlc.Period] = ohlc
+		m[ohlc.Period.String()] = ohlc
 	}
 	// Check if all periods are present, if not, add them
 	for _, v := range ohlcgrpc.PeriodsList {
-		if _, ok := m[v]; !ok {
-			m[v] = &ohlcgrpc.OHLC{
+		if _, ok := m[v.String()]; !ok {
+			m[v.String()] = &ohlcgrpc.OHLC{
 				Symbol:    symbol,
 				Period:    v,
 				Timestamp: v.ToOHLCKeyTimestamppb(base),

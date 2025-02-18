@@ -107,53 +107,52 @@ Returns:
 
 ```json5
 {
-  Trades: [
+  "Trades": [
     {
-      Account: "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc",
-      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
-      Sequence: 27388,
-      Amount: {
-        Value: 2080,
-        Exp: -6,
+      "Account": "devcore1fpdgztw4aepgy8vezs9hx27yqua4fpewygdspc",
+      "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      "Sequence": 27388,
+      "Amount": {
+        "Value": 2080,
+        "Exp": -6,
       },
-      Price: 35.015385,
-      Denom1: {
-        Currency: "dextestdenom8",
-        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Precision: 6,
-        Denom: "dextestdenom8-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "Price": 35.015385,
+      "Denom1": {
+        "Currency": "dextestdenom8",
+        "Issuer": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        "Precision": 6,
+        "Denom": "dextestdenom8-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
       },
-      Denom2: {
-        Currency: "dextestdenom3",
-        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Precision: 6,
-        Denom: "dextestdenom3-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "Denom2": {
+        "Currency": "dextestdenom3",
+        "Issuer": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        "Precision": 6,
+        "Denom": "dextestdenom3-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
       },
-      Side: 1,
-      BlockTime: {
-        seconds: 1736358800,
-        nanos: 634506142,
+      "Side": 1,
+      "BlockTime": {
+        "seconds": 1736358800,
+        "nanos": 634506142,
       },
-      MetaData: {
-        Network: 3,
-        UpdatedAt: {
-          seconds: 1737747689,
-          nanos: 498590000,
+      "MetaData": {
+        "Network": 3,
+        "UpdatedAt": {
+          "seconds": 1737747689,
+          "nanos": 498590000,
         },
-        CreatedAt: {
-          seconds: 1737747689,
-          nanos: 498029000,
+        "CreatedAt": {
+          "seconds": 1737747689,
+          "nanos": 498029000,
         },
       },
-      TXID: "29E2362BE19BE53B5A38CFAAB4B777484F5956972C656A4378D7620A6E8F4A36",
-      BlockHeight: 6714462,
-      HumanReadablePrice: "35.015385",
-      SymbolAmount: "0.002080",
-      Status: 3,
+      "TXID": "29E2362BE19BE53B5A38CFAAB4B777484F5956972C656A4378D7620A6E8F4A36",
+      "BlockHeight": 6714462,
+      "HumanReadablePrice": "35.015385",
+      "SymbolAmount": "0.002080",
+      "Status": 3,
     },
     //...
-  ],
-  Offset: 0,
+  ]
 }
 ```
 
@@ -216,44 +215,44 @@ Returns a list of currencies.
 
 ```json5
 {
-  Currencies: [
+  "Currencies": [
     {
-      Denom: {
-        Currency: "ATOM",
-        Issuer: "cosmoshub-4",
-        Precision: 6,
-        IsIBC: false,
-        Denom: "uatom",
-        Name: "Cosmos",
-        Description: "Cosmos Hub native token",
-        Icon: "https://cosmos.network/logo.png",
+      "Denom": {
+        "Currency": "ATOM",
+        "Issuer": "cosmoshub-4",
+        "Precision": 6,
+        "IsIBC": false,
+        "Denom": "uatom",
+        "Name": "Cosmos",
+        "Description": "Cosmos Hub native token",
+        "Icon": "https://cosmos.network/logo.png",
       },
-      SendCommission: {
-        Value: 1,
-        Exp: -2,
+      "SendCommission": {
+        "Value": 1,
+        "Exp": -2,
       },
-      BurnRate: {
-        Value: 1,
-        Exp: -3,
+      "BurnRate": {
+        "Value": 1,
+        "Exp": -3,
       },
-      InitialAmount: {
-        Value: 1000000,
-        Exp: 0,
+      "InitialAmount": {
+        "Value": 1000000,
+        "Exp": 0,
       },
-      Chain: "cosmoshub-4",
-      OriginChain: "cosmoshub-4",
-      ChainSupply: "100000000",
-      Description: "Cosmos Hub native token",
-      SkipDisplay: false,
-      MetaData: {
-        Network: 1,
-        UpdatedAt: "2023-10-01T12:00:00Z",
-        CreatedAt: "2020-01-01T00:00:00Z",
+      "Chain": "cosmoshub-4",
+      "OriginChain": "cosmoshub-4",
+      "ChainSupply": "100000000",
+      "Description": "Cosmos Hub native token",
+      "SkipDisplay": false,
+      "MetaData": {
+        "Network": 1,
+        "UpdatedAt": "2023-10-01T12:00:00Z",
+        "CreatedAt": "2020-01-01T00:00:00Z",
       },
     },
     //...
   ],
-  Offset: 0,
+  "Offset": 0,
 }
 ```
 
