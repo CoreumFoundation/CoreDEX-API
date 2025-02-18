@@ -314,6 +314,8 @@ export type WalletAsset = {
   SymbolAmount: string;
 };
 
+export type WalletBalances = WalletAsset[];
+
 export type CancelOrderResponse = {
   TXBytes: string;
 };

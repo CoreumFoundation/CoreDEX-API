@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/state/store";
 import {
   OrderType,
@@ -8,6 +8,7 @@ import {
   TimeInForceString,
   TimeSelection,
   TimeInForceStringToEnum,
+  WalletBalances,
 } from "@/types/market";
 import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
@@ -30,6 +31,12 @@ import { DatetimePicker } from "../DatetimePicker";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import {
+  Method,
+  NetworkToEnum,
+  UpdateStrategy,
+  wsManager,
+} from "@/services/websocket";
 
 dayjs.extend(utc);
 dayjs.extend(advancedFormat);
@@ -40,17 +47,28 @@ const OrderActions = ({
 }: {
   orderbookAction?: OrderbookAction;
 }) => {
-  const { orderbook, wallet, setLoginModal, pushNotification, market, coreum } =
-    useStore();
+  const {
+    orderbook,
+    wallet,
+    setLoginModal,
+    pushNotification,
+    market,
+    coreum,
+    network,
+  } = useStore();
 
   const [orderType, setOrderType] = useState<OrderType>(OrderType.BUY);
   const [totalPrice, setTotalPrice] = useState(0);
   const [limitPrice, setLimitPrice] = useState("");
   const [volume, setVolume] = useState<string>("");
   const [tradeType, setTradeType] = useState(TradeType.MARKET);
-  const [balances, setBalances] = useState<any>(null);
-  const [baseBalance, setBaseBalance] = useState<string>("0");
-  const [counterBalance, setCounterBalance] = useState<string>("0");
+  const [walletBalances, setWalletBalances] = useState<WalletBalances | null>(
+    null
+  );
+  const [marketBalances, setMarketBalances] = useState({
+    base: "0",
+    counter: "0",
+  });
   const [advSettingsOpen, setAdvSetting] = useState<boolean>(false);
   const [timeInForce, setTimeInForce] = useState<TimeInForceString>(
     TimeInForceString.goodTilCancel
@@ -66,21 +84,63 @@ const OrderActions = ({
     fetchWalletAssets();
   }, [wallet, market]);
 
-  useEffect(() => {
-    if (!balances) return;
+  const walletSubscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.WALLET,
+      ID: `${wallet ? wallet.address : ""}`,
+    }),
+    [market.pair_symbol, wallet]
+  );
 
-    const baseBalanceObject = balances.find(
+  const handleWalletUpdate = (message: WalletBalances) => {
+    if (message.length > 0) {
+      setWalletBalances(message);
+    }
+  };
+
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        walletSubscription,
+        handleWalletUpdate,
+        UpdateStrategy.REPLACE
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(walletSubscription, setWalletBalances);
+    };
+  }, [walletSubscription]);
+
+  useEffect(() => {
+    if (!walletBalances) return;
+
+    const baseBalanceObject = walletBalances.find(
       (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
     );
-    const counterBalanceObject = balances.find(
+    const counterBalanceObject = walletBalances.find(
       (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
     );
 
-    setBaseBalance(baseBalanceObject ? baseBalanceObject.SymbolAmount : "0");
-    setCounterBalance(
-      counterBalanceObject ? counterBalanceObject.SymbolAmount : "0"
-    );
-  }, [market, balances]);
+    setMarketBalances({
+      base: baseBalanceObject?.Amount || "0",
+      counter: counterBalanceObject?.Amount || "0",
+    });
+  }, [market, walletBalances]);
+
+  const fetchWalletAssets = async () => {
+    if (!wallet?.address) return;
+    try {
+      const response = await getWalletAssets(wallet?.address);
+      if (response.status === 200 && response.data.length > 0) {
+        const data = response.data;
+        setWalletBalances(data);
+        wsManager.setInitialState(walletSubscription, data);
+      }
+    } catch (e) {
+      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
+    }
+  };
 
   // trigger when click on orderbook
   useEffect(() => {
@@ -172,19 +232,6 @@ const OrderActions = ({
       setExpirationTime(now.toDate());
     }
   }, [timeInForce, timeToCancel, customTime]);
-
-  const fetchWalletAssets = async () => {
-    if (!wallet?.address) return;
-    try {
-      const response = await getWalletAssets(wallet?.address);
-      if (response.status === 200 && response.data.length > 0) {
-        const data = response.data;
-        setBalances(data);
-      }
-    } catch (e) {
-      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
-    }
-  };
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
@@ -531,9 +578,9 @@ const OrderActions = ({
                   volume === "0" ||
                   (tradeType === TradeType.LIMIT && !limitPrice) ||
                   (orderType === OrderType.BUY &&
-                    totalPrice > Number(counterBalance)) ||
+                    totalPrice > Number(marketBalances.counter)) ||
                   (orderType === OrderType.SELL &&
-                    totalPrice > Number(baseBalance))
+                    totalPrice > Number(marketBalances.base))
                 }
               />
             </>
@@ -546,7 +593,7 @@ const OrderActions = ({
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
 
-          <FormatNumber number={baseBalance} />
+          <FormatNumber number={marketBalances.base} />
         </div>
 
         <div className="balance-row">
@@ -554,7 +601,7 @@ const OrderActions = ({
             {market.counter.Denom.Currency} Balance
           </p>
 
-          <FormatNumber number={counterBalance} />
+          <FormatNumber number={marketBalances.counter} />
         </div>
       </div>
     </div>

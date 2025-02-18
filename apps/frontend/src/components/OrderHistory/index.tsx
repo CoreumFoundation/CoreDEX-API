@@ -139,6 +139,7 @@ const OrderHistory = () => {
         if (data) {
           const openOrders = transformOrderbook(data);
           setOpenOrders(openOrders);
+          wsManager.setInitialState(openOrderSubscription, openOrders);
         }
       } catch (e) {
         console.log("ERROR GETTING OPEN ORDERS DATA >>", e);
