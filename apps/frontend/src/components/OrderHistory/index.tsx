@@ -44,6 +44,8 @@ const TABS = {
   ORDER_HISTORY: "ORDER_HISTORY",
 };
 
+const MAX_HISTORY_DAYS = 14;
+
 const OrderHistory = () => {
   const {
     setOpenOrders,
@@ -57,13 +59,10 @@ const OrderHistory = () => {
     coreum,
   } = useStore();
 
-  const ONE_MINUTE = dayjs.duration(1, "minutes").asSeconds();
-
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
-  // an initial window of 5 minutes
   const [timeRange, setTimeRange] = useState({
-    from: dayjs().subtract(4, "day").subtract(5, "minutes").unix(),
-    to: dayjs().subtract(4, "day").unix(),
+    from: dayjs().subtract(1, "day").unix(),
+    to: dayjs().unix(),
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -86,29 +85,46 @@ const OrderHistory = () => {
 
   // fetch order history
   useEffect(() => {
-    const fetchExchangeHistory = async () => {
+    const initFetch = async () => {
       if (!wallet?.address) return;
-      const { from, to } = timeRange;
-
-      try {
-        const response = await getTrades(
-          market.pair_symbol,
-          from,
-          to,
-          wallet?.address
-        );
-        if (response.status === 200) {
-          const data = response.data;
-          wsManager.setInitialState(orderHistorySubscription, data);
-          setOrderHistory(data);
-        }
-      } catch (e) {
-        console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
-        setOrderHistory(null);
+      let daysBack = 1;
+      let dataFound = await fetchHistoryWindow(daysBack);
+      while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
+        daysBack++;
+        dataFound = await fetchHistoryWindow(daysBack);
+      }
+      if (!dataFound) {
+        setOrderHistory([]);
+        setHasMore(false);
       }
     };
-    fetchExchangeHistory();
+
+    initFetch();
   }, [market.pair_symbol, wallet]);
+
+  const fetchHistoryWindow = async (daysBack: number): Promise<boolean> => {
+    const from = dayjs().subtract(daysBack, "day").unix();
+    const to = dayjs()
+      .subtract(daysBack - 1, "day")
+      .unix();
+    try {
+      const response = await getTrades(market.pair_symbol, from, to);
+      if (
+        response.status === 200 &&
+        response.data &&
+        response.data.length > 0
+      ) {
+        setOrderHistory(response.data);
+        wsManager.setInitialState(orderHistorySubscription, response.data);
+        setTimeRange({ from, to });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      return false;
+    }
+  };
 
   // fetch open orders filtered from orderbook. transform to formatted data
   useEffect(() => {
@@ -122,7 +138,6 @@ const OrderHistory = () => {
         const data = response.data;
         if (data) {
           const openOrders = transformOrderbook(data);
-          console.log(openOrders);
           setOpenOrders(openOrders);
         }
       } catch (e) {
@@ -190,13 +205,10 @@ const OrderHistory = () => {
 
   const loadOlderHistory = async (): Promise<number> => {
     try {
-      const currentOldest = timeRange.from;
-      const newFrom = currentOldest - ONE_MINUTE;
-      const response = await getTrades(
-        market.pair_symbol,
-        newFrom,
-        currentOldest
-      );
+      const currentWindow = timeRange.to - timeRange.from;
+      const newTo = timeRange.from;
+      const newFrom = newTo - currentWindow;
+      const response = await getTrades(market.pair_symbol, newFrom, newTo);
       if (response.status === 200) {
         const olderData = response.data;
         if (!olderData || olderData.length === 0) {
@@ -207,7 +219,7 @@ const OrderHistory = () => {
         const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
         wsManager.setInitialState(orderHistorySubscription, mergedHistory);
         setOrderHistory(mergedHistory);
-        setTimeRange((prev) => ({ ...prev, from: newFrom }));
+        setTimeRange({ from: newFrom, to: newTo });
         return olderData.length;
       }
     } catch (e) {
@@ -233,22 +245,27 @@ const OrderHistory = () => {
           hasMore
         ) {
           setIsFetchingMore(true);
+          const anchorEl = container.querySelector(".history-row");
+          const anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : null;
           const previousScrollTop = container.scrollTop;
-          const previousScrollHeight = container.scrollHeight;
 
           await loadOlderHistory();
 
           requestAnimationFrame(() => {
-            const newScrollHeight = container.scrollHeight;
-            const delta = newScrollHeight - previousScrollHeight;
-            container.scrollTop = previousScrollTop - delta;
+            if (anchorEl && anchorRect) {
+              const newAnchorRect = anchorEl.getBoundingClientRect();
+              const delta = newAnchorRect.top - anchorRect.top;
+              container.scrollTop = previousScrollTop + delta;
+            } else {
+              container.scrollTop = previousScrollTop;
+            }
             setIsFetchingMore(false);
           });
         }
       }
     };
 
-    const debouncedHandleScroll = debounce(handleScroll, 300);
+    const debouncedHandleScroll = debounce(handleScroll, 100);
     container.addEventListener("scroll", debouncedHandleScroll);
     return () => {
       container.removeEventListener("scroll", debouncedHandleScroll);
@@ -387,7 +404,7 @@ const OrderHistory = () => {
             )}
           </div>
 
-          <div className="order-history-body">
+          <div className="order-history-body" ref={historyRef}>
             {activeTab === TABS.OPEN_ORDERS ? (
               <>
                 {openOrders && openOrders.length > 0 ? (
@@ -448,7 +465,7 @@ const OrderHistory = () => {
                 )}
               </>
             ) : (
-              <>
+              <div>
                 {orderHistory && orderHistory.length > 0 ? (
                   orderHistory.map((order, index) => {
                     return (
@@ -516,7 +533,7 @@ const OrderHistory = () => {
                     You have no orders!
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </>

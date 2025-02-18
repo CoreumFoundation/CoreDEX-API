@@ -16,41 +16,20 @@ import debounce from "lodash/debounce";
 
 dayjs.extend(duration);
 
-const ONE_MINUTE = dayjs.duration(1, "minutes").asSeconds();
+const MAX_HISTORY_DAYS = 14;
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
 
-  // an initial window of 5 minutes
+  // initial window
   const [timeRange, setTimeRange] = useState({
-    from: dayjs().subtract(5, "minutes").unix(),
+    from: dayjs().subtract(1, "day").unix(),
     to: dayjs().unix(),
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const historyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchExchangeHistory = async () => {
-      const { from, to } = timeRange;
-      try {
-        const response = await getTrades(market.pair_symbol, from, to);
-        if (response.status === 200) {
-          const data = response.data;
-          setExchangeHistory(data);
-          wsManager.setInitialState(subscription, data);
-          if (!data || data.length === 0) {
-            setHasMore(false);
-          }
-        }
-      } catch (e) {
-        console.log("ERROR GETTING EXCHANGE HISTORY DATA >>", e);
-        setExchangeHistory([]);
-      }
-    };
-    fetchExchangeHistory();
-  }, [market.pair_symbol, timeRange, setExchangeHistory]);
 
   const subscription = useMemo(
     () => ({
@@ -74,6 +53,46 @@ const ExchangeHistory = () => {
     };
   }, [subscription]);
 
+  useEffect(() => {
+    const initFetch = async () => {
+      let daysBack = 1;
+      let dataFound = await fetchHistoryWindow(daysBack);
+      while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
+        daysBack++;
+        dataFound = await fetchHistoryWindow(daysBack);
+      }
+      if (!dataFound) {
+        setExchangeHistory([]);
+        setHasMore(false);
+      }
+    };
+    initFetch();
+  }, [market.pair_symbol, setExchangeHistory]);
+
+  const fetchHistoryWindow = async (daysBack: number): Promise<boolean> => {
+    const from = dayjs().subtract(daysBack, "day").unix();
+    const to = dayjs()
+      .subtract(daysBack - 1, "day")
+      .unix();
+    try {
+      const response = await getTrades(market.pair_symbol, from, to);
+      if (
+        response.status === 200 &&
+        response.data &&
+        response.data.length > 0
+      ) {
+        setExchangeHistory(response.data);
+        wsManager.setInitialState(subscription, response.data);
+        setTimeRange({ from, to });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      return false;
+    }
+  };
+
   const mergeUniqueTrades = (
     prevHistory: TradeRecord[],
     newTrades: TradeRecord[]
@@ -86,13 +105,10 @@ const ExchangeHistory = () => {
 
   const loadOlderHistory = async (): Promise<number> => {
     try {
-      const currentOldest = timeRange.from;
-      const newFrom = currentOldest - ONE_MINUTE;
-      const response = await getTrades(
-        market.pair_symbol,
-        newFrom,
-        currentOldest
-      );
+      const currentWindow = timeRange.to - timeRange.from;
+      const newTo = timeRange.from;
+      const newFrom = newTo - currentWindow;
+      const response = await getTrades(market.pair_symbol, newFrom, newTo);
       if (response.status === 200) {
         const olderData = response.data;
         if (!olderData || olderData.length === 0) {
@@ -103,7 +119,7 @@ const ExchangeHistory = () => {
         const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
         wsManager.setInitialState(subscription, mergedHistory);
         setExchangeHistory(mergedHistory);
-        setTimeRange((prev) => ({ ...prev, from: newFrom }));
+        setTimeRange({ from: newFrom, to: newTo });
         return olderData.length;
       }
     } catch (e) {
@@ -129,15 +145,22 @@ const ExchangeHistory = () => {
           hasMore
         ) {
           setIsFetchingMore(true);
+          const anchorEl = container.querySelector(
+            ".exchange-history-body-rows"
+          );
+          const anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : null;
           const previousScrollTop = container.scrollTop;
-          const previousScrollHeight = container.scrollHeight;
 
           await loadOlderHistory();
 
           requestAnimationFrame(() => {
-            const newScrollHeight = container.scrollHeight;
-            const delta = newScrollHeight - previousScrollHeight;
-            container.scrollTop = previousScrollTop - delta;
+            if (anchorEl && anchorRect) {
+              const newAnchorRect = anchorEl.getBoundingClientRect();
+              const delta = newAnchorRect.top - anchorRect.top;
+              container.scrollTop = previousScrollTop + delta;
+            } else {
+              container.scrollTop = previousScrollTop;
+            }
             setIsFetchingMore(false);
           });
         }
@@ -175,7 +198,7 @@ const ExchangeHistory = () => {
                 <FormatNumber number={trade.SymbolAmount} />
               </div>
               <div className="exchange-history-body-value time">
-                {dayjs.unix(trade.BlockTime.seconds).format("h:mm A")}
+                {dayjs.unix(trade.BlockTime.seconds).format("MM/DD/YY h:mm A")}
               </div>
             </div>
           ))}

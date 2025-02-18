@@ -29,7 +29,7 @@
   .header {
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1.3fr;
     justify-items: space-between;
     padding: 0 16px;
     white-space: nowrap;
@@ -58,7 +58,7 @@
 
     .exchange-history-body-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1.3fr;
       justify-content: space-between;
       .exchange-history-body-value {
         font-size: 12px;
