@@ -133,21 +133,21 @@ func (s *httpServer) createOrder() handler.Handler {
 			}
 		}
 
-		addr, err := types.AccAddressFromBech32(orderReq.Sender)
-		if err != nil {
-			return err
-		}
-		txBytes, err := s.app.Order.EncodeTx(network, addr, &msgPlaceOrder)
-		if err != nil {
-			logger.Errorf("Error encoding tx: %v", err)
-			return err
-		}
-		// We do not want to handle bytes in the return, and we like to have a structured response:
-		// base64 encode the txBytes:
-		res := Order{
-			TXBytes: base64.StdEncoding.EncodeToString(txBytes),
-		}
-		return json.NewEncoder(w).Encode(res)
+		// addr, err := types.AccAddressFromBech32(orderReq.Sender)
+		// if err != nil {
+		// 	return err
+		// }
+		// txBytes, err := s.app.Order.EncodeTx(network, addr, &msgPlaceOrder)
+		// if err != nil {
+		// 	logger.Errorf("Error encoding tx: %v", err)
+		// 	return err
+		// }
+		// // We do not want to handle bytes in the return, and we like to have a structured response:
+		// // base64 encode the txBytes:
+		// res := Order{
+		// 	TXBytes: base64.StdEncoding.EncodeToString(txBytes),
+		// }
+		return json.NewEncoder(w).Encode(msgPlaceOrder)
 	}
 }
 
