@@ -189,7 +189,7 @@ export interface Ticker {
   LastPrice: number;
   FirstPrice: number;
   Volume: number;
-  Invertedvolume: number;
+  InvertedVolume: number;
   Inverted: boolean;
 }
 export type TickerResponse = {
