@@ -327,12 +327,30 @@ curl -H "Network: devnet" \
     }'
 ```
 
+The response object is compatible with the javascript and the golang proto marshallers (which are different in the COSMOS SDK), and due to that contain some replicated fields.
+The response object is corrected for the precision and goes from human readable to a bit harder to read in the format required for the DEX.
+
 Example response:
 
 ```json
 {
-  "TXBytes": "CvwBCvkBChwvY29yZXVtLmRleC52MS5Nc2dQbGFjZU9yZGVyEtgBCi5kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzEAEaBnN0cmluZyI8ZGV4dGVzdGRlbm9tNS1kZXZjb3JlMXAwZWR6eXpwYXpwdDY4dmRyankyMGM0Mmx2d3NqcHZmemFoeWdzKjxkZXh0ZXN0ZGVub205LWRldmNvcmUxcDBlZHp5enBhenB0Njh2ZHJqeTIwYzQybHZ3c2pwdmZ6YWh5Z3MyBTI1ZS0yOgoxMDAwMDAwMDAwQAFKCwjoBxIGCMCv9MYGEgISAA=="
-}
+    "sender": "devcore1878pk82zlndhldglx26r606qcd886562mad59y",
+    "type": 1,
+    "baseDenom": "dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "quoteDenom": "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "price": "25e-2",
+    "quantity": "1000000000",
+    "side": 1,
+    "goodTil": {
+        "goodTilBlockTime": "2025-12-30T12:00:00Z"
+    },
+    "timeInForce": 1,
+    "base_denom": "dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "quote_denom": "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "time_in_force": 1,
+    "good_til": {
+        "good_til_block_time": "2025-12-30T12:00:00Z"
+    }
 ```
 
 In which the TXBytes is the base64 encoded transaction that needs to be signed and submitted to the blockchain.
@@ -351,6 +369,17 @@ curl -H "Network: devnet" \
     "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac"
 }'
 ```
+
+The response object is:
+
+```json
+{
+  "sender": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+  "id": "8b341e25-482e-487f-b9e2-9467d98c16ac"
+}
+```
+
+The difference here is minimal. The cancel in this format is mainly present to have a consistent API interface.
 
 #### /order/submit
 
