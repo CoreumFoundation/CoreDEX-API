@@ -30,13 +30,7 @@ export const request = async (
       .then((res: any) => res)
       .catch((error: any) => {
         console.log("E_REQUEST =>", error);
-        if (
-          error.response?.status === 401 &&
-          (error.response?.data?.includes("unauthorized") ||
-            error.response?.data?.includes("invalid token"))
-        ) {
-          console.log(error.response);
-        }
+
         throw error;
       });
   } else {
@@ -49,14 +43,7 @@ export const request = async (
       .then((res: any) => res)
       .catch((error: any) => {
         console.log("E_REQUEST =>", error);
-        if (
-          (error.response?.status === 401 &&
-            error.response?.data?.message === "unauthorized") ||
-          error.response?.data?.includes("unauthorized") ||
-          error.response?.data?.includes("invalid token")
-        ) {
-          console.log(error.response);
-        }
+
         throw error;
       });
   }

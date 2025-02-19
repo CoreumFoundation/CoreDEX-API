@@ -122,8 +122,8 @@ const OrderActions = ({
     );
 
     setMarketBalances({
-      base: baseBalanceObject?.Amount || "0",
-      counter: counterBalanceObject?.Amount || "0",
+      base: baseBalanceObject?.SymbolAmount || "0",
+      counter: counterBalanceObject?.SymbolAmount || "0",
     });
   }, [market, walletBalances]);
 
@@ -150,8 +150,8 @@ const OrderActions = ({
       const volumeBN = new BigNumber(orderbookAction.volume);
       const priceBN = new BigNumber(orderbookAction.price);
 
-      setVolume(volumeBN.toFixed(18));
-      setLimitPrice(priceBN.toFixed(18));
+      setVolume(volumeBN.toString());
+      setLimitPrice(priceBN.toString());
       setTotalPrice(priceBN.times(volumeBN).toNumber());
     }
   }, [orderbookAction]);
@@ -161,6 +161,11 @@ const OrderActions = ({
       const vol = volume ? Number(volume) : 0;
 
       const total = multiply(Number(limitPrice), vol);
+      BigNumber(volume)
+        .multipliedBy(
+          new BigNumber(10).exponentiatedBy(market.base.Denom.Precision)
+        )
+        .toFixed();
       setTotalPrice(
         !total.isNaN()
           ? Number(noExponents(Number(total)).replaceAll(",", ""))
@@ -273,7 +278,11 @@ const OrderActions = ({
           tradeType === TradeType.LIMIT
             ? formatPriceForRegex(BigNumber(limitPrice))
             : "",
-        quantity: volume,
+        quantity: BigNumber(volume)
+          .multipliedBy(
+            new BigNumber(10).exponentiatedBy(market.base.Denom.Precision)
+          )
+          .toFixed(),
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
         goodTil:
           tradeType === TradeType.LIMIT &&
@@ -315,10 +324,10 @@ const OrderActions = ({
       setVolume("");
       setLimitPrice("");
     } catch (e: any) {
-      console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
+      console.log("ERROR HANDLING SUBMIT ORDER >>", e);
       pushNotification({
         type: "error",
-        message: e.error.message,
+        message: e.error.message || e.message,
       });
       throw e;
     }
@@ -371,6 +380,7 @@ const OrderActions = ({
               </div>
             </div>
           </div>
+
           <div className="order-trade">
             {tradeType === TradeType.LIMIT ? (
               <div className="limit-type-wrapper">
@@ -455,18 +465,6 @@ const OrderActions = ({
 
                       {timeInForce === TimeInForceString.goodTilTime && (
                         <>
-                          {/* <Dropdown
-                            variant={DropdownVariant.OUTLINED}
-                            items={Object.keys(TimeSelection).map((key) => [
-                              TimeSelection[key as keyof typeof TimeSelection],
-                            ])}
-                            value={timeToCancel}
-                            onClick={(item) => {
-                              setTimeToCancel(item[0] as TimeSelection);
-                            }}
-                            renderItem={(item) => <div>{item}</div>}
-                          /> */}
-
                           {
                             <div className="good-til-time">
                               <div className="time-selector">
