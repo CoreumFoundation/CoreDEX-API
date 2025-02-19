@@ -170,15 +170,12 @@ export const getWalletAssets = async (
   return response;
 };
 
-export const cancelOrder = async (
-  address: string,
-  id: string
-): Promise<CancelOrderResponse> => {
+export const cancelOrder = async (cancelParams: {
+  address: string;
+  id: string;
+}): Promise<CancelOrderResponse> => {
   const response = await request(
-    {
-      Sender: address,
-      OrderID: id,
-    },
+    cancelParams,
     `${BASE_API_URL}/order/cancel`,
     APIMethod.POST
   );

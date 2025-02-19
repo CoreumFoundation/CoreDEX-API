@@ -317,38 +317,35 @@ const OrderHistory = () => {
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
     try {
-      const data = await cancelOrder(wallet.address, id);
+      const orderCancel = {
+        Sender: wallet.address,
+        OrderID: id,
+      };
+      console.log("!!", orderCancel);
+      const test = await cancelOrder(orderCancel);
 
-      if (data) {
-        const orderCancel: MsgCancelOrder = {
-          sender: wallet.address,
-          id: id,
-        };
-        const test = await cancelOrder(wallet.address, id);
-        
-        const cancelMessage = DEX.CancelOrder(orderCancel);
-        const signedTx = await coreum?.signTx([cancelMessage]);
-        const encodedTx = TxRaw.encode(signedTx!).finish();
-        const base64Tx = fromByteArray(encodedTx);
-        const submitResponse = await submitOrder({ TX: base64Tx });
+      const cancelMessage = DEX.CancelOrder(test);
+      const signedTx = await coreum?.signTx([cancelMessage]);
+      const encodedTx = TxRaw.encode(signedTx!).finish();
+      const base64Tx = fromByteArray(encodedTx);
+      const submitResponse = await submitOrder({ TX: base64Tx });
 
-        if (submitResponse.status !== 200) {
-          pushNotification({
-            type: "error",
-            message: "There was an issue cancelling your order",
-          });
-          throw new Error("Error submitting order");
-        }
-
-        const txHash = submitResponse.data.TXHash;
+      if (submitResponse.status !== 200) {
         pushNotification({
-          type: "success",
-          message: `Order Cancelled! TXHash: ${txHash.slice(
-            0,
-            6
-          )}...${txHash.slice(-4)}`,
+          type: "error",
+          message: "There was an issue cancelling your order",
         });
+        throw new Error("Error submitting order");
       }
+
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Cancelled! TXHash: ${txHash.slice(
+          0,
+          6
+        )}...${txHash.slice(-4)}`,
+      });
     } catch (e: any) {
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
