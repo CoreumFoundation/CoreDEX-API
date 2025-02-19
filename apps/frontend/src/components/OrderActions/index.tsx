@@ -278,11 +278,7 @@ const OrderActions = ({
           tradeType === TradeType.LIMIT
             ? formatPriceForRegex(BigNumber(limitPrice))
             : "",
-        quantity: BigNumber(volume)
-          .multipliedBy(
-            new BigNumber(10).exponentiatedBy(market.base.Denom.Precision)
-          )
-          .toFixed(),
+        quantity: volume,
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
         goodTil:
           tradeType === TradeType.LIMIT &&
