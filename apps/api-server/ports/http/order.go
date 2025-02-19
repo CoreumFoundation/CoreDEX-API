@@ -72,25 +72,25 @@ func (s *httpServer) createOrder() handler.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return err
 		}
-		quoteCurrency, err := s.app.Currency.GetCurrency(r.Context(), network, orderReq.QuoteDenom)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return err
-		}
+		// quoteCurrency, err := s.app.Currency.GetCurrency(r.Context(), network, orderReq.QuoteDenom)
+		// if err != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	return err
+		// }
 		baseDenomPrecision := int64(0)
 		if baseCurrency.Denom.Precision != nil {
 			baseDenomPrecision = int64(*baseCurrency.Denom.Precision)
 		}
-		quoteDenomPrecision := int64(0)
-		if quoteCurrency.Denom.Precision != nil {
-			quoteDenomPrecision = int64(*quoteCurrency.Denom.Precision)
-		}
+		// quoteDenomPrecision := int64(0)
+		// if quoteCurrency.Denom.Precision != nil {
+		// 	quoteDenomPrecision = int64(*quoteCurrency.Denom.Precision)
+		// }
 
-		priceExponent := quoteDenomPrecision - baseDenomPrecision
-		if orderReq.Side == dextypes.SIDE_BUY {
-			priceExponent = baseDenomPrecision - quoteDenomPrecision
-		}
-		price = price.Mul(decimal.New(1, int32(priceExponent)))
+		// priceExponent := quoteDenomPrecision - baseDenomPrecision
+		// if orderReq.Side == dextypes.SIDE_BUY {
+		// 	priceExponent = baseDenomPrecision - quoteDenomPrecision
+		// }
+		// price = price.Mul(decimal.New(1, int32(priceExponent)))
 
 		coreumPrice, err := coreum.ParsePrice(price.String())
 		if err != nil {
