@@ -13,10 +13,13 @@ import {
 } from "@/services/websocket";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
+import { FixedSizeList as List } from "react-window";
 
 dayjs.extend(duration);
 
 const MAX_HISTORY_DAYS = 14;
+const ROW_HEIGHT = 26;
+const containerHeight = 152;
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
@@ -175,6 +178,32 @@ const ExchangeHistory = () => {
     };
   }, [exchangeHistory, timeRange, market.pair_symbol, isFetchingMore, hasMore]);
 
+  const Row = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
+    const trade = exchangeHistory[index];
+    return (
+      <div style={style} className="exchange-history-body-row">
+        <div
+          className={`exchange-history-body-value ${
+            trade.Side === SideBuy.BUY ? "positive" : "negative"
+          }`}
+        >
+          <FormatNumber number={trade.HumanReadablePrice} />
+        </div>
+        <div className="exchange-history-body-value volume">
+          <FormatNumber number={trade.SymbolAmount} />
+        </div>
+        <div className="exchange-history-body-value time">
+          {dayjs.unix(trade.BlockTime.seconds).format("MM/DD/YY h:mm A")}
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="exchange-history-container">
       <div className="exchange-history-title">Exchange History</div>
@@ -184,24 +213,16 @@ const ExchangeHistory = () => {
         <div className="exchange-history-body-row label time">Time</div>
       </div>
       {exchangeHistory && exchangeHistory.length > 0 ? (
-        <div ref={historyRef} className="exchange-history-body-rows">
-          {exchangeHistory.map((trade, index: number) => (
-            <div className="exchange-history-body-row" key={index}>
-              <div
-                className={`exchange-history-body-value ${
-                  trade.Side === SideBuy.BUY ? "positive" : "negative"
-                }`}
-              >
-                <FormatNumber number={trade.HumanReadablePrice} />
-              </div>
-              <div className="exchange-history-body-value volume">
-                <FormatNumber number={trade.SymbolAmount} />
-              </div>
-              <div className="exchange-history-body-value time">
-                {dayjs.unix(trade.BlockTime.seconds).format("MM/DD/YY h:mm A")}
-              </div>
-            </div>
-          ))}
+        <div className="exchange-history-body-rows">
+          <List
+            height={containerHeight}
+            itemCount={exchangeHistory.length}
+            itemSize={ROW_HEIGHT}
+            width={"100%"}
+            outerRef={historyRef}
+          >
+            {Row}
+          </List>
           <div style={{ height: "1px" }}></div>
         </div>
       ) : (
