@@ -26,9 +26,9 @@ import (
 // GoodTil is a good til order settings.
 type GoodTil struct {
 	// good_til_block_height means that order remains active until a specific blockchain block height is reached.
-	GoodTilBlockHeight uint64
+	GoodTilBlockHeight uint64 `json:"goodTilBlockHeight,omitempty"`
 	// good_til_block_time means that order remains active until a specific blockchain block time is reached.
-	GoodTilBlockTime *time.Time
+	GoodTilBlockTime *time.Time `json:"goodTilBlockTime,omitempty"`
 }
 
 type MsgPlaceOrderRequest struct {
@@ -40,7 +40,7 @@ type MsgPlaceOrderRequest struct {
 	Price       string
 	Quantity    string
 	Side        dextypes.Side
-	GoodTil     *GoodTil             `json:"GoodTil,omitempty"`
+	GoodTil     *GoodTil             `json:"goodTil,omitempty"`
 	TimeInForce dextypes.TimeInForce `json:"TimeInForce,omitempty"`
 }
 
@@ -132,7 +132,13 @@ func (s *httpServer) createOrder() handler.Handler {
 				GoodTilBlockTime:   orderReq.GoodTil.GoodTilBlockTime,
 			}
 		}
-
+		o := OrderData{
+			MsgPlaceOrder: msgPlaceOrder,
+			BaseDenom:     orderReq.BaseDenom,
+			QuoteDenom:    orderReq.QuoteDenom,
+			TimeInForce:   orderReq.TimeInForce,
+			GoodTil:       orderReq.GoodTil,
+		}
 		// addr, err := types.AccAddressFromBech32(orderReq.Sender)
 		// if err != nil {
 		// 	return err
@@ -147,8 +153,16 @@ func (s *httpServer) createOrder() handler.Handler {
 		// res := Order{
 		// 	TXBytes: base64.StdEncoding.EncodeToString(txBytes),
 		// }
-		return json.NewEncoder(w).Encode(msgPlaceOrder)
+		return json.NewEncoder(w).Encode(o)
 	}
+}
+
+type OrderData struct {
+	dextypes.MsgPlaceOrder
+	BaseDenom   string               `json:"baseDenom"`
+	QuoteDenom  string               `json:"quoteDenom"`
+	TimeInForce dextypes.TimeInForce `json:"timeInForce"`
+	GoodTil     *GoodTil             `json:"goodTil,omitempty"`
 }
 
 func (s *httpServer) cancelOrder() handler.Handler {
