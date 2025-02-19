@@ -298,34 +298,35 @@ const OrderActions = ({
             : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
       };
 
-      const test = createOrder(orderCreate);
-      console.log(test);
+      const test = await createOrder(orderCreate);
+      console.log(test.data);
 
-      // const orderMessage = DEX.PlaceOrder(orderCreate);
-      // const signedTx = await coreum?.signTx([orderMessage]);
-      // const encodedTx = TxRaw.encode(signedTx!).finish();
-      // const base64Tx = fromByteArray(encodedTx);
-      // const submitResponse = await submitOrder({ TX: base64Tx });
+      const orderMessage = DEX.PlaceOrder(test.data);
+      console.log("placeorder", orderMessage);
+      const signedTx = await coreum?.signTx([orderMessage]);
+      const encodedTx = TxRaw.encode(signedTx!).finish();
+      const base64Tx = fromByteArray(encodedTx);
+      const submitResponse = await submitOrder({ TX: base64Tx });
 
-      // if (submitResponse.status !== 200) {
-      //   pushNotification({
-      //     type: "error",
-      //     message: "There was an issue submitting your order",
-      //   });
-      //   throw new Error("Error submitting order");
-      // }
-      // const txHash = submitResponse.data.TXHash;
-      // pushNotification({
-      //   type: "success",
-      //   message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
-      //     -4
-      //   )}`,
-      // });
+      if (submitResponse.status !== 200) {
+        pushNotification({
+          type: "error",
+          message: "There was an issue submitting your order",
+        });
+        throw new Error("Error submitting order");
+      }
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
+          -4
+        )}`,
+      });
 
-      // setTimeInForce(TimeInForceString.goodTilCancel);
-      // setGoodTilValue(1);
-      // setVolume("");
-      // setLimitPrice("");
+      setTimeInForce(TimeInForceString.goodTilCancel);
+      setGoodTilValue(1);
+      setVolume("");
+      setLimitPrice("");
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
       pushNotification({
