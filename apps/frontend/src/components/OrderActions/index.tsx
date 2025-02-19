@@ -274,10 +274,7 @@ const OrderActions = ({
         id: crypto.randomUUID(),
         baseDenom: market.base.Denom.Denom,
         quoteDenom: market.counter.Denom.Denom,
-        price:
-          tradeType === TradeType.LIMIT
-            ? formatPriceForRegex(BigNumber(limitPrice))
-            : "",
+        price: tradeType === TradeType.LIMIT ? limitPrice : "",
         quantity: volume,
         side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
         goodTil:

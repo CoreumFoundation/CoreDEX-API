@@ -324,7 +324,8 @@ const OrderHistory = () => {
           sender: wallet.address,
           id: id,
         };
-
+        const test = await cancelOrder(wallet.address, id);
+        
         const cancelMessage = DEX.CancelOrder(orderCancel);
         const signedTx = await coreum?.signTx([cancelMessage]);
         const encodedTx = TxRaw.encode(signedTx!).finish();
