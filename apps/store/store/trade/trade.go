@@ -42,45 +42,9 @@ func NewApplication(client *store.StoreBase) *Application {
 	app := &Application{
 		client: *client,
 	}
-	app.initDB()
+	app.schema()
+	app.index()
 	return app
-}
-
-// Initialize tables and indexes
-func (a *Application) initDB() {
-	_, err := a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS Trade (
-		TXID VARCHAR(255),
-		Account VARCHAR(255),
-		OrderID VARCHAR(255),
-		Sequence BIGINT,
-		Amount JSON,
-		Price FLOAT,
-		Denom1 JSON,
-		Denom2 JSON,
-		Side INT,
-		BlockTime JSON,
-		BlockHeight BIGINT,
-		MetaData JSON,
-		USD FLOAT,
-		Network INT,
-		UNIQUE KEY (TXID, Sequence, Network)
-	)`)
-	if err != nil {
-		logger.Fatalf("Error creating Trade table: %v", err)
-	}
-	_, err = a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS TradePairs (
-		Denom1 JSON,
-		Denom2 JSON,
-		MetaData JSON,
-		Symbol1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom'))),
-		Symbol2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom'))),
-		Network INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))),
-		UNIQUE KEY (Symbol1, Symbol2, Network)
-	)`)
-	if err != nil {
-		logger.Fatalf("Error creating TradePairs table: %v", err)
-	}
-
 }
 
 func (a *Application) Upsert(in *tradegrpc.Trade) error {
@@ -206,11 +170,11 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 		`)
 	args = append(args, filter.Network)
 	if filter.From != nil && filter.From.AsTime().Unix() > 0 {
-		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) >= ?")
+		queryBuilder.WriteString(" AND BlockTimeSeconds >= ?")
 		args = append(args, filter.From.AsTime().Unix())
 	}
 	if filter.To != nil && filter.To.AsTime().Unix() > 0 {
-		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) < ?")
+		queryBuilder.WriteString(" AND BlockTimeSeconds < ?")
 		args = append(args, filter.To.AsTime().Unix())
 	}
 	if filter.Account != nil && *filter.Account != "" {
@@ -231,17 +195,17 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 	}
 	if filter.Denom1 != nil {
 		if filter.Denom1.Denom != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom')) = ?")
+			queryBuilder.WriteString(" AND Symbol1 = ?")
 			args = append(args, filter.Denom1.Denom)
 		}
 	}
 	if filter.Denom2 != nil {
 		if filter.Denom2.Denom != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom')) = ?")
+			queryBuilder.WriteString(" AND Symbol2 = ?")
 			args = append(args, filter.Denom2.Denom)
 		}
 	}
-	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
+	queryBuilder.WriteString(" ORDER BY BlockTimeSeconds DESC")
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
@@ -318,21 +282,21 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 
 	if filter.Denom1 != nil {
 		if filter.Denom1.Currency != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Currency')) = ?")
+			queryBuilder.WriteString(" AND Currency1 = ?")
 			args = append(args, filter.Denom1.Currency)
 		}
 		if filter.Denom1.Issuer != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer')) = ?")
+			queryBuilder.WriteString(" AND Issuer1 = ?")
 			args = append(args, filter.Denom1.Issuer)
 		}
 	}
 	if filter.Denom2 != nil {
 		if filter.Denom2.Currency != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Currency')) = ?")
+			queryBuilder.WriteString(" AND Currency2 = ?")
 			args = append(args, filter.Denom2.Currency)
 		}
 		if filter.Denom2.Issuer != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer')) = ?")
+			queryBuilder.WriteString(" AND Issuer2 = ?")
 			args = append(args, filter.Denom2.Issuer)
 		}
 	}

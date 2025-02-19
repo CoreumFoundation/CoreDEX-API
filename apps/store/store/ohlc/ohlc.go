@@ -1,4 +1,4 @@
-package order
+package ohlc
 
 import (
 	"database/sql"
@@ -37,38 +37,9 @@ func NewApplication(client *store.StoreBase) *Application {
 	app := &Application{
 		client: *client,
 	}
-	app.initDB()
+	app.schema()
+	app.index()
 	return app
-}
-
-// Initialize tables and indexes
-// Initialize tables and indexes
-func (a *Application) initDB() {
-	// Create OHLC table
-	_, err := a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS OHLC (
-        Symbol VARCHAR(255),
-        Timestamp TIMESTAMP,
-        Open DOUBLE,
-        High DOUBLE,
-        Low DOUBLE,
-        Close DOUBLE,
-        Volume DOUBLE,
-        NumberOfTrades BIGINT,
-        Period JSON,
-		PeriodStr VARCHAR(255),
-        USDValue DOUBLE,
-        MetaData JSON,
-        OpenTime TIMESTAMP,
-        CloseTime TIMESTAMP,
-		Network INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))),
-		PeriodType INT AS (JSON_UNQUOTE(JSON_EXTRACT(Period, '$.PeriodType'))),
-		Duration INT AS (JSON_UNQUOTE(JSON_EXTRACT(Period, '$.Duration'))),
-        UNIQUE KEY (Symbol, PeriodType, Duration, Timestamp)
-    )`)
-	if err != nil {
-		logger.Fatalf("Error creating OHLC table: %v", err)
-	}
-	a.client.Client.Exec(`ALTER TABLE OHLC ADD COLUMN QuoteVolume DOUBLE`)
 }
 
 func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
@@ -249,11 +220,6 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 		}
 		queryBuilder.WriteString(")")
 	}
-	// output the query and args to the log
-	for i, arg := range args {
-		logger.Infof("arg %d: %v", i, arg)
-	}
-	logger.Infof("query: %s", queryBuilder.String())
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {

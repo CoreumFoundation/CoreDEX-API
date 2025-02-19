@@ -41,99 +41,9 @@ func NewApplication(client *store.StoreBase) *Application {
 	app := &Application{
 		client: *client,
 	}
-	app.initDB()
+	app.schema()
+	app.index()
 	return app
-}
-
-// Initialize tables and indexes
-func (a *Application) initDB() {
-	_, err := a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS OrderData (
-		Account VARCHAR(255),
-		Type INT,
-		OrderID VARCHAR(255),
-		Sequence BIGINT,
-		BaseDenom JSON,
-		QuoteDenom JSON,
-		Price DOUBLE,
-		Quantity JSON,
-		RemainingQuantity JSON,
-		Side INT,
-		GoodTil JSON,
-		TimeInForce INT,
-		BlockTime JSON,
-		OrderFee BIGINT,
-		MetaData JSON,
-		TXID VARCHAR(255),
-		BlockHeight BIGINT,
-		Network INT,
-		UNIQUE KEY (Sequence, Network)
-	)`)
-	if err != nil {
-		logger.Fatalf("Error creating state table: %v", err)
-	}
-	// Create historical table and trigger
-	_, err = a.client.Client.Exec(`
-	CREATE TABLE IF NOT EXISTS OrderDataHistory (
-		Account VARCHAR(255),
-		Type INT,
-		OrderID VARCHAR(255),
-		Sequence BIGINT,
-		BaseDenom JSON,
-		QuoteDenom JSON,
-		Price DOUBLE,
-		Quantity JSON,
-		RemainingQuantity JSON,
-		Side INT,
-		GoodTil JSON,
-		TimeInForce INT,
-		BlockTime JSON,
-		OrderFee BIGINT,
-		MetaData JSON,
-		TXID VARCHAR(255),
-		BlockHeight BIGINT,
-		Network INT
-	)`)
-	if err != nil {
-		logger.Fatalf("Error creating historical table OrderDataHistory: %v", err)
-	}
-	// Add the OrderStatus INT column (ignore error if it already exists)
-	a.client.Client.Exec(`ALTER TABLE OrderData ADD COLUMN OrderStatus INT`)
-	a.client.Client.Exec(`ALTER TABLE OrderDataHistory ADD COLUMN OrderStatus INT`)
-	// Replace the trigger with the new one
-	_, err = a.client.Client.Exec(`DROP TRIGGER IF EXISTS after_order_update`)
-	if err != nil {
-		logger.Fatalf("Error dropping trigger after_order_update: %v", err)
-	}
-	_, err = a.client.Client.Exec(`
-	CREATE TRIGGER IF NOT EXISTS after_order_update
-	AFTER UPDATE ON OrderData
-	FOR EACH ROW
-	BEGIN
-		INSERT INTO OrderDataHistory (` + OrderDataFields + `) VALUES (
-			NEW.Account,
-			NEW.Type,
-			NEW.OrderID,
-			NEW.Sequence,
-			NEW.BaseDenom,
-			NEW.QuoteDenom,
-			NEW.Price,
-			NEW.Quantity,
-			NEW.RemainingQuantity,
-			NEW.Side,
-			NEW.GoodTil,
-			NEW.TimeInForce,
-			NEW.BlockTime,
-			NEW.OrderFee,
-			NEW.MetaData,
-			NEW.TXID,
-			NEW.BlockHeight,
-			NEW.OrderStatus,
-			NEW.Network
-		);
-	END;`)
-	if err != nil {
-		logger.Fatalf("Error creating historical table OrderDataHistory: %v", err)
-	}
 }
 
 func (a *Application) Get(in *ordergrpc.ID) (*ordergrpc.Order, error) {
@@ -176,11 +86,11 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
         `)
 	args = append(args, filter.Network)
 	if filter.From != nil && filter.From.AsTime().Unix() > 0 {
-		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) >= ?")
+		queryBuilder.WriteString(" AND BlockTimeSeconds >= ?")
 		args = append(args, filter.From.AsTime().Unix())
 	}
 	if filter.To != nil && filter.To.AsTime().Unix() > 0 {
-		queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) < ?")
+		queryBuilder.WriteString(" AND BlockTimeSeconds < ?")
 		args = append(args, filter.To.AsTime().Unix())
 	}
 	if filter.Account != nil && *filter.Account != "" {
@@ -197,21 +107,21 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 	}
 	if filter.Denom1 != nil {
 		if filter.Denom1.Currency != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BaseDenom, '$.Currency')) = ?")
+			queryBuilder.WriteString(" AND BaseCurrency = ?")
 			args = append(args, filter.Denom1.Currency)
 		}
 		if filter.Denom1.Issuer != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(BaseDenom, '$.Issuer')) = ?")
+			queryBuilder.WriteString(" AND BaseIssuer = ?")
 			args = append(args, filter.Denom1.Issuer)
 		}
 	}
 	if filter.Denom2 != nil {
 		if filter.Denom2.Currency != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(QuoteDenom, '$.Currency')) = ?")
+			queryBuilder.WriteString(" AND QuoteCurrency = ?")
 			args = append(args, filter.Denom2.Currency)
 		}
 		if filter.Denom2.Issuer != "" {
-			queryBuilder.WriteString(" AND JSON_UNQUOTE(JSON_EXTRACT(QuoteDenom, '$.Issuer')) = ?")
+			queryBuilder.WriteString(" AND QuoteIssuer = ?")
 			args = append(args, filter.Denom2.Issuer)
 		}
 	}
@@ -223,7 +133,7 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 		queryBuilder.WriteString(" AND OrderStatus=?")
 		args = append(args, *filter.OrderStatus)
 	}
-	queryBuilder.WriteString(" ORDER BY JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds')) DESC")
+	queryBuilder.WriteString(" ORDER BY BlockTimeSeconds DESC")
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
