@@ -73,9 +73,8 @@ const OrderActions = ({
   const [timeInForce, setTimeInForce] = useState<TimeInForceString>(
     TimeInForceString.goodTilCancel
   );
-  const [timeToCancel, setTimeToCancel] = useState<TimeSelection>(
-    TimeSelection["5M"]
-  );
+  const [goodTilValue, setGoodTilValue] = useState<number>(1);
+  const [goodTilUnit, setGoodTilUnit] = useState<string>("Minutes");
   const [expirationTime, setExpirationTime] = useState<Date>();
   const [customTime, setCustomTime] = useState<string>("");
   const [blockHeight, setBlockHeight] = useState<number>(0);
@@ -203,35 +202,23 @@ const OrderActions = ({
     if (timeInForce === TimeInForceString.goodTilTime) {
       let now = dayjs.utc();
 
-      switch (timeToCancel) {
-        case TimeSelection["5M"]:
-          now = dayjs.utc().add(5, "minutes");
+      switch (goodTilUnit) {
+        case "Minutes":
+          now = dayjs.utc().add(goodTilValue, "minutes");
           break;
-        case TimeSelection["15M"]:
-          now = dayjs.utc().add(15, "minutes");
+        case "Hours":
+          now = dayjs.utc().add(goodTilValue, "hours");
           break;
-        case TimeSelection["30M"]:
-          now = dayjs.utc().add(30, "minutes");
+        case "Days":
+          now = dayjs.utc().add(goodTilValue, "days");
           break;
-        case TimeSelection["1H"]:
-          now = dayjs.utc().add(1, "hour");
-          break;
-        case TimeSelection["6H"]:
-          now = dayjs.utc().add(6, "hours");
-          break;
-        case TimeSelection["12H"]:
-          now = dayjs.utc().add(12, "hours");
-          break;
-        case TimeSelection["1D"]:
-          now = dayjs.utc().add(1, "day");
-          break;
-        case TimeSelection.CUSTOM:
+        case "Custom":
           now = dayjs.utc(customTime);
           break;
       }
       setExpirationTime(now.toDate());
     }
-  }, [timeInForce, timeToCancel, customTime]);
+  }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
   // format price for regex according to coreum backend
   // 1.5 -> 15e-1 or 1e+1 -> 10
@@ -324,7 +311,9 @@ const OrderActions = ({
       });
 
       setTimeInForce(TimeInForceString.goodTilCancel);
-      setTimeToCancel(TimeSelection["5M"]);
+      setGoodTilValue(1);
+      setVolume("");
+      setLimitPrice("");
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
       pushNotification({
@@ -466,20 +455,91 @@ const OrderActions = ({
 
                       {timeInForce === TimeInForceString.goodTilTime && (
                         <>
-                          <Dropdown
+                          {/* <Dropdown
                             variant={DropdownVariant.OUTLINED}
                             items={Object.keys(TimeSelection).map((key) => [
                               TimeSelection[key as keyof typeof TimeSelection],
                             ])}
                             value={timeToCancel}
-                            onClick={(item) =>
-                              setTimeToCancel(item[0] as TimeSelection)
-                            }
+                            onClick={(item) => {
+                              setTimeToCancel(item[0] as TimeSelection);
+                            }}
                             renderItem={(item) => <div>{item}</div>}
-                          />
+                          /> */}
 
-                          {timeToCancel === TimeSelection.CUSTOM && (
-                            <div className="good-til-time-selectors">
+                          {
+                            <div className="good-til-time">
+                              <div className="time-selector">
+                                <img
+                                  src="/trade/images/arrow.svg"
+                                  alt=""
+                                  style={{
+                                    transform: "rotate(90deg)",
+                                  }}
+                                  onClick={() =>
+                                    goodTilUnit !== TimeSelection.CUSTOM &&
+                                    setGoodTilValue((prev) =>
+                                      Math.max(prev - 1, 1)
+                                    )
+                                  }
+                                />
+
+                                <div className="good-til-values">
+                                  {goodTilUnit !== TimeSelection.CUSTOM && (
+                                    <span className="time-value">
+                                      {goodTilValue}
+                                    </span>
+                                  )}
+
+                                  <span className="time-unit">
+                                    {goodTilUnit}
+                                  </span>
+                                </div>
+
+                                <img
+                                  src="/trade/images/arrow.svg"
+                                  alt=""
+                                  style={{
+                                    transform: "rotate(-90deg)",
+                                  }}
+                                  onClick={() =>
+                                    goodTilUnit !== TimeSelection.CUSTOM &&
+                                    setGoodTilValue((prev) => prev + 1)
+                                  }
+                                />
+                              </div>
+
+                              <div className="unit-selector">
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Minutes")}
+                                >
+                                  mins
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Hours")}
+                                >
+                                  hrs
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Days")}
+                                >
+                                  day
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Custom")}
+                                >
+                                  custom
+                                </div>
+                              </div>
+                            </div>
+                          }
+
+                          {goodTilUnit === TimeSelection.CUSTOM && (
+                            <div className="custom-time">
                               <DatetimePicker
                                 selectedDate={customTime}
                                 onChange={(val: any) => setCustomTime(val)}

@@ -206,18 +206,64 @@
               .time-in-force {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 20px;
                 .time-in-force-label {
                   @extend %label;
                   color: #868991;
                 }
               }
+              .good-til-time {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                .time-selector {
+                  display: flex;
+                  justify-content: space-between;
+                  .good-til-values {
+                    display: flex;
+                    gap: 4px;
 
-              .good-til-time-selectors {
+                    .time-value,
+                    .time-unit {
+                      font-family: "Noto Sans";
+                      font-size: 12px;
+                      font-weight: 500;
+                      line-height: 24px;
+                      color: #fff;
+                    }
+                  }
+                }
+                .unit-selector {
+                  display: flex;
+                  justify-content: space-between;
+                  gap: 4px;
+                  .unit {
+                    border: 1px solid #868991;
+                    border-radius: 8px;
+                    flex: 1;
+                    display: flex;
+                    justify-content: center;
+                    padding: 0px 20px;
+                    font-family: "Noto Sans";
+                    font-size: 12px;
+                    font-weight: 300;
+                    line-height: 24px;
+                    color: #fff;
+                    transition: all 0.3s ease-in-out;
+
+                    &:hover {
+                      border: 1px solid #25d695;
+                    }
+                  }
+                }
+              }
+
+              .custom-time {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
               }
+
               .dropdown-list {
                 max-height: 180px;
               }
