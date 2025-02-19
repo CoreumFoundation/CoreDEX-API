@@ -15,7 +15,7 @@ import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
 import BigNumber from "bignumber.js";
-import { submitOrder, getWalletAssets } from "@/services/api";
+import { submitOrder, getWalletAssets, createOrder } from "@/services/api";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import "./order-actions.scss";
@@ -298,31 +298,34 @@ const OrderActions = ({
             : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
       };
 
-      const orderMessage = DEX.PlaceOrder(orderCreate);
-      const signedTx = await coreum?.signTx([orderMessage]);
-      const encodedTx = TxRaw.encode(signedTx!).finish();
-      const base64Tx = fromByteArray(encodedTx);
-      const submitResponse = await submitOrder({ TX: base64Tx });
+      const test = createOrder(orderCreate);
+      console.log(test);
 
-      if (submitResponse.status !== 200) {
-        pushNotification({
-          type: "error",
-          message: "There was an issue submitting your order",
-        });
-        throw new Error("Error submitting order");
-      }
-      const txHash = submitResponse.data.TXHash;
-      pushNotification({
-        type: "success",
-        message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
-          -4
-        )}`,
-      });
+      // const orderMessage = DEX.PlaceOrder(orderCreate);
+      // const signedTx = await coreum?.signTx([orderMessage]);
+      // const encodedTx = TxRaw.encode(signedTx!).finish();
+      // const base64Tx = fromByteArray(encodedTx);
+      // const submitResponse = await submitOrder({ TX: base64Tx });
 
-      setTimeInForce(TimeInForceString.goodTilCancel);
-      setGoodTilValue(1);
-      setVolume("");
-      setLimitPrice("");
+      // if (submitResponse.status !== 200) {
+      //   pushNotification({
+      //     type: "error",
+      //     message: "There was an issue submitting your order",
+      //   });
+      //   throw new Error("Error submitting order");
+      // }
+      // const txHash = submitResponse.data.TXHash;
+      // pushNotification({
+      //   type: "success",
+      //   message: `Order Placed! TXHash: ${txHash.slice(0, 6)}...${txHash.slice(
+      //     -4
+      //   )}`,
+      // });
+
+      // setTimeInForce(TimeInForceString.goodTilCancel);
+      // setGoodTilValue(1);
+      // setVolume("");
+      // setLimitPrice("");
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
       pushNotification({
