@@ -210,7 +210,7 @@ func calculateTickerOHLC(ohlcs *ohlcgrpc.OHLCs, domainOptions *dmn.TickerReadOpt
 			high = baseOHLCS.High
 		}
 		volume += baseOHLCS.Volume
-
+		invertedVolume += baseOHLCS.QuoteVolume
 		// calculate the open:
 		if tStart.IsZero() || tStart.After(baseOHLCS.Timestamp.AsTime()) {
 			open = baseOHLCS.Open
