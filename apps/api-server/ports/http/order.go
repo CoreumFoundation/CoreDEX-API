@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
@@ -44,8 +43,12 @@ type MsgPlaceOrderRequest struct {
 	TimeInForce dextypes.TimeInForce `json:"TimeInForce,omitempty"`
 }
 
-type Order struct {
-	TXBytes string
+type OrderData struct {
+	dextypes.MsgPlaceOrder
+	BaseDenom   string               `json:"baseDenom"`
+	QuoteDenom  string               `json:"quoteDenom"`
+	TimeInForce dextypes.TimeInForce `json:"timeInForce"`
+	GoodTil     *GoodTil             `json:"goodTil,omitempty"`
 }
 
 func (s *httpServer) createOrder() handler.Handler {
@@ -72,26 +75,10 @@ func (s *httpServer) createOrder() handler.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return err
 		}
-		// quoteCurrency, err := s.app.Currency.GetCurrency(r.Context(), network, orderReq.QuoteDenom)
-		// if err != nil {
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	return err
-		// }
 		baseDenomPrecision := int64(0)
 		if baseCurrency.Denom.Precision != nil {
 			baseDenomPrecision = int64(*baseCurrency.Denom.Precision)
 		}
-		// quoteDenomPrecision := int64(0)
-		// if quoteCurrency.Denom.Precision != nil {
-		// 	quoteDenomPrecision = int64(*quoteCurrency.Denom.Precision)
-		// }
-
-		// priceExponent := quoteDenomPrecision - baseDenomPrecision
-		// if orderReq.Side == dextypes.SIDE_BUY {
-		// 	priceExponent = baseDenomPrecision - quoteDenomPrecision
-		// }
-		// price = price.Mul(decimal.New(1, int32(priceExponent)))
-
 		coreumPrice, err := coreum.ParsePrice(price.String())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -139,30 +126,8 @@ func (s *httpServer) createOrder() handler.Handler {
 			TimeInForce:   orderReq.TimeInForce,
 			GoodTil:       orderReq.GoodTil,
 		}
-		// addr, err := types.AccAddressFromBech32(orderReq.Sender)
-		// if err != nil {
-		// 	return err
-		// }
-		// txBytes, err := s.app.Order.EncodeTx(network, addr, &msgPlaceOrder)
-		// if err != nil {
-		// 	logger.Errorf("Error encoding tx: %v", err)
-		// 	return err
-		// }
-		// // We do not want to handle bytes in the return, and we like to have a structured response:
-		// // base64 encode the txBytes:
-		// res := Order{
-		// 	TXBytes: base64.StdEncoding.EncodeToString(txBytes),
-		// }
 		return json.NewEncoder(w).Encode(o)
 	}
-}
-
-type OrderData struct {
-	dextypes.MsgPlaceOrder
-	BaseDenom   string               `json:"baseDenom"`
-	QuoteDenom  string               `json:"quoteDenom"`
-	TimeInForce dextypes.TimeInForce `json:"timeInForce"`
-	GoodTil     *GoodTil             `json:"goodTil,omitempty"`
 }
 
 func (s *httpServer) cancelOrder() handler.Handler {
@@ -177,30 +142,11 @@ func (s *httpServer) cancelOrder() handler.Handler {
 			w.WriteHeader(http.StatusBadRequest)
 			return err
 		}
-		network, err := networklib.Network(r)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return err
-		}
 		msgCancelOrder := dextypes.MsgCancelOrder{
 			Sender: orderReq.Sender,
 			ID:     orderReq.OrderID,
 		}
-		addr, err := types.AccAddressFromBech32(orderReq.Sender)
-		if err != nil {
-			return err
-		}
-		txBytes, err := s.app.Order.EncodeTx(network, addr, &msgCancelOrder)
-		if err != nil {
-			logger.Infof("Error encoding cancel tx: %v", err)
-			return err
-		}
-		// We do not want to handle bytes in the return, and we like to have a structured response:
-		// base64 encode the txBytes:
-		res := Order{
-			TXBytes: base64.StdEncoding.EncodeToString(txBytes),
-		}
-		return json.NewEncoder(w).Encode(res)
+		return json.NewEncoder(w).Encode(msgCancelOrder)
 	}
 }
 
