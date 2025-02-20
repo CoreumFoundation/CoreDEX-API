@@ -27,7 +27,7 @@ const MarketSelector = () => {
         const data = await getCurrencies();
         if (data) {
           const currs = data.data.Currencies;
-          setCurrencies(currs);
+          handleUdevcore(currs);
         }
       } catch (e) {
         console.log("ERROR GETTING CURRENCIES DATA >>", e);
@@ -50,6 +50,18 @@ const MarketSelector = () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
+
+  // rename udevcore to core for display purposes + add to top of list
+  const handleUdevcore = (currs: Token[]) => {
+    const udevcore = currs.find((curr) => curr.Denom.Name === "udevcore");
+    if (udevcore) {
+      udevcore.Denom.Name = "Core";
+      udevcore.Denom.Currency = "Core";
+    }
+    currs = currs.filter((curr) => curr.Denom.Name !== "udevcore");
+    currs.unshift(udevcore!);
+    setCurrencies(currs);
+  };
 
   return (
     <div className="market-selector-container" ref={ref}>
