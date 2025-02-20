@@ -14,7 +14,8 @@ import {
   UpdateStrategy,
   wsManager,
 } from "@/services/websocket";
-// import dayjs from "dayjs";
+import { mirage } from "ldrs";
+mirage.register();
 
 declare global {
   interface Window {
@@ -238,6 +239,33 @@ const TradingView = ({ height }: { height: number | string }) => {
             1m
           </div>
           <div
+            className={`interval ${resolution === "5" ? "active" : ""}`}
+            onClick={() => {
+              updateResolution("5");
+              setChartPeriod("5");
+            }}
+          >
+            5m
+          </div>
+          <div
+            className={`interval ${resolution === "15" ? "active" : ""}`}
+            onClick={() => {
+              updateResolution("15");
+              setChartPeriod("15");
+            }}
+          >
+            15m
+          </div>
+          <div
+            className={`interval ${resolution === "30" ? "active" : ""}`}
+            onClick={() => {
+              updateResolution("30");
+              setChartPeriod("30");
+            }}
+          >
+            30m
+          </div>
+          <div
             className={`interval ${resolution === "1h" ? "active" : ""}`}
             onClick={() => {
               updateResolution("60");
@@ -291,7 +319,7 @@ const TradingView = ({ height }: { height: number | string }) => {
             width: "100%",
           }}
         >
-          loading...
+          <l-mirage size="40" speed="6" color="#25d695"></l-mirage>
         </div>
       )}
       <div

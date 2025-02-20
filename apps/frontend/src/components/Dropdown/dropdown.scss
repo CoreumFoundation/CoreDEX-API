@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  position: relative;
+  overflow: visible;
   // height: 37px;
   .dropdown-label {
     color: var(--Shades-Light, #868991);
@@ -149,11 +151,19 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    overflow: scroll;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
   }
 
   .dropdown-item {
-    // padding: 8px 16px;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
     cursor: pointer;

@@ -47,7 +47,7 @@ const Tickers = () => {
 
     setLastPrice(tickers.Tickers[market.pair_symbol].LastPrice);
     setVolume(tickers.Tickers[market.pair_symbol].Volume);
-    setInvertedVolume(tickers.Tickers[market.pair_symbol].Invertedvolume);
+    setInvertedVolume(tickers.Tickers[market.pair_symbol].InvertedVolume);
     setHighPrice(tickers.Tickers[market.pair_symbol].HighPrice);
     setLowPrice(tickers.Tickers[market.pair_symbol].LowPrice);
   }, [tickers, market]);
@@ -90,7 +90,7 @@ const Tickers = () => {
           className={`change ${Number(change) > 0 ? "positive" : "negative"}`}
         >
           <span>{Number(change) >= 0 ? "+" : ""}</span>
-          <FormatNumber number={change} precision={2} />
+          <FormatNumber number={change} precision={2} /> %
         </div>
       </div>
 

@@ -1,9 +1,17 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import {
   OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
   SideBuy,
+  TradeRecord,
   TransformedOrder,
 } from "@/types/market";
 import { useStore } from "@/state/store";
@@ -18,7 +26,6 @@ import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
-import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
 import {
   UpdateStrategy,
@@ -26,11 +33,20 @@ import {
   Method,
   NetworkToEnum,
 } from "@/services/websocket";
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
+import debounce from "lodash/debounce";
+import { FixedSizeList as List } from "react-window";
+dayjs.extend(duration);
 
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
   ORDER_HISTORY: "ORDER_HISTORY",
 };
+
+const MAX_HISTORY_DAYS = 14;
+const containerHeight = 300;
+const ROW_HEIGHT = 26;
 
 const OrderHistory = () => {
   const {
@@ -46,8 +62,14 @@ const OrderHistory = () => {
   } = useStore();
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
+  const [timeRange, setTimeRange] = useState({
+    from: dayjs().subtract(1, "day").unix(),
+    to: dayjs().unix(),
+  });
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const listOuterRef = useRef<HTMLDivElement>(null);
 
-  // TODO replace from backend
   const resolveOrderStatus = (status: OrderHistoryStatus) => {
     switch (status) {
       case OrderHistoryStatus.OrderStatus_ORDER_STATUS_OPEN:
@@ -65,33 +87,52 @@ const OrderHistory = () => {
 
   // fetch order history
   useEffect(() => {
-    const fetchExchangeHistory = async () => {
+    const initFetch = async () => {
       if (!wallet?.address) return;
-      const from = new Date().getTime();
-      const to = from - 2592000000; // 30 days ago
-      try {
-        const response = await getTrades(
-          market.pair_symbol,
-          to,
-          from,
-          wallet?.address
-        );
-        if (response.status === 200) {
-          const data = response.data;
-          setOrderHistory(data);
-        }
-      } catch (e) {
-        console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
-        setOrderHistory(null);
+      let daysBack = 1;
+      let dataFound = await fetchHistoryWindow(daysBack);
+      while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
+        daysBack++;
+        dataFound = await fetchHistoryWindow(daysBack);
+      }
+      if (!dataFound) {
+        setOrderHistory([]);
+        setHasMore(false);
       }
     };
-    fetchExchangeHistory();
+
+    initFetch();
   }, [market.pair_symbol, wallet]);
+
+  const fetchHistoryWindow = async (daysBack: number): Promise<boolean> => {
+    const from = dayjs().subtract(daysBack, "day").unix();
+    const to = dayjs()
+      .subtract(daysBack - 1, "day")
+      .unix();
+    try {
+      const response = await getTrades(market.pair_symbol, from, to);
+      if (
+        response.status === 200 &&
+        response.data &&
+        response.data.length > 0
+      ) {
+        setOrderHistory(response.data);
+        wsManager.setInitialState(orderHistorySubscription, response.data);
+        setTimeRange({ from, to });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      return false;
+    }
+  };
 
   // fetch open orders filtered from orderbook. transform to formatted data
   useEffect(() => {
     const fetchOpenOrders = async () => {
       try {
+        if (!wallet?.address) return;
         const response = await getOrderbook(
           market.pair_symbol,
           wallet?.address
@@ -100,6 +141,7 @@ const OrderHistory = () => {
         if (data) {
           const openOrders = transformOrderbook(data);
           setOpenOrders(openOrders);
+          wsManager.setInitialState(openOrderSubscription, openOrders);
         }
       } catch (e) {
         console.log("ERROR GETTING OPEN ORDERS DATA >>", e);
@@ -154,6 +196,86 @@ const OrderHistory = () => {
     };
   }, [orderHistorySubscription]);
 
+  const mergeUniqueTrades = (
+    prevHistory: TradeRecord[],
+    newTrades: TradeRecord[]
+  ): TradeRecord[] => {
+    const filteredNew = newTrades.filter(
+      (trade) => !prevHistory.some((prev) => prev.TXID === trade.TXID)
+    );
+    return [...prevHistory, ...filteredNew];
+  };
+
+  const loadOlderHistory = async (): Promise<number> => {
+    try {
+      const currentWindow = timeRange.to - timeRange.from;
+      const newTo = timeRange.from;
+      const newFrom = newTo - currentWindow;
+      const response = await getTrades(market.pair_symbol, newFrom, newTo);
+      if (response.status === 200) {
+        const olderData = response.data;
+        if (!olderData || olderData.length === 0) {
+          setHasMore(false);
+          return 0;
+        }
+        const prevHistory = orderHistory || [];
+        const mergedHistory = mergeUniqueTrades(prevHistory, olderData);
+        wsManager.setInitialState(orderHistorySubscription, mergedHistory);
+        setOrderHistory(mergedHistory);
+        setTimeRange({ from: newFrom, to: newTo });
+        return olderData.length;
+      }
+    } catch (e) {
+      console.log("ERROR FETCHING OLDER HISTORY >>", e);
+    }
+    return 0;
+  };
+
+  useLayoutEffect(() => {
+    if (!listOuterRef.current) return;
+    const container = listOuterRef.current;
+
+    const handleScroll = async () => {
+      const threshold = 50;
+      if (
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - threshold
+      ) {
+        if (
+          orderHistory &&
+          orderHistory.length > 0 &&
+          !isFetchingMore &&
+          hasMore
+        ) {
+          setIsFetchingMore(true);
+          const anchorEl = container.querySelector(".history-row");
+          const anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : null;
+          const previousScrollTop = container.scrollTop;
+
+          await loadOlderHistory();
+
+          requestAnimationFrame(() => {
+            if (anchorEl && anchorRect) {
+              const newAnchorRect = anchorEl.getBoundingClientRect();
+              const delta = newAnchorRect.top - anchorRect.top;
+              container.scrollTop = previousScrollTop + delta;
+            } else {
+              container.scrollTop = previousScrollTop;
+            }
+            setIsFetchingMore(false);
+          });
+        }
+      }
+    };
+
+    const debouncedHandleScroll = debounce(handleScroll, 100);
+    container.addEventListener("scroll", debouncedHandleScroll);
+    return () => {
+      container.removeEventListener("scroll", debouncedHandleScroll);
+      debouncedHandleScroll.cancel();
+    };
+  }, [orderHistory, timeRange, market.pair_symbol, isFetchingMore, hasMore]);
+
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
       const transformSide = (
@@ -194,37 +316,33 @@ const OrderHistory = () => {
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
     try {
-      const data = await cancelOrder(wallet.address, id);
+      const orderCancel = {
+        Sender: wallet.address,
+        OrderID: id,
+      };
+      const orderCancelResponse = await cancelOrder(orderCancel);
+      const cancelMessage = DEX.CancelOrder(orderCancelResponse);
+      const signedTx = await coreum?.signTx([cancelMessage]);
+      const encodedTx = TxRaw.encode(signedTx!).finish();
+      const base64Tx = fromByteArray(encodedTx);
+      const submitResponse = await submitOrder({ TX: base64Tx });
 
-      if (data) {
-        const orderCancel: MsgCancelOrder = {
-          sender: wallet.address,
-          id: id,
-        };
-
-        const cancelMessage = DEX.CancelOrder(orderCancel);
-        const signedTx = await coreum?.signTx([cancelMessage]);
-        const encodedTx = TxRaw.encode(signedTx!).finish();
-        const base64Tx = fromByteArray(encodedTx);
-        const submitResponse = await submitOrder({ TX: base64Tx });
-
-        if (submitResponse.status !== 200) {
-          pushNotification({
-            type: "error",
-            message: "There was an issue cancelling your order",
-          });
-          throw new Error("Error submitting order");
-        }
-
-        const txHash = submitResponse.data.TXHash;
+      if (submitResponse.status !== 200) {
         pushNotification({
-          type: "success",
-          message: `Order Cancelled! TXHash: ${txHash.slice(
-            0,
-            6
-          )}...${txHash.slice(-4)}`,
+          type: "error",
+          message: "There was an issue cancelling your order",
         });
+        throw new Error("Error submitting order");
       }
+
+      const txHash = submitResponse.data.TXHash;
+      pushNotification({
+        type: "success",
+        message: `Order Cancelled! TXHash: ${txHash.slice(
+          0,
+          6
+        )}...${txHash.slice(-4)}`,
+      });
     } catch (e: any) {
       console.log("ERROR CANCELLING ORDER >>", e);
       pushNotification({
@@ -232,6 +350,55 @@ const OrderHistory = () => {
         message: "Error cancelling order",
       });
     }
+  };
+
+  const Row = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
+    if (!orderHistory) return null;
+    const order = orderHistory[index];
+    return (
+      <a
+        style={style}
+        className="history-row"
+        href={`${resolveCoreumExplorer(network)}/transactions/${order.TXID}`}
+        target="_blank"
+      >
+        <div className={order.Side === SideBuy.BUY ? "buy" : "sell"}>
+          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
+        </div>
+        <div className="order-id">{order.Sequence}</div>
+        <div className="status">{resolveOrderStatus(order.Status)}</div>
+        <FormatNumber number={order.HumanReadablePrice} className="price" />
+        <FormatNumber number={order.SymbolAmount} className="volume" />
+        <FormatNumber
+          number={Number(order.HumanReadablePrice) * Number(order.SymbolAmount)}
+          className="total"
+        />
+        <p className="date">
+          {dayjs.unix(order.BlockTime.seconds).format("MM/DD/YY h:mm A")}
+        </p>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="21"
+          height="21"
+          viewBox="0 0 21 21"
+          fill="none"
+          className="external-link"
+        >
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M2 5.941C2.00498 5.83929 2.03774 5.74086 2.09471 5.65645C2.15166 5.57191 2.23083 5.50453 2.32345 5.46193L10.2992 2.04202C10.43 1.98599 10.578 1.98599 10.7087 2.04202L18.6849 5.46208C18.7777 5.50308 18.8566 5.56994 18.9126 5.65471C18.9685 5.73949 18.9988 5.83885 19 5.94037L19 15.0602C18.9999 15.162 18.9698 15.2617 18.9135 15.3465C18.8572 15.4314 18.7771 15.4981 18.6834 15.5378L10.703 18.958C10.5728 19.014 10.4253 19.014 10.2952 18.958L2.31494 15.5378C2.22147 15.4978 2.14189 15.4312 2.08584 15.3463C2.02981 15.2614 2 15.162 2 15.0602V5.941ZM3.03967 14.7178L9.9805 17.6924V9.70242L3.03967 6.72761V14.7178ZM3.83948 5.93982L10.5002 8.79507L17.161 5.93982L10.5002 3.0851L3.83948 5.93982ZM11.0199 17.6924L17.9608 14.7178V6.72761L11.0199 9.70229V17.6924Z"
+            fill="#5E6773"
+          />
+        </svg>
+      </a>
+    );
   };
 
   return (
@@ -287,7 +454,7 @@ const OrderHistory = () => {
 
           <div className="order-history-body">
             {activeTab === TABS.OPEN_ORDERS ? (
-              <>
+              <div className="open-orders">
                 {openOrders && openOrders.length > 0 ? (
                   openOrders.map((order: TransformedOrder, index) => {
                     return (
@@ -344,77 +511,26 @@ const OrderHistory = () => {
                     You have no orders!
                   </div>
                 )}
-              </>
+              </div>
             ) : (
-              <>
+              <div className="order-history">
                 {orderHistory && orderHistory.length > 0 ? (
-                  orderHistory.map((order, index) => {
-                    return (
-                      <a
-                        key={index}
-                        className="history-row"
-                        href={`${resolveCoreumExplorer(network)}/transactions/${
-                          order.TXID
-                        }`}
-                      >
-                        <div
-                          className={
-                            order.Side === SideBuy.BUY ? `buy` : "sell"
-                          }
-                        >
-                          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
-                        </div>
-                        <div className="order-id"> {order.Sequence}</div>
-                        <div className="status">
-                          {resolveOrderStatus(order.Status)}
-                        </div>
-                        <FormatNumber
-                          number={order.HumanReadablePrice}
-                          className="price"
-                        />
-                        <FormatNumber
-                          number={order.SymbolAmount}
-                          className="volume"
-                        />
-                        <FormatNumber
-                          number={
-                            Number(order.HumanReadablePrice) *
-                            Number(order.SymbolAmount)
-                          }
-                          className="total"
-                        />
-                        <p className="date">
-                          {"BlockTime" in order &&
-                            new Date(
-                              order.BlockTime.seconds * 1000
-                            ).toLocaleString()}
-                        </p>
-
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="21"
-                          height="21"
-                          viewBox="0 0 21 21"
-                          fill="none"
-                          className="external-link"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M2 5.941C2.00498 5.83929 2.03774 5.74086 2.09471 5.65645C2.15166 5.57191 2.23083 5.50453 2.32345 5.46193L10.2992 2.04202C10.43 1.98599 10.578 1.98599 10.7087 2.04202L18.6849 5.46208C18.7777 5.50308 18.8566 5.56994 18.9126 5.65471C18.9685 5.73949 18.9988 5.83885 19 5.94037L19 15.0602C18.9999 15.162 18.9698 15.2617 18.9135 15.3465C18.8572 15.4314 18.7771 15.4981 18.6834 15.5378L10.703 18.958C10.5728 19.014 10.4253 19.014 10.2952 18.958L2.31494 15.5378C2.22147 15.4978 2.14189 15.4312 2.08584 15.3463C2.02981 15.2614 2 15.162 2 15.0602V5.941ZM3.03967 14.7178L9.9805 17.6924V9.70242L3.03967 6.72761V14.7178ZM3.83948 5.93982L10.5002 8.79507L17.161 5.93982L10.5002 3.0851L3.83948 5.93982ZM11.0199 17.6924L17.9608 14.7178V6.72761L11.0199 9.70229V17.6924Z"
-                            fill="#5E6773"
-                          />
-                        </svg>
-                      </a>
-                    );
-                  })
+                  <List
+                    height={containerHeight}
+                    itemCount={orderHistory.length}
+                    itemSize={ROW_HEIGHT}
+                    width={"100%"}
+                    outerRef={listOuterRef}
+                  >
+                    {Row}
+                  </List>
                 ) : (
                   <div className="no-orders">
                     <img src="/trade/images/planet-graphic.svg" alt="" />
                     You have no orders!
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </>

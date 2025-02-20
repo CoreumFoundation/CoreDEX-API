@@ -48,7 +48,7 @@ export class CoreumDataFeed {
       const market = useStore.getState().market;
 
       if (ticker && ticker.Tickers[market.pair_symbol].LastPrice) {
-        const tick = ticker.Tickers[market.pair_symbol]
+        const tick = ticker.Tickers[market.pair_symbol];
         const zeros = () => {
           let string = "";
           const decimalLength = String(tick.LastPrice).includes(".")
@@ -64,7 +64,7 @@ export class CoreumDataFeed {
 
         const symbol_stub: BarSymbolInfo = {
           ...this.asset,
-          exchange: "COREUMDEX",
+          // exchange: "COREUMDEX",
           session: "24x7",
           timezone: dayjs.tz.guess(),
           has_intraday: true,

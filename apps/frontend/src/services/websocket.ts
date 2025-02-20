@@ -16,6 +16,7 @@ export enum Method {
   TICKER = 5,
   ORDERBOOK = 6,
   ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT = 7,
+  WALLET = 8,
 }
 
 export enum Network {

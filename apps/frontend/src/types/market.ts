@@ -1,5 +1,5 @@
 // TODO - remove enums and types that can be replaced from backend protos
-import { TimeInForce } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Side, TimeInForce } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 
 export type Market = {
   base: Token;
@@ -107,7 +107,7 @@ export enum TradeType {
   LIMIT = "limit",
 }
 export type OrderbookAction = {
-  type: OrderType;
+  type: Side;
   price: number;
   volume: number;
 };
@@ -132,7 +132,7 @@ export type ChartSubscription = {
 export type BarSymbolInfo = {
   id: string;
   name: string;
-  exchange: string;
+  exchange?: string;
   session: string;
   timezone: string;
   has_intraday: boolean;
@@ -189,7 +189,7 @@ export interface Ticker {
   LastPrice: number;
   FirstPrice: number;
   Volume: number;
-  Invertedvolume: number;
+  InvertedVolume: number;
   Inverted: boolean;
 }
 export type TickerResponse = {
@@ -313,6 +313,8 @@ export type WalletAsset = {
   Denom: string;
   SymbolAmount: string;
 };
+
+export type WalletBalances = WalletAsset[];
 
 export type CancelOrderResponse = {
   TXBytes: string;

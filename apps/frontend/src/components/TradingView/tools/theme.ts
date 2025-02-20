@@ -172,7 +172,7 @@ const dark = {
     },
     notifications: {
       text: "#c3c3c3",
-      high_importance: "#DE0F3E",
+      high_importance: "#ff7386",
       medium_importance: "#ED6D24",
       low_importance: "#18A773",
     },
@@ -435,7 +435,7 @@ const light = {
     },
     notifications: {
       text: "#878787",
-      high_importance: "#DE0F3E",
+      high_importance: "#ff7386",
       medium_importance: "#ED6D24",
       low_importance: "#18A773",
     },

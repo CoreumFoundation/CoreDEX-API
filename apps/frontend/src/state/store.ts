@@ -15,13 +15,13 @@ export type State = {
   fetching: boolean;
   wallet: any;
   setWallet: (wallet: any) => Promise<void>;
-  account: string;
-  setAccount: (accountID: string) => void;
   network: CoreumNetwork;
   setNetwork: (network: CoreumNetwork) => void;
   coreum: Client | null;
   setCoreum: (client: Client | null) => Promise<void>;
   pushNotification: (object: ToasterProps) => void;
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
 
   // market
   market: Market;
@@ -64,10 +64,7 @@ export const useStore = create<State>((set) => ({
       wallet,
     }));
   },
-  account: "",
-  setAccount: (accountID: string) => {
-    set({ account: accountID });
-  },
+
   coreum: null,
   setCoreum: async (client: Client | null) => {
     set({ coreum: client });
@@ -81,6 +78,11 @@ export const useStore = create<State>((set) => ({
     } else {
       toast.warning(message);
     }
+  },
+
+  isLoading: false,
+  setIsLoading: (isLoading: boolean) => {
+    set({ isLoading: isLoading });
   },
 
   market: {

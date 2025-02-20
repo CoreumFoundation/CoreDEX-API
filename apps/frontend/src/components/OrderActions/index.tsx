@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/state/store";
 import {
-  OrderType,
-  TradeType,
   OrderbookAction,
   WalletAsset,
   TimeInForceString,
   TimeSelection,
   TimeInForceStringToEnum,
+  WalletBalances,
 } from "@/types/market";
 import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
 import BigNumber from "bignumber.js";
-import { submitOrder, getWalletAssets } from "@/services/api";
+import { submitOrder, getWalletAssets, createOrder } from "@/services/api";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import "./order-actions.scss";
@@ -30,6 +29,12 @@ import { DatetimePicker } from "../DatetimePicker";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import {
+  Method,
+  NetworkToEnum,
+  UpdateStrategy,
+  wsManager,
+} from "@/services/websocket";
 
 dayjs.extend(utc);
 dayjs.extend(advancedFormat);
@@ -40,25 +45,39 @@ const OrderActions = ({
 }: {
   orderbookAction?: OrderbookAction;
 }) => {
-  const { orderbook, wallet, setLoginModal, pushNotification, market, coreum } =
-    useStore();
+  const {
+    orderbook,
+    wallet,
+    setLoginModal,
+    pushNotification,
+    market,
+    coreum,
+    network,
+    setIsLoading,
+    isLoading,
+  } = useStore();
 
-  const [orderType, setOrderType] = useState<OrderType>(OrderType.BUY);
+  const [orderType, setOrderType] = useState(Side.SIDE_BUY);
   const [totalPrice, setTotalPrice] = useState(0);
   const [limitPrice, setLimitPrice] = useState("");
   const [volume, setVolume] = useState<string>("");
-  const [tradeType, setTradeType] = useState(TradeType.MARKET);
-  const [balances, setBalances] = useState<any>(null);
-  const [baseBalance, setBaseBalance] = useState<string>("0");
-  const [counterBalance, setCounterBalance] = useState<string>("0");
+  const [tradeType, setTradeType] = useState(OT.ORDER_TYPE_LIMIT);
+  const [walletBalances, setWalletBalances] = useState<WalletBalances | null>(
+    null
+  );
+  const [marketBalances, setMarketBalances] = useState({
+    base: "0",
+    counter: "0",
+  });
   const [advSettingsOpen, setAdvSetting] = useState<boolean>(false);
   const [timeInForce, setTimeInForce] = useState<TimeInForceString>(
     TimeInForceString.goodTilCancel
   );
-  const [timeToCancel, setTimeToCancel] = useState<TimeSelection>(
-    TimeSelection["5M"]
+  const [goodTilValue, setGoodTilValue] = useState<number>(1);
+  const [goodTilUnit, setGoodTilUnit] = useState<string>("Minutes");
+  const [expirationTime, setExpirationTime] = useState<Date>(
+    dayjs.utc().toDate()
   );
-  const [expirationTime, setExpirationTime] = useState<Date>();
   const [customTime, setCustomTime] = useState<string>("");
   const [blockHeight, setBlockHeight] = useState<number>(0);
 
@@ -66,42 +85,89 @@ const OrderActions = ({
     fetchWalletAssets();
   }, [wallet, market]);
 
-  useEffect(() => {
-    if (!balances) return;
+  const walletSubscription = useMemo(
+    () => ({
+      Network: NetworkToEnum(network),
+      Method: Method.WALLET,
+      ID: `${wallet ? wallet.address : ""}`,
+    }),
+    [market.pair_symbol, wallet]
+  );
 
-    const baseBalanceObject = balances.find(
+  const handleWalletUpdate = (message: WalletBalances) => {
+    if (message.length > 0) {
+      setWalletBalances(message);
+    }
+  };
+
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        walletSubscription,
+        handleWalletUpdate,
+        UpdateStrategy.REPLACE
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(walletSubscription, setWalletBalances);
+    };
+  }, [walletSubscription]);
+
+  useEffect(() => {
+    if (!walletBalances) return;
+
+    const baseBalanceObject = walletBalances.find(
       (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
     );
-    const counterBalanceObject = balances.find(
+    const counterBalanceObject = walletBalances.find(
       (asset: WalletAsset) => asset.Denom === market.counter.Denom.Denom
     );
 
-    setBaseBalance(baseBalanceObject ? baseBalanceObject.SymbolAmount : "0");
-    setCounterBalance(
-      counterBalanceObject ? counterBalanceObject.SymbolAmount : "0"
-    );
-  }, [market, balances]);
+    setMarketBalances({
+      base: baseBalanceObject?.SymbolAmount || "0",
+      counter: counterBalanceObject?.SymbolAmount || "0",
+    });
+  }, [market, walletBalances]);
+
+  const fetchWalletAssets = async () => {
+    if (!wallet?.address) return;
+    try {
+      const response = await getWalletAssets(wallet?.address);
+      if (response.status === 200 && response.data.length > 0) {
+        const data = response.data;
+        setWalletBalances(data);
+        wsManager.setInitialState(walletSubscription, data);
+      }
+    } catch (e) {
+      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
+    }
+  };
 
   // trigger when click on orderbook
   useEffect(() => {
     if (orderbookAction?.price) {
-      setTradeType(TradeType.LIMIT);
+      setTradeType(OT.ORDER_TYPE_LIMIT);
       setOrderType(orderbookAction.type);
 
       const volumeBN = new BigNumber(orderbookAction.volume);
       const priceBN = new BigNumber(orderbookAction.price);
 
-      setVolume(volumeBN.toFixed(18));
-      setLimitPrice(priceBN.toFixed(18));
+      setVolume(volumeBN.toString());
+      setLimitPrice(priceBN.toString());
       setTotalPrice(priceBN.times(volumeBN).toNumber());
     }
   }, [orderbookAction]);
 
   useEffect(() => {
-    if (tradeType === TradeType.LIMIT) {
+    if (tradeType === OT.ORDER_TYPE_LIMIT) {
       const vol = volume ? Number(volume) : 0;
 
       const total = multiply(Number(limitPrice), vol);
+      BigNumber(volume)
+        .multipliedBy(
+          new BigNumber(10).exponentiatedBy(market.base.Denom.Precision)
+        )
+        .toFixed();
       setTotalPrice(
         !total.isNaN()
           ? Number(noExponents(Number(total)).replaceAll(",", ""))
@@ -110,10 +176,10 @@ const OrderActions = ({
     }
 
     if (orderbook) {
-      if (tradeType === TradeType.MARKET) {
+      if (tradeType === OT.ORDER_TYPE_MARKET) {
         const avgPrice = Number(
           getAvgPriceFromOBbyVolume(
-            orderType === OrderType.BUY ? orderbook.Buy : orderbook.Sell,
+            orderType === Side.SIDE_BUY ? orderbook.Buy : orderbook.Sell,
             volume
           )
         );
@@ -143,119 +209,64 @@ const OrderActions = ({
     if (timeInForce === TimeInForceString.goodTilTime) {
       let now = dayjs.utc();
 
-      switch (timeToCancel) {
-        case TimeSelection["5M"]:
-          now = dayjs.utc().add(5, "minutes");
+      switch (goodTilUnit) {
+        case "Minutes":
+          now = dayjs.utc().add(goodTilValue, "minutes");
           break;
-        case TimeSelection["15M"]:
-          now = dayjs.utc().add(15, "minutes");
+        case "Hours":
+          now = dayjs.utc().add(goodTilValue, "hours");
           break;
-        case TimeSelection["30M"]:
-          now = dayjs.utc().add(30, "minutes");
+        case "Days":
+          now = dayjs.utc().add(goodTilValue, "days");
           break;
-        case TimeSelection["1H"]:
-          now = dayjs.utc().add(1, "hour");
-          break;
-        case TimeSelection["6H"]:
-          now = dayjs.utc().add(6, "hours");
-          break;
-        case TimeSelection["12H"]:
-          now = dayjs.utc().add(12, "hours");
-          break;
-        case TimeSelection["1D"]:
-          now = dayjs.utc().add(1, "day");
-          break;
-        case TimeSelection.CUSTOM:
+        case "Custom":
           now = dayjs.utc(customTime);
           break;
       }
       setExpirationTime(now.toDate());
     }
-  }, [timeInForce, timeToCancel, customTime]);
-
-  const fetchWalletAssets = async () => {
-    if (!wallet?.address) return;
-    try {
-      const response = await getWalletAssets(wallet?.address);
-      if (response.status === 200 && response.data.length > 0) {
-        const data = response.data;
-        setBalances(data);
-      }
-    } catch (e) {
-      console.log("ERROR GETTING WALLET ASSETS DATA >>", e);
-    }
-  };
-
-  // format price for regex according to coreum backend
-  // 1.5 -> 15e-1 or 1e+1 -> 10
-  const formatPriceForRegex = (value: BigNumber): string => {
-    let [mantissa, exponent = ""] = value.toExponential().split("e");
-    exponent = exponent.replace(/^\+/, "");
-
-    if (mantissa.includes(".")) {
-      const decimalIndex = mantissa.indexOf(".");
-      const decimalPlaces = mantissa.length - decimalIndex - 1;
-      mantissa = mantissa.replace(".", "");
-      const adjustedExponent = (parseInt(exponent, 10) || 0) - decimalPlaces;
-      exponent = adjustedExponent.toString();
-    }
-
-    let processedExponent = "";
-    if (exponent) {
-      const exponentMatch = exponent.match(/^(-?)(\d+)$/);
-      if (!exponentMatch) {
-        throw new Error(`Invalid exponent: ${exponent}`);
-      }
-
-      const [_, sign, digits] = exponentMatch;
-      const trimmedDigits = digits.replace(/^0+/, "") || "0";
-      const isZeroExponent = trimmedDigits === "0";
-
-      if (!isZeroExponent) {
-        processedExponent = `${sign}${trimmedDigits}`;
-      }
-    }
-
-    let result = mantissa;
-    if (processedExponent) {
-      result += `e${processedExponent}`;
-    }
-
-    return result;
-  };
+  }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
   const handleSubmit = async () => {
     try {
+      const goodTil =
+        tradeType === OT.ORDER_TYPE_LIMIT &&
+        timeInForce === TimeInForceString.goodTilTime
+          ? {
+              goodTilBlockTime: expirationTime,
+              goodTilBlockHeight: blockHeight,
+            }
+          : undefined;
+
+      const orderTimeInForce =
+        tradeType === OT.ORDER_TYPE_LIMIT
+          ? (TimeInForceStringToEnum[timeInForce] as any)
+          : TimeInForce.TIME_IN_FORCE_UNSPECIFIED;
+
       const orderCreate: MsgPlaceOrder = {
         sender: wallet.address,
-        type:
-          tradeType === TradeType.LIMIT
-            ? OT.ORDER_TYPE_LIMIT
-            : OT.ORDER_TYPE_MARKET,
+        type: tradeType,
         id: crypto.randomUUID(),
         baseDenom: market.base.Denom.Denom,
         quoteDenom: market.counter.Denom.Denom,
-        price:
-          tradeType === TradeType.LIMIT
-            ? formatPriceForRegex(BigNumber(limitPrice))
-            : "",
+        price: tradeType === OT.ORDER_TYPE_LIMIT ? limitPrice : "",
         quantity: volume,
-        side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
-        goodTil:
-          tradeType === TradeType.LIMIT &&
-          timeInForce === TimeInForceString.goodTilTime
-            ? {
-                goodTilBlockTime: expirationTime,
-                goodTilBlockHeight: blockHeight,
-              }
-            : undefined,
-        timeInForce:
-          tradeType === TradeType.LIMIT
-            ? (TimeInForceStringToEnum[timeInForce] as any)
-            : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
+        side: orderType,
+        goodTil: goodTil,
+        timeInForce: orderTimeInForce,
       };
 
-      const orderMessage = DEX.PlaceOrder(orderCreate);
+      setIsLoading(true);
+      const orderCreateResponse = await createOrder(orderCreate);
+      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data);
+
+      // have to convert date back to date object
+      // createOrder returns a stringified date
+      if (orderMessage?.value?.goodTil?.goodTilBlockTime) {
+        orderMessage.value.goodTil.goodTilBlockTime = new Date(
+          orderMessage.value.goodTil.goodTilBlockTime
+        );
+      }
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -277,13 +288,17 @@ const OrderActions = ({
       });
 
       setTimeInForce(TimeInForceString.goodTilCancel);
-      setTimeToCancel(TimeSelection["5M"]);
+      setGoodTilValue(1);
+      setVolume("");
+      setLimitPrice("");
+      setIsLoading(false);
     } catch (e: any) {
-      console.log("ERROR HANDLING SUBMIT ORDER >>", e.error.message);
+      console.log("ERROR HANDLING SUBMIT ORDER >>", e);
       pushNotification({
         type: "error",
-        message: e.error.message,
+        message: e.error.message || e.message,
       });
+      setIsLoading(false);
       throw e;
     }
   };
@@ -295,18 +310,18 @@ const OrderActions = ({
           <div className="order-switch">
             <div
               className={`switch switch-buy ${
-                orderType === OrderType.BUY ? "active" : ""
+                orderType === Side.SIDE_BUY ? "active" : ""
               }`}
-              onClick={() => setOrderType(OrderType.BUY)}
+              onClick={() => setOrderType(Side.SIDE_BUY)}
             >
               <p>Buy</p>
             </div>
 
             <div
               className={`switch switch-sell ${
-                orderType === OrderType.SELL ? "active" : ""
+                orderType === Side.SIDE_SELL ? "active" : ""
               }`}
-              onClick={() => setOrderType(OrderType.SELL)}
+              onClick={() => setOrderType(Side.SIDE_SELL)}
             >
               <p>Sell</p>
             </div>
@@ -315,28 +330,29 @@ const OrderActions = ({
             <div className="order-trade-types">
               <div
                 className={`type-item ${
-                  tradeType === TradeType.MARKET ? "active" : ""
+                  tradeType === OT.ORDER_TYPE_MARKET ? "active" : ""
                 }`}
                 onClick={() => {
-                  setTradeType(TradeType.MARKET);
+                  setTradeType(OT.ORDER_TYPE_MARKET);
                 }}
               >
                 Market
               </div>
               <div
                 className={`type-item ${
-                  tradeType === TradeType.LIMIT ? "active" : ""
+                  tradeType === OT.ORDER_TYPE_LIMIT ? "active" : ""
                 }`}
                 onClick={() => {
-                  setTradeType(TradeType.LIMIT);
+                  setTradeType(OT.ORDER_TYPE_LIMIT);
                 }}
               >
                 Limit
               </div>
             </div>
           </div>
+
           <div className="order-trade">
-            {tradeType === TradeType.LIMIT ? (
+            {tradeType === OT.ORDER_TYPE_LIMIT ? (
               <div className="limit-type-wrapper">
                 <Input
                   maxLength={16}
@@ -419,20 +435,79 @@ const OrderActions = ({
 
                       {timeInForce === TimeInForceString.goodTilTime && (
                         <>
-                          <Dropdown
-                            variant={DropdownVariant.OUTLINED}
-                            items={Object.keys(TimeSelection).map((key) => [
-                              TimeSelection[key as keyof typeof TimeSelection],
-                            ])}
-                            value={timeToCancel}
-                            onClick={(item) =>
-                              setTimeToCancel(item[0] as TimeSelection)
-                            }
-                            renderItem={(item) => <div>{item}</div>}
-                          />
+                          {
+                            <div className="good-til-time">
+                              <div className="time-selector">
+                                <img
+                                  src="/trade/images/arrow.svg"
+                                  alt=""
+                                  style={{
+                                    transform: "rotate(90deg)",
+                                  }}
+                                  onClick={() =>
+                                    goodTilUnit !== TimeSelection.CUSTOM &&
+                                    setGoodTilValue((prev) =>
+                                      Math.max(prev - 1, 1)
+                                    )
+                                  }
+                                />
 
-                          {timeToCancel === TimeSelection.CUSTOM && (
-                            <div className="good-til-time-selectors">
+                                <div className="good-til-values">
+                                  {goodTilUnit !== TimeSelection.CUSTOM && (
+                                    <span className="time-value">
+                                      {goodTilValue}
+                                    </span>
+                                  )}
+
+                                  <span className="time-unit">
+                                    {goodTilUnit}
+                                  </span>
+                                </div>
+
+                                <img
+                                  src="/trade/images/arrow.svg"
+                                  alt=""
+                                  style={{
+                                    transform: "rotate(-90deg)",
+                                  }}
+                                  onClick={() =>
+                                    goodTilUnit !== TimeSelection.CUSTOM &&
+                                    setGoodTilValue((prev) => prev + 1)
+                                  }
+                                />
+                              </div>
+
+                              <div className="unit-selector">
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Minutes")}
+                                >
+                                  mins
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Hours")}
+                                >
+                                  hrs
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Days")}
+                                >
+                                  day
+                                </div>
+                                <div
+                                  className="unit"
+                                  onClick={() => setGoodTilUnit("Custom")}
+                                >
+                                  custom
+                                </div>
+                              </div>
+                            </div>
+                          }
+
+                          {goodTilUnit === TimeSelection.CUSTOM && (
+                            <div className="custom-time">
                               <DatetimePicker
                                 selectedDate={customTime}
                                 onChange={(val: any) => setCustomTime(val)}
@@ -527,13 +602,14 @@ const OrderActions = ({
                 height={37}
                 label="Confirm Order"
                 disabled={
+                  isLoading ||
                   !volume ||
                   volume === "0" ||
-                  (tradeType === TradeType.LIMIT && !limitPrice) ||
-                  (orderType === OrderType.BUY &&
-                    totalPrice > Number(counterBalance)) ||
-                  (orderType === OrderType.SELL &&
-                    totalPrice > Number(baseBalance))
+                  (tradeType === OT.ORDER_TYPE_LIMIT && !limitPrice) ||
+                  (orderType === Side.SIDE_BUY &&
+                    totalPrice > Number(marketBalances.counter)) ||
+                  (orderType === Side.SIDE_SELL &&
+                    totalPrice > Number(marketBalances.base))
                 }
               />
             </>
@@ -546,7 +622,7 @@ const OrderActions = ({
         <div className="balance-row">
           <p className="balance-label">{market.base.Denom.Currency} Balance</p>
 
-          <FormatNumber number={baseBalance} />
+          <FormatNumber number={marketBalances.base} />
         </div>
 
         <div className="balance-row">
@@ -554,7 +630,7 @@ const OrderActions = ({
             {market.counter.Denom.Currency} Balance
           </p>
 
-          <FormatNumber number={counterBalance} />
+          <FormatNumber number={marketBalances.counter} />
         </div>
       </div>
     </div>

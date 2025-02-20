@@ -1,5 +1,8 @@
 import React from "react";
 import "./button.scss";
+import { useStore } from "@/state/store";
+import { mirage } from "ldrs";
+mirage.register();
 
 interface ButtonProps {
   label: string;
@@ -32,6 +35,8 @@ const Button: React.FC<ButtonProps> = ({
   width,
   disabled,
 }) => {
+  const { isLoading } = useStore();
+
   return (
     <button
       className={`button button-${variant}  ${className || ""}`}
@@ -39,8 +44,14 @@ const Button: React.FC<ButtonProps> = ({
       style={{ height, width }}
       disabled={disabled}
     >
-      {image && <img src={image} alt={label} className="button-image" />}
-      <span className="button-label">{label}</span>
+      {isLoading ? (
+        <l-mirage size="40" speed="6" color="#25d695"></l-mirage>
+      ) : (
+        <>
+          {image && <img src={image} alt={label} className="button-image" />}
+          <span className="button-label">{label}</span>
+        </>
+      )}
     </button>
   );
 };

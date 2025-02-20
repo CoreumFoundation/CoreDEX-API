@@ -29,7 +29,7 @@
   .header {
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1.3fr;
     justify-items: space-between;
     padding: 0 16px;
     white-space: nowrap;
@@ -53,12 +53,11 @@
 
   .exchange-history-body-rows {
     width: 100%;
-    padding: 0 16px;
-    overflow-y: scroll;
+    overflow-y: hidden;
 
     .exchange-history-body-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1.3fr;
       justify-content: space-between;
       .exchange-history-body-value {
         font-size: 12px;
@@ -82,11 +81,12 @@
         }
         &.negative {
           .format__number {
-            color: #de0f3e;
+            color: #ff7386;
           }
         }
         &.time {
           text-align: right;
+          padding-right: 16px;
         }
         &.time,
         &.price {
