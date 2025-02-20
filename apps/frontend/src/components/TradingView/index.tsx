@@ -123,7 +123,7 @@ const TradingView = ({ height }: { height: number | string }) => {
         close: newTick.close,
         high: Math.max(lastBar.high, newTick.high),
         low: Math.min(lastBar.low, newTick.low),
-        volume: newTick.volume + lastBar.volume,
+        volume: newTick.volume,
       };
       sub.lastBar = updatedBar;
       sub.onRealtimeCallback(updatedBar);
