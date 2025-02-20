@@ -50,16 +50,10 @@ const Dropdown = <T,>({
   }, []);
 
   const filteredItems = searchable
-    ? items
-        .filter((item: any) => {
-          const itemValue = getvalue ? getvalue(item) : item.Denom?.Name;
-          return itemValue.toLowerCase().includes(searchQuery.toLowerCase());
-        })
-        .sort((a: any, b: any) => {
-          const itemValueA = getvalue ? getvalue(a) : a.Denom?.Name;
-          const itemValueB = getvalue ? getvalue(b) : b.Denom?.Name;
-          return itemValueA.localeCompare(itemValueB);
-        })
+    ? items.filter((item: any) => {
+        const itemValue = getvalue ? getvalue(item) : item.Denom?.Name;
+        return itemValue.toLowerCase().includes(searchQuery.toLowerCase());
+      })
     : items;
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);

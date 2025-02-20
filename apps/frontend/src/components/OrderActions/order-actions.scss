@@ -188,7 +188,7 @@
             .advanced-settings-content {
               opacity: 0;
               height: 100%;
-              max-height: 500px;
+              max-height: 0px;
               flex-direction: column;
               opacity: 0;
               gap: 8px;
@@ -436,6 +436,47 @@
           color: #ff7386;
         }
       }
+    }
+  }
+
+  .fund-wallet-tooltip {
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    .fund-wallet-info {
+      cursor: pointer;
+    }
+
+    .fund-wallet-desc {
+      position: absolute;
+      right: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 240px;
+      border-radius: 8px;
+      background-color: #17191e;
+      border-radius: 8px;
+      background: var(--Shades-Dark-3, #1b1d23);
+      box-shadow: 0px 20px 40px 0px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 5px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+      z-index: 10;
+      margin-right: 8px;
+      color: #aaa;
+      font-family: "Noto Sans";
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 18px; /* 150% */
+    }
+
+    .fund-wallet-info:hover + .fund-wallet-desc {
+      visibility: visible;
+      opacity: 1;
     }
   }
 }

@@ -55,19 +55,24 @@
         .tooltip-total {
           visibility: hidden;
           width: 120px;
-          background-color: #17191e;
-          color: #868991;
           text-align: center;
-          border-radius: 4px;
+          border-radius: 8px;
+          background: var(--Shades-Dark-3, #1b1d23);
+          box-shadow: 0px 20px 40px 0px rgba(0, 0, 0, 0.1);
           padding: 5px;
           position: absolute;
-          z-index: 1;
           bottom: 125%;
           left: 50%;
           margin-left: -60px;
           opacity: 0;
           transition: opacity 0.3s;
           z-index: 10;
+          color: #aaa;
+          font-family: "Noto Sans";
+          font-size: 12px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: 18px; /* 150% */
         }
       }
       .orderbook-header-cell:hover .tooltip-total {

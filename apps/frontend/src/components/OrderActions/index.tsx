@@ -619,18 +619,53 @@ const OrderActions = ({
 
       <div className="available-balances">
         <p className="title">Assets</p>
-        <div className="balance-row">
-          <p className="balance-label">{market.base.Denom.Currency} Balance</p>
+        {wallet?.address && (
+          <>
+            <div className="balance-row">
+              <p className="balance-label">
+                {market.base.Denom.Currency} Balance
+              </p>
 
-          <FormatNumber number={marketBalances.base} />
-        </div>
+              <FormatNumber number={marketBalances.base} />
+            </div>
 
-        <div className="balance-row">
-          <p className="balance-label">
-            {market.counter.Denom.Currency} Balance
-          </p>
+            <div className="balance-row">
+              <p className="balance-label">
+                {market.counter.Denom.Currency} Balance
+              </p>
 
-          <FormatNumber number={marketBalances.counter} />
+              <FormatNumber number={marketBalances.counter} />
+            </div>
+          </>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}
+        >
+          <Button
+            variant={ButtonVariant.SECONDARY}
+            onClick={() => {
+              window.open("https://docs.coreum.dev/docs/tools/faucet");
+            }}
+            width={"100%"}
+            height={37}
+            label="Fund Wallet"
+          />
+          <div className="fund-wallet-tooltip">
+            <img
+              className="fund-wallet-info"
+              src="/trade/images/info.svg"
+              alt=""
+            />
+
+            <span className="fund-wallet-desc">
+              You will be directed to the Coreum Docs. Manually fund your wallet
+              following Faucet - Devnet.
+            </span>
+          </div>
         </div>
       </div>
     </div>
