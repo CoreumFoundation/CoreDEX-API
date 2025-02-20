@@ -113,6 +113,11 @@ func isTemporaryError(err error) bool {
 		}
 	}
 
+	// Tx not found error, should be temporary or we have a chain split:
+	if strings.Contains(err.Error(), "tx not found:") {
+		return true
+	}
+
 	if statusError, ok := status.FromError(err); ok {
 		if statusError.Code() == codes.Unavailable {
 			return true
@@ -151,7 +156,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 			}
 		}
 		if err != nil {
-			logger.Errorf("grpc error: %v", err)
+			logger.Errorf("processBlock error: %v", err)
 			m.Lock()
 			goroutineError = err
 			m.Unlock()
