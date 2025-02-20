@@ -90,7 +90,7 @@ const Tickers = () => {
           className={`change ${Number(change) > 0 ? "positive" : "negative"}`}
         >
           <span>{Number(change) >= 0 ? "+" : ""}</span>
-          <FormatNumber number={change} precision={2} />
+          <FormatNumber number={change} precision={2} /> %
         </div>
       </div>
 

@@ -4,13 +4,15 @@ import {
   TickerResponse,
   OhlcResponse,
   TradeHistoryResponse,
-  CreateOrder,
   WalletAsset,
-  CancelOrderResponse,
 } from "@/types/market";
 import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
 import { BASE_API_URL } from "@/config/envs";
+import {
+  MsgCancelOrder,
+  MsgPlaceOrder,
+} from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 
 export const getOHLC = async (
   symbol: string,
@@ -100,7 +102,7 @@ export const getCurrencies = async (): Promise<
   return response;
 };
 
-export const createOrder = async (order: CreateOrder) => {
+export const createOrder = async (order: MsgPlaceOrder) => {
   const response = await request(
     order,
     `${BASE_API_URL}/order/create`,
@@ -171,9 +173,9 @@ export const getWalletAssets = async (
 };
 
 export const cancelOrder = async (cancelParams: {
-  address: string;
-  id: string;
-}): Promise<CancelOrderResponse> => {
+  Sender: string;
+  OrderID: string;
+}): Promise<MsgCancelOrder> => {
   const response = await request(
     cancelParams,
     `${BASE_API_URL}/order/cancel`,

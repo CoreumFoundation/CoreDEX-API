@@ -1,5 +1,5 @@
 // TODO - remove enums and types that can be replaced from backend protos
-import { TimeInForce } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Side, TimeInForce } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 
 export type Market = {
   base: Token;
@@ -107,7 +107,7 @@ export enum TradeType {
   LIMIT = "limit",
 }
 export type OrderbookAction = {
-  type: OrderType;
+  type: Side;
   price: number;
   volume: number;
 };

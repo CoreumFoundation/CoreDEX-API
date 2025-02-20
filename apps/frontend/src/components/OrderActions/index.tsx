@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/state/store";
 import {
-  OrderType,
-  TradeType,
   OrderbookAction,
   WalletAsset,
   TimeInForceString,
@@ -55,13 +53,15 @@ const OrderActions = ({
     market,
     coreum,
     network,
+    setIsLoading,
+    isLoading,
   } = useStore();
 
-  const [orderType, setOrderType] = useState<OrderType>(OrderType.BUY);
+  const [orderType, setOrderType] = useState(Side.SIDE_BUY);
   const [totalPrice, setTotalPrice] = useState(0);
   const [limitPrice, setLimitPrice] = useState("");
   const [volume, setVolume] = useState<string>("");
-  const [tradeType, setTradeType] = useState(TradeType.MARKET);
+  const [tradeType, setTradeType] = useState(OT.ORDER_TYPE_LIMIT);
   const [walletBalances, setWalletBalances] = useState<WalletBalances | null>(
     null
   );
@@ -75,7 +75,9 @@ const OrderActions = ({
   );
   const [goodTilValue, setGoodTilValue] = useState<number>(1);
   const [goodTilUnit, setGoodTilUnit] = useState<string>("Minutes");
-  const [expirationTime, setExpirationTime] = useState<Date>();
+  const [expirationTime, setExpirationTime] = useState<Date>(
+    dayjs.utc().toDate()
+  );
   const [customTime, setCustomTime] = useState<string>("");
   const [blockHeight, setBlockHeight] = useState<number>(0);
 
@@ -144,7 +146,7 @@ const OrderActions = ({
   // trigger when click on orderbook
   useEffect(() => {
     if (orderbookAction?.price) {
-      setTradeType(TradeType.LIMIT);
+      setTradeType(OT.ORDER_TYPE_LIMIT);
       setOrderType(orderbookAction.type);
 
       const volumeBN = new BigNumber(orderbookAction.volume);
@@ -157,7 +159,7 @@ const OrderActions = ({
   }, [orderbookAction]);
 
   useEffect(() => {
-    if (tradeType === TradeType.LIMIT) {
+    if (tradeType === OT.ORDER_TYPE_LIMIT) {
       const vol = volume ? Number(volume) : 0;
 
       const total = multiply(Number(limitPrice), vol);
@@ -174,10 +176,10 @@ const OrderActions = ({
     }
 
     if (orderbook) {
-      if (tradeType === TradeType.MARKET) {
+      if (tradeType === OT.ORDER_TYPE_MARKET) {
         const avgPrice = Number(
           getAvgPriceFromOBbyVolume(
-            orderType === OrderType.BUY ? orderbook.Buy : orderbook.Sell,
+            orderType === Side.SIDE_BUY ? orderbook.Buy : orderbook.Sell,
             volume
           )
         );
@@ -225,77 +227,46 @@ const OrderActions = ({
     }
   }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
-  // format price for regex according to coreum backend
-  // 1.5 -> 15e-1 or 1e+1 -> 10
-  const formatPriceForRegex = (value: BigNumber): string => {
-    let [mantissa, exponent = ""] = value.toExponential().split("e");
-    exponent = exponent.replace(/^\+/, "");
-
-    if (mantissa.includes(".")) {
-      const decimalIndex = mantissa.indexOf(".");
-      const decimalPlaces = mantissa.length - decimalIndex - 1;
-      mantissa = mantissa.replace(".", "");
-      const adjustedExponent = (parseInt(exponent, 10) || 0) - decimalPlaces;
-      exponent = adjustedExponent.toString();
-    }
-
-    let processedExponent = "";
-    if (exponent) {
-      const exponentMatch = exponent.match(/^(-?)(\d+)$/);
-      if (!exponentMatch) {
-        throw new Error(`Invalid exponent: ${exponent}`);
-      }
-
-      const [_, sign, digits] = exponentMatch;
-      const trimmedDigits = digits.replace(/^0+/, "") || "0";
-      const isZeroExponent = trimmedDigits === "0";
-
-      if (!isZeroExponent) {
-        processedExponent = `${sign}${trimmedDigits}`;
-      }
-    }
-
-    let result = mantissa;
-    if (processedExponent) {
-      result += `e${processedExponent}`;
-    }
-
-    return result;
-  };
-
   const handleSubmit = async () => {
     try {
+      const goodTil =
+        tradeType === OT.ORDER_TYPE_LIMIT &&
+        timeInForce === TimeInForceString.goodTilTime
+          ? {
+              goodTilBlockTime: expirationTime,
+              goodTilBlockHeight: blockHeight,
+            }
+          : undefined;
+
+      const orderTimeInForce =
+        tradeType === OT.ORDER_TYPE_LIMIT
+          ? (TimeInForceStringToEnum[timeInForce] as any)
+          : TimeInForce.TIME_IN_FORCE_UNSPECIFIED;
+
       const orderCreate: MsgPlaceOrder = {
         sender: wallet.address,
-        type:
-          tradeType === TradeType.LIMIT
-            ? OT.ORDER_TYPE_LIMIT
-            : OT.ORDER_TYPE_MARKET,
+        type: tradeType,
         id: crypto.randomUUID(),
         baseDenom: market.base.Denom.Denom,
         quoteDenom: market.counter.Denom.Denom,
-        price: tradeType === TradeType.LIMIT ? limitPrice : "",
+        price: tradeType === OT.ORDER_TYPE_LIMIT ? limitPrice : "",
         quantity: volume,
-        side: orderType === OrderType.BUY ? Side.SIDE_BUY : Side.SIDE_SELL,
-        goodTil:
-          tradeType === TradeType.LIMIT &&
-          timeInForce === TimeInForceString.goodTilTime
-            ? {
-                goodTilBlockTime: expirationTime,
-                goodTilBlockHeight: blockHeight,
-              }
-            : undefined,
-        timeInForce:
-          tradeType === TradeType.LIMIT
-            ? (TimeInForceStringToEnum[timeInForce] as any)
-            : TimeInForce.TIME_IN_FORCE_UNSPECIFIED,
+        side: orderType,
+        goodTil: goodTil,
+        timeInForce: orderTimeInForce,
       };
 
-      const test = await createOrder(orderCreate);
-      console.log(test.data);
+      setIsLoading(true);
+      const orderCreateResponse = await createOrder(orderCreate);
+      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data);
 
-      const orderMessage = DEX.PlaceOrder(test.data);
-      console.log("placeorder", orderMessage);
+      // have to convert date back to date object
+      // createOrder returns a stringified date
+      if (orderMessage?.value?.goodTil?.goodTilBlockTime) {
+        orderMessage.value.goodTil.goodTilBlockTime = new Date(
+          orderMessage.value.goodTil.goodTilBlockTime
+        );
+      }
       const signedTx = await coreum?.signTx([orderMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -320,12 +291,14 @@ const OrderActions = ({
       setGoodTilValue(1);
       setVolume("");
       setLimitPrice("");
+      setIsLoading(false);
     } catch (e: any) {
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
       pushNotification({
         type: "error",
         message: e.error.message || e.message,
       });
+      setIsLoading(false);
       throw e;
     }
   };
@@ -337,18 +310,18 @@ const OrderActions = ({
           <div className="order-switch">
             <div
               className={`switch switch-buy ${
-                orderType === OrderType.BUY ? "active" : ""
+                orderType === Side.SIDE_BUY ? "active" : ""
               }`}
-              onClick={() => setOrderType(OrderType.BUY)}
+              onClick={() => setOrderType(Side.SIDE_BUY)}
             >
               <p>Buy</p>
             </div>
 
             <div
               className={`switch switch-sell ${
-                orderType === OrderType.SELL ? "active" : ""
+                orderType === Side.SIDE_SELL ? "active" : ""
               }`}
-              onClick={() => setOrderType(OrderType.SELL)}
+              onClick={() => setOrderType(Side.SIDE_SELL)}
             >
               <p>Sell</p>
             </div>
@@ -357,20 +330,20 @@ const OrderActions = ({
             <div className="order-trade-types">
               <div
                 className={`type-item ${
-                  tradeType === TradeType.MARKET ? "active" : ""
+                  tradeType === OT.ORDER_TYPE_MARKET ? "active" : ""
                 }`}
                 onClick={() => {
-                  setTradeType(TradeType.MARKET);
+                  setTradeType(OT.ORDER_TYPE_MARKET);
                 }}
               >
                 Market
               </div>
               <div
                 className={`type-item ${
-                  tradeType === TradeType.LIMIT ? "active" : ""
+                  tradeType === OT.ORDER_TYPE_LIMIT ? "active" : ""
                 }`}
                 onClick={() => {
-                  setTradeType(TradeType.LIMIT);
+                  setTradeType(OT.ORDER_TYPE_LIMIT);
                 }}
               >
                 Limit
@@ -379,7 +352,7 @@ const OrderActions = ({
           </div>
 
           <div className="order-trade">
-            {tradeType === TradeType.LIMIT ? (
+            {tradeType === OT.ORDER_TYPE_LIMIT ? (
               <div className="limit-type-wrapper">
                 <Input
                   maxLength={16}
@@ -629,12 +602,13 @@ const OrderActions = ({
                 height={37}
                 label="Confirm Order"
                 disabled={
+                  isLoading ||
                   !volume ||
                   volume === "0" ||
-                  (tradeType === TradeType.LIMIT && !limitPrice) ||
-                  (orderType === OrderType.BUY &&
+                  (tradeType === OT.ORDER_TYPE_LIMIT && !limitPrice) ||
+                  (orderType === Side.SIDE_BUY &&
                     totalPrice > Number(marketBalances.counter)) ||
-                  (orderType === OrderType.SELL &&
+                  (orderType === Side.SIDE_SELL &&
                     totalPrice > Number(marketBalances.base))
                 }
               />

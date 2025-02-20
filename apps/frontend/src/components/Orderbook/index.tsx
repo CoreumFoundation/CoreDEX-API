@@ -4,7 +4,7 @@ import { useStore } from "@/state/store";
 import { useTooltip, TooltipPosition } from "@/hooks";
 import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
-import { OrderType, OrderbookAction, OrderbookRecord } from "@/types/market";
+import { OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
 import {
   wsManager,
@@ -13,6 +13,7 @@ import {
   Method,
 } from "@/services/websocket";
 import "./orderbook.scss";
+import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 
 enum ORDERBOOK_TYPE {
   BUY = "buy",
@@ -264,7 +265,7 @@ export default function Orderbook({
         }}
         onClick={() => {
           setOrderbookAction({
-            type: isBuy ? OrderType.BUY : OrderType.SELL,
+            type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
             price: Number(order.HumanReadablePrice),
             volume: Number(order.SymbolAmount),
           });

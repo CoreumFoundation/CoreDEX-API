@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useStore } from "@/state/store";
 import { ExtensionWallets } from "coreum-js-nightly/dist/main/types";
-import { quantum } from "ldrs";
 import { Client } from "coreum-js-nightly";
+import { quantum } from "ldrs";
 quantum.register();
 import "./login-selection.scss";
 

@@ -26,7 +26,6 @@ import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
-import { MsgCancelOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
 import {
   UpdateStrategy,
@@ -321,10 +320,8 @@ const OrderHistory = () => {
         Sender: wallet.address,
         OrderID: id,
       };
-      console.log("!!", orderCancel);
-      const test = await cancelOrder(orderCancel);
-
-      const cancelMessage = DEX.CancelOrder(test);
+      const orderCancelResponse = await cancelOrder(orderCancel);
+      const cancelMessage = DEX.CancelOrder(orderCancelResponse);
       const signedTx = await coreum?.signTx([cancelMessage]);
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
@@ -362,6 +359,7 @@ const OrderHistory = () => {
     index: number;
     style: React.CSSProperties;
   }) => {
+    if (!orderHistory) return null;
     const order = orderHistory[index];
     return (
       <a
