@@ -57,9 +57,10 @@ const MarketSelector = () => {
     if (udevcore) {
       udevcore.Denom.Name = "Core";
       udevcore.Denom.Currency = "Core";
+      currs = currs.filter((curr) => curr.Denom.Name !== "udevcore");
+      currs.unshift(udevcore!);
     }
-    currs = currs.filter((curr) => curr.Denom.Name !== "udevcore");
-    currs.unshift(udevcore!);
+
     setCurrencies(currs);
   };
 
