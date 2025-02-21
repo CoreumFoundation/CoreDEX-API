@@ -241,7 +241,7 @@ const OrderActions = ({
       const orderTimeInForce =
         tradeType === OT.ORDER_TYPE_LIMIT
           ? (TimeInForceStringToEnum[timeInForce] as any)
-          : TimeInForce.TIME_IN_FORCE_UNSPECIFIED;
+          : TimeInForce.TIME_IN_FORCE_IOC;
 
       const orderCreate: MsgPlaceOrder = {
         sender: wallet.address,

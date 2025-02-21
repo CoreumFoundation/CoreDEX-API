@@ -41,34 +41,45 @@ The websocket manager takes care of data handling and manages its own state.
 
 You may choose to create a wrapper like a React hook for the websocket manager in your project. But below is an example of how you would connect and subscribe using only the websocket manager:
 
-// TODO update examples after refactoring websocket
+
 
 ```
-import { useEffect } from 'react';
-import useWebSocketStore from './websocketStore';
+import { useEffect, useMemo } from 'react';
+import {
+  Method,
+  NetworkToEnum,
+  UpdateStrategy,
+  wsManager,
+} from "@/services/websocket";
 
-const TestOrderBook: React.FC = () => {
-  const { isConnected, messages, connect, subscribe } = useWebSocketStore();
-
-  // memoize callback and subscription to prevent unnecessary subscriptions/unsubscriptions
-  const handleOrderbookUpdate = useCallback(
-    (message: WebSocketMessage) => {
-      setOrderbook(message.Subscription?.Content);
-    },
-    [setOrderbook]
-  );
-
-  const subscription = useMemo(
+const Test: React.FC = () => {
+  const walletSubscription = useMemo(
     () => ({
-      Network: Network.DEVNET,
-      Method: Method.ORDERBOOK,
-      ID: market.pair_symbol,
+      Network: NetworkToEnum(network),
+      Method: Method.WALLET,
+      ID: `${wallet ? wallet.address : ""}`,
     }),
-    [market.pair_symbol]
+    [market.pair_symbol, wallet]
   );
 
-  useWebSocket(subscription, handleOrderbookUpdate);
+  const handleWalletUpdate = (message: WalletBalances) => {
+    if (message.length > 0) {
+      setWalletBalances(message);
+    }
+  };
 
+  useEffect(() => {
+    wsManager.connected().then(() => {
+      wsManager.subscribe(
+        walletSubscription,
+        handleWalletUpdate,
+        UpdateStrategy.REPLACE
+      );
+    });
+    return () => {
+      wsManager.unsubscribe(walletSubscription, setWalletBalances);
+    };
+  }, [walletSubscription]);
   return (
     <div>
       ...
@@ -76,8 +87,11 @@ const TestOrderBook: React.FC = () => {
   );
 };
 
-export default TestOrderBook;
+export default Test;
 ```
+
+- you can pass a custom handler function or just a setter. The above example uses `handleWalletUpdate`
+- there are a few basic update strategies like replace, merge, etc that describe how data should be added to the ws state (append, replace, etc)
 
 ## API
 

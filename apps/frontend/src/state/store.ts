@@ -88,30 +88,30 @@ export const useStore = create<State>((set) => ({
   market: {
     base: {
       Denom: {
-        Currency: "dextestdenom0",
-        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Currency: "btc",
+        Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
         Precision: 6,
-        Denom: "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Name: "DexTestDenom0",
-        Description: "Dex Test Denom",
+        Denom: "btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        Name: "BTC",
+        Description: "Wrapped Bitcoin Token",
       },
-      Description: "Dex Test Denom",
+      Description: "Wrapped Bitcoin Token",
     },
     counter: {
       Denom: {
-        Currency: "dextestdenom1",
-        Issuer: "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+        Currency: "usdc",
+        Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
         Precision: 6,
-        Denom: "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-        Name: "DexTestDenom1",
-        Description: "Dex Test Denom",
+        Denom: "usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        Name: "USDC",
+        Description: "Wrapped USDC Token",
       },
-      Description: "Dex Test Denom",
+      Description: "Wrapped USDC Token",
     },
     pair_symbol:
-      "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
     reversed_pair_symbol:
-      "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+      "usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
   },
   setMarket: (market: Market) => {
     set({ market: market });
