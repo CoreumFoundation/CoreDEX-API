@@ -1,5 +1,14 @@
 // TODO - remove enums and types that can be replaced from backend protos
-import { Side, TimeInForce } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { ExtensionWallets } from "coreum-js-nightly";
+import {
+  Side,
+  TimeInForce,
+} from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+
+export type ICoreumWallet = {
+  address: string;
+  method: ExtensionWallets;
+};
 
 export type Market = {
   base: Token;

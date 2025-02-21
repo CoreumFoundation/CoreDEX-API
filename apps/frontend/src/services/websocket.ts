@@ -218,6 +218,7 @@ class WebSocketManager {
       if (data === "Connected") return;
       const message: WebSocketMessage = JSON.parse(data);
       if (!message.Subscription) return;
+      if (!("Content" in message.Subscription)) return;
 
       const key = this.getSubscriptionKey(message.Subscription);
 

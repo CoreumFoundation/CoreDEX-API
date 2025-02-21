@@ -57,7 +57,6 @@ const Wallet = ({}) => {
     {
       label: "Switch Wallet",
       action: () => {
-        console.log("switch");
         setLoginModal(true);
       },
       image: (
@@ -105,6 +104,7 @@ const Wallet = ({}) => {
       label: "Disconnect",
       action: async () => {
         try {
+          localStorage.removeItem("wallet");
           window.location.reload();
         } catch (e) {
           console.log("E_DISCONNECT =>", e);

@@ -241,7 +241,7 @@ const OrderActions = ({
       const orderTimeInForce =
         tradeType === OT.ORDER_TYPE_LIMIT
           ? (TimeInForceStringToEnum[timeInForce] as any)
-          : TimeInForce.TIME_IN_FORCE_UNSPECIFIED;
+          : TimeInForce.TIME_IN_FORCE_IOC;
 
       const orderCreate: MsgPlaceOrder = {
         sender: wallet.address,
@@ -369,7 +369,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={market.base.Denom.Precision}
-                  adornmentRight={market.base.Denom.Currency}
+                  adornmentRight={market.base.Denom.Currency.toUpperCase()}
                 />
                 <Input
                   maxLength={16}
@@ -386,7 +386,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={market.counter.Denom.Precision}
-                  adornmentRight={market.counter.Denom.Currency}
+                  adornmentRight={market.counter.Denom.Currency.toUpperCase()}
                 />
 
                 <div className="advanced-settings-header">
@@ -556,7 +556,7 @@ const OrderActions = ({
                     fontSize: 16,
                   }}
                   decimals={13}
-                  adornmentRight={market.base.Denom.Currency}
+                  adornmentRight={market.base.Denom.Currency.toUpperCase()}
                 />
               </div>
             )}
@@ -572,7 +572,7 @@ const OrderActions = ({
                 className="order-total-number"
               />
               <p className="order-total-currency">
-                {market.counter.Denom.Currency}
+                {market.counter.Denom.Currency.toUpperCase()}
               </p>
             </div>
           </div>
@@ -623,7 +623,7 @@ const OrderActions = ({
           <>
             <div className="balance-row">
               <p className="balance-label">
-                {market.base.Denom.Currency} Balance
+                {market.base.Denom.Currency.toUpperCase()} Balance
               </p>
 
               <FormatNumber number={marketBalances.base} />
@@ -631,7 +631,7 @@ const OrderActions = ({
 
             <div className="balance-row">
               <p className="balance-label">
-                {market.counter.Denom.Currency} Balance
+                {market.counter.Denom.Currency.toUpperCase()} Balance
               </p>
 
               <FormatNumber number={marketBalances.counter} />
