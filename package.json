@@ -1,6 +1,13 @@
 {
   "name": "coredex-api-types",
   "version": "1.0.0",
+  "files": [
+    "domain/order/build",
+    "domain/trades/build",
+    "domain/ohlc/build",
+    "domain/order-properties/build",
+    "domain/update/build"
+  ],
   "exports": {
     "./order": {
       "import": "./domain/order/build/index.js",
