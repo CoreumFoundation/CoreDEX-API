@@ -1,8 +1,13 @@
 {
-  "name": "update",
+  "name": "coredex-api-types",
   "version": "1.0.0",
-  "description": "",
-  "main": "build/update.js",
+  "exports": {
+    "./order": "./domain/order/build/index.js",
+    "./trades": "./domain/trades/build/index.js",
+    "./ohlc": "./domain/ohlc/build/index.js",
+    "./order-properties": "./domain/order-properties/build/index.js",
+    "./update": "./domain/update/build/index.js"
+  },
   "scripts": {
     "build-ts": "rm -rf build/ && npx tsc"
   },
