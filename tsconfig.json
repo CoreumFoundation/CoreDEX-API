@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "rootDir": "./",
+    "rootDir": ".",
     "outDir": "./build",
     "esModuleInterop": true,
     "strict": true,
@@ -10,6 +10,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["domain/**/*.ts"],
-  "exclude": ["node_modules/**", "client/**"]
+  "include": ["domain/**/*"],
+  "exclude": ["node_modules", "client"]
 }

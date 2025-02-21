@@ -2,36 +2,33 @@
   "name": "coredex-api-types",
   "version": "1.0.0",
   "files": [
-    "domain/order/build",
-    "domain/trades/build",
-    "domain/ohlc/build",
-    "domain/order-properties/build",
-    "domain/update/build"
+    "build"
   ],
   "exports": {
     "./order": {
-      "import": "./domain/order/build/index.js",
-      "types": "./domain/order/build/index.d.ts"
+      "import": "./build/domain/order/order.js",
+      "types": "./build/domain/order/order.d.ts"
     },
     "./trades": {
-      "import": "./domain/trades/build/index.js",
-      "types": "./domain/trades/build/index.d.ts"
+      "import": "./build/domain/trades/trades.js",
+      "types": "./build/domain/trades/trades.d.ts"
     },
     "./ohlc": {
-      "import": "./domain/ohlc/build/index.js",
-      "types": "./domain/ohlc/build/index.d.ts"
+      "import": "./build/domain/ohlc/ohlc.js",
+      "types": "./build/domain/ohlc/ohlc.d.ts"
     },
     "./order-properties": {
-      "import": "./domain/order-properties/build/index.js",
-      "types": "./domain/order-properties/build/index.d.ts"
+      "import": "./build/domain/order-properties/order-properties.js",
+      "types": "./build/domain/order-properties/order-properties.d.ts"
     },
-    "./update": {
-      "import": "./domain/update/build/index.js",
-      "types": "./domain/update/build/index.d.ts"
+    "./metadata": {
+      "import": "./build/domain/metadata/metadata.js",
+      "types": "./build/domain/metadata/metadata.d.ts"
+    },
+    "./denom": {
+      "import": "./build/domain/denom/denom.js",
+      "types": "./build/domain/denom/denom.d.ts"
     }
-  },
-  "scripts": {
-    "build-ts": "rm -rf build/ && npx tsc"
   },
   "dependencies": {
     "long": "^5.2.3",
