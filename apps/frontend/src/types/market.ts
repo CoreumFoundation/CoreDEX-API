@@ -1,8 +1,8 @@
-// TODO - remove enums and types that can be replaced from backend protos
 import { ExtensionWallets } from "coreum-js-nightly";
 import {
   Side,
   TimeInForce,
+  OrderType,
 } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 
 export type ICoreumWallet = {
@@ -35,12 +35,6 @@ export type CurrencyResponse = {
   Currencies: Token[];
 };
 
-// order actions
-export enum OrderType {
-  LIMIT = 1,
-  MARKET = 2,
-}
-
 export enum TimeInForceString {
   goodTilCancel = "Good till Cancel",
   goodTilTime = "Good till Time",
@@ -66,11 +60,6 @@ export enum TimeSelection {
   CUSTOM = "Custom",
 }
 
-export enum SideBuy {
-  BUY = 1,
-  SELL = 2,
-}
-
 export type CreateOrderObject = {
   sender: string;
   type: OrderType;
@@ -82,17 +71,14 @@ export type CreateOrderObject = {
     num: number;
   };
   quantity: number;
-  side: SideBuy;
+  side: Side;
   good_til: {
     good_til_block_height: number;
     good_til_block_time: string;
   };
   timeInForce: TimeInForce;
 };
-export enum OrderType {
-  BUY = "buy",
-  SELL = "sell",
-}
+
 export type Order = {
   direction: OrderType;
   quantity: {
@@ -252,7 +238,7 @@ export type TradeRecord = {
     Description: string;
     Icon: string;
   };
-  Side: SideBuy;
+  Side: Side;
   BlockTime: {
     seconds: number;
     nanos: number;
@@ -309,7 +295,7 @@ export type CreateOrder = {
   QuoteDenom: string;
   Price: string;
   Quantity: string;
-  Side: SideBuy;
+  Side: Side;
   GoodTil: {
     GoodTilBlockHeight: number;
     GoodTilBlockTime: string;

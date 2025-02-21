@@ -115,7 +115,6 @@ const OrderActions = ({
 
   useEffect(() => {
     if (!walletBalances) return;
-
     const baseBalanceObject = walletBalances.find(
       (asset: WalletAsset) => asset.Denom === market.base.Denom.Denom
     );
@@ -135,6 +134,7 @@ const OrderActions = ({
       const response = await getWalletAssets(wallet?.address);
       if (response.status === 200 && response.data.length > 0) {
         const data = response.data;
+        console.log(data);
         setWalletBalances(data);
         wsManager.setInitialState(walletSubscription, data);
       }

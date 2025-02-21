@@ -10,7 +10,6 @@ import {
   OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
-  SideBuy,
   TradeRecord,
   TransformedOrder,
 } from "@/types/market";
@@ -26,6 +25,7 @@ import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
+import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { fromByteArray } from "base64-js";
 import {
   UpdateStrategy,
@@ -278,10 +278,7 @@ const OrderHistory = () => {
 
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
-      const transformSide = (
-        orders: OrderbookRecord[],
-        side: SideBuy.BUY | SideBuy.SELL
-      ) =>
+      const transformSide = (orders: OrderbookRecord[], side: Side) =>
         orders.map((order) => {
           return {
             Side: side,
@@ -298,8 +295,8 @@ const OrderHistory = () => {
         });
 
       return [
-        ...transformSide(orderbook.Buy, SideBuy.BUY),
-        ...transformSide(orderbook.Sell, SideBuy.SELL),
+        ...transformSide(orderbook.Buy, Side.SIDE_BUY),
+        ...transformSide(orderbook.Sell, Side.SIDE_SELL),
       ].sort((a, b) => a.Sequence - b.Sequence);
     },
     []
@@ -368,8 +365,8 @@ const OrderHistory = () => {
         href={`${resolveCoreumExplorer(network)}/transactions/${order.TXID}`}
         target="_blank"
       >
-        <div className={order.Side === SideBuy.BUY ? "buy" : "sell"}>
-          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
+        <div className={order.Side === Side.SIDE_BUY ? "buy" : "sell"}>
+          {order.Side === Side.SIDE_BUY ? "Buy" : "Sell"}
         </div>
         <div className="order-id">{order.Sequence}</div>
         <div className="status">{resolveOrderStatus(order.Status)}</div>
@@ -461,12 +458,12 @@ const OrderHistory = () => {
                       <div key={index} className="open-row">
                         <div
                           className={
-                            order.Side === SideBuy.BUY ? `buy` : "sell"
+                            order.Side === Side.SIDE_BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SideBuy.BUY
+                          {order.Side === Side.SIDE_BUY
                             ? "Buy"
-                            : order.Side === SideBuy.SELL
+                            : order.Side === Side.SIDE_BUY
                             ? "Sell"
                             : "Unspecified"}
                         </div>

@@ -3,7 +3,8 @@ import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
-import { SideBuy, TradeRecord } from "@/types/market";
+import { TradeRecord } from "@/types/market";
+import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import "./exchange-history.scss";
 import {
   UpdateStrategy,
@@ -195,7 +196,7 @@ const ExchangeHistory = () => {
       <div style={style} className="exchange-history-body-row">
         <div
           className={`exchange-history-body-value ${
-            trade.Side === SideBuy.BUY ? "positive" : "negative"
+            trade.Side === Side.SIDE_BUY ? "positive" : "negative"
           }`}
         >
           <FormatNumber number={trade.HumanReadablePrice} />
