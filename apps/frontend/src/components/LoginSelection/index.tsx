@@ -37,7 +37,7 @@ const LoginSelection = ({
       console.log("Attempting to connect with:", option);
       await client.connectWithExtension(option, connectOptions);
       console.log("Connected with:", option);
-      setWallet({ address: client!.address });
+      setWallet({ address: client!.address, method: option });
       setCoreum(client);
       closeModal && closeModal(false);
       pushNotification({

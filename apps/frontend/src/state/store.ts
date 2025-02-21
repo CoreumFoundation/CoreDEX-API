@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Client, CoreumNetwork } from "coreum-js-nightly";
 import {
+  ICoreumWallet,
   Market,
   OrderbookResponse,
   TickerResponse,
@@ -59,7 +60,11 @@ export const useStore = create<State>((set) => ({
     set(() => ({ network }));
   },
   wallet: null,
-  setWallet: async (wallet: any) => {
+  setWallet: async (wallet: ICoreumWallet) => {
+    localStorage.wallet = JSON.stringify({
+      address: wallet.address,
+      method: wallet.method,
+    });
     set(() => ({
       wallet,
     }));
