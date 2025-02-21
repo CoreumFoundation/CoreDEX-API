@@ -2,18 +2,18 @@
 
 ## About the Coreum DEX
 
-The Coreum DEX is a permissionless, fee-free exchange with an ***organic order book*** designed for RWAs. Build trading interfaces using the CoreDEX APi pre-built extenstions for compliance and increased security.
+The Coreum DEX is a permissionless, fee-free exchange with an ***organic order book*** designed for RWAs. Build trading interfaces using the CoreDEX APi pre-built extensions for compliance and increased security.
 
 | Quick Setup                                                     | Custom Trading Logic                                                                                      | Developer Ready API                                                                                                         |
 |-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| Get started in under 15 minutes with minimal technical overhead | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions | Use any language to interact wit hthe API, providing trade history, order history, OHLC data and some convenience endpoints |
+| Get started in under 15 minutes with minimal technical overhead | Configure trading hours, compliance rules, and asset restrictions with built-in smart contract extensions | Use any language to interact with the API, providing trade history, order history, OHLC data and some convenience endpoints |
 
 
 ## About the CoreDEX API
 
-The CoreDEX is an API on top of the Coreum blockchain integrated DEX. The API is in RESTFUL style so that it is easier to use than using the blockchain directly. By using this restful API the developer onbly needs to integrate signing of transactions with their preferred wallet system.
+The CoreDEX is an API on top of the Coreum blockchain integrated DEX. The API is in RESTFUL style so that it is easier to use than using the blockchain directly. By using this restful API, the developer only needs to integrate signing of transactions with their preferred wallet system.
 
-The project provides a data aggrator (block chain scanner), an API server, store, and an UI (for demo purposes).
+The project provides a data aggregator (blockchain scanner), an API server, store, and a UI (for demo purposes).
 
 Once started, the UI is accessible at `http://localhost:3000`.
 
@@ -31,7 +31,7 @@ The API server is horizontally scalable, thus providing the developer/operator w
 
 The data-aggregator is a single instance and is build such that it will, in case of a crash, restart where it left of before the crash, thus making certain the full history is present.
 
-The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling would require this.
+The store (folder `/apps/store`) is an implementation against a MySQL database, which in the end is the suspected bottleneck for any scaling of the system. The store is connected with the API server and the data-aggregator through grpc, and can thus be replaced with a different store implementation if scaling requires this.
 
 ## Installation and running of the CoreDEX API
 
@@ -45,7 +45,7 @@ There are 3 provided methods of running the Friendly DEX:
 
 Getting the CoreDEX running on your local (unix or linux) system takes just a few minutes.
 
-To run the CoreDEX you need to have the following installed:
+To run the CoreDEX, you need to have the following installed:
 
 * Go lang 1.23 or higher (https://golang.org/dl/)
 * MySQL (https://dev.mysql.com/downloads/)
@@ -114,7 +114,7 @@ Once that has been done, the start script can be run:
 ./bin/start-docker-compose.sh
 ```
 
-The script, `./bin/stop-docker-compose.sh`, can be used to stop the docker-compose environment. This script will remove the volumes (e.g. reset the database), so depending on your use case you might want to just shutdown with `docker compose down`.
+The script, `./bin/stop-docker-compose.sh`, can be used to stop the docker-compose environment. This script will remove the volumes (e.g., reset the database), so depending on your use case you might want to just shutdown with `docker compose down`.
 
 ### Running the Friendly DEX on VMs, Kubernetes or other cloud services
 
@@ -147,4 +147,4 @@ There are also sample deployment files for Kubernetes in the `apps/kubernetes` d
 ## Application documentation
 
 See the `README.md` files in the associated application folders.
-Do note the UI `README.md` where there is information on some javascript packages/files which take care of UI data management.
+Do note the UI `README.md` where there is information on some javascript packages/files that take care of UI data management.

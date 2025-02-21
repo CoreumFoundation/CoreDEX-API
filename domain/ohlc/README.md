@@ -1,6 +1,6 @@
 # OHLC
 
-The HOLC proto provides all the functionality required to interact with the ohlc store.
+The OHLC proto provides all the functionality required to interact with the ohlc store.
 
 ## Building the required files
 

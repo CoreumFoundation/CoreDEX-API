@@ -7,7 +7,7 @@ The V3 package is open in structure allowing the addition of more roles without 
 
 ## Usage
 
-Set a go struct to configur the handler as follows:
+Set a go struct to configure the handler as follows:
 
 ```go
 	behttp.InitRoutes([]behttp.Route{
@@ -18,17 +18,17 @@ Set a go struct to configur the handler as follows:
 ```
 
 This example would setup 3 routes, two with authorization and one without. The first authorized route in this scenario would require ADMIN rights to be present on the account.
-On the auth request first the AuthHandler is executed, which could for example evaluate record level access (the main auth handler only checks if the user is logged in and has the correct role).
+On the auth request first the AuthHandler is executed, which could, for example, evaluate record level access (the main auth handler only checks if the user is logged in and has the correct role).
 
 Setting `Auth:false` is optional. `Auth:false` also means that the `AuthHandler` is not executed (and not injected in the http handler chain).
 Providing `Roles` is optional: If `Auth:true` and no roles are provided, the `Role` `accountgrpc.Role_STANDARD` is assigned to the route.
 
 ### Route information
 
-For every route there are now 2 routes injected into the router:
+For every route, there are now 2 routes injected into the router:
 
-- `/api/v1/{path}`: This is the route that is used for the actual http calls. If the user is not authorized, this route will respond with a 401 Unauthorized.
-- `/api/v1/auth/{path}`: This route responds with wether the requested is authorized or not, and responds with the role (this is a 200OK) => This route can be used to dynamically construct the UI: Call this route to see if a user has access to a functionality and if so, render the functionality. This route is also helpful for the FE developer: Instead of having to ask the BE or inspect the code, the FE developer can see if a route is authorized or not for a given user with a given role and debug/adjust code accordingly.
+- `/api/v1/{path}`: This is the route used for the actual http calls. If the user is not authorized, this route will respond with a 401 Unauthorized.
+- `/api/v1/auth/{path}`: This route responds with whether the requested is authorized or not, and responds with the role (this is a 200OK) => This route can be used to dynamically construct the UI: Call this route to see if a user has access to a functionality and if so, render the functionality. This route is also helpful for the FE developer: Instead of having to ask the BE or inspect the code, the FE developer can see if a route is authorized or not for a given user with a given role and debug/adjust code accordingly.
 
 ## Start parameters
 

@@ -12,12 +12,12 @@ The API design principles used are:
 
 This means that:
 
-- Numberic values are published in the internal representation and as human readable values: HumanReadablePrice, SymbolAmount
-- Submission of values into the order/create endpoint is in human readable values (e.g. 0.25 for a price instead of 25000 (Depending on precision: The developer does not need to know how to work with precision))
+- Numeric values are published in the internal representation and as human-readable values: HumanReadablePrice, SymbolAmount
+- Submission of values into the order/create endpoint is in human-readable values (e.g., 0.25 for a price instead of 25000 (Depending on precision: The developer does not need to know how to work with precision))
 - Submission into endpoints like order/create check all the relevant business rules so that the frontend dev can be concerned with UX/UI instead of what order works or not
-- The frontend uses a single javascript package to communicate with the backend thus abstracting the communication between this API and the frontend, making it easier to implement a personalized DEX
+- The frontend uses a single javascript package to communicate with the backend, thus abstracting the communication between this API and the frontend, making it easier to implement a personalized DEX
 
-The goal is that by using this API any developer can launch a Coreum DEX with a lower investment and commoditize the DEX market.
+The goal is that by using this API, any developer can launch a Coreum DEX with a lower investment and commoditize the DEX market.
 
 ## Requirement for running the API
 
@@ -293,10 +293,10 @@ The response is a transaction that needs to be signed and submitted to the block
 Below is a matrix of possible values for the order object before it can be successfully submitted using `/order/submit`.
 
 | Parameter/Feature | Limit Order                                                         | Market Order                              |
-| ----------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| ----------------- | ------------------------------------------------------------------- |-------------------------------------------|
 | **price**         | Specified by trader (exponential notation eg. 1e-3)                 | Not specified (empty string/nil)          |
-| **timeInForce**   | TIME_IN_FORCE_GTC (1)                                               | TIME_IN_FORCE_UNSPECIFIED (0)             |
-|                   | TIME_IN_FORCE_IOC (2)                                               |                                           |
+| **timeInForce**   | TIME_IN_FORCE_GTC (1)                                               |                                           |
+|                   | TIME_IN_FORCE_IOC (2)                                               | TIME_IN_FORCE_IOC (2)                     |
 |                   | TIME_IN_FORCE_FOK (3)                                               |                                           |
 | **goodTil**       | {goodTilBlockTime: Date Object, goodTilBlockHeight: 0} or undefined | undefined                                 |
 | **baseDenom**     | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
@@ -328,7 +328,7 @@ curl -H "Network: devnet" \
 ```
 
 The response object is compatible with the javascript and the golang proto marshallers (which are different in the COSMOS SDK), and due to that contain some replicated fields.
-The response object is corrected for the precision and goes from human readable to a bit harder to read in the format required for the DEX.
+The response object is corrected for the precision and goes from human-readable to a bit harder to read in the format required for the DEX.
 
 Example response:
 
@@ -500,7 +500,7 @@ The API server can be started with the following parameters:
 
 ### Networks
 
-The networks are configured in a json array which depending on usage might require escaping. The network configuration is as follows:
+The networks are configured in a JSON array which depending on usage might require escaping. The network configuration is as follows:
 
 ```json
 {
@@ -514,11 +514,11 @@ The networks are configured in a json array which depending on usage might requi
 }
 ```
 
-For production purposes it is advised to use a private node, and the API servfer functions are proxy for that scenario.
+For production purposes, it is advised to use a private node, and the API server functions are proxy for that scenario.
 
 ### HTTP configuration
 
-The HTTP configuration is configured in a json array which depending on usage might require escaping. The HTTP configuration is as follows:
+The HTTP configuration is configured in a JSON array which depending on usage might require escaping. The HTTP configuration is as follows:
 
 ```json
 {
@@ -541,7 +541,7 @@ The most often changed values are the `cors.AllowOrigins` and the `port`.
 
 ### Base coin
 
-The base coin is configured in a json array which depending on usage might require escaping. The base coin configuration is as follows:
+The base coin is configured in a JSON array which depending on usage might require escaping. The base coin configuration is as follows:
 
 ```json
 {
@@ -566,7 +566,7 @@ The base coin is configured in a json array which depending on usage might requi
 
 Base USDC is used by a path resolving algorithm (non-weighted Dijkstra algorithm) to find the path between two assets and be able to resolve that to the representative USD value using a USDC as base.
 Often devnet and testnet will not have an IBC USDC currency available, resulting in a devnet configuration only. On devnet/testnet the user will most likely not see any USD values in the data.
-The base USDC is configured in a json array which depending on usage might require escaping. The base USDC configuration is as follows:
+The base USDC is configured in a JSON array which depending on usage might require escaping. The base USDC configuration is as follows:
 
 ```json
 {

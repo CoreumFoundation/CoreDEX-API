@@ -32,20 +32,20 @@ func (e *EventOrderClosedHandler) Parse(event cmtypes.Event) proto.Message {
 				continue
 			}
 			res.Sequence = id
-		case "remaining_balance":
+		case "remaining_spendable_balance":
 			value, ok := math.NewIntFromString(attribute.Value)
 			if !ok {
-				logger.Errorf("failed to parse EventOrderClosed remaining_balance %s as integer", attribute.Value)
+				logger.Errorf("failed to parse EventOrderClosed remaining_spendable_balance %s as integer", attribute.Value)
 				return nil
 			}
-			res.RemainingBalance = value
-		case "remaining_quantity":
+			res.RemainingSpendableBalance = value
+		case "remaining_base_quantity":
 			value, ok := math.NewIntFromString(attribute.Value)
 			if !ok {
-				logger.Errorf("failed to parse EventOrderClosed remaining_quantity %s as integer", attribute.Value)
+				logger.Errorf("failed to parse EventOrderClosed remaining_base_quantity %s as integer", attribute.Value)
 				return nil
 			}
-			res.RemainingQuantity = value
+			res.RemainingBaseQuantity = value
 		}
 	}
 	return res

@@ -1,9 +1,9 @@
 # Order
 
 The Order proto provides all the functionality required to interact with the order store.
-The Order proto also defines the domain objects for communication between the services and use events (e.g. messaging).
+The Order proto also defines the domain objects for communication between the services and use events (e.g., messaging).
 
-The Order is modelled after the order as defined in the Coreum DEX.
+The Order is modeled after the order as defined in the Coreum DEX.
 
 ## Building the required files
 
