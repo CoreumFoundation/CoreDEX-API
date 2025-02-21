@@ -4,16 +4,17 @@ import (
 	"context"
 	"errors"
 
-	"github.com/CoreumFoundation/CoreDEX-API/coreum"
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
-	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/shopspring/decimal"
+
+	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
+	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
 type Application struct {
@@ -98,11 +99,11 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		return nil, err
 	}
 	denom1Precision := int64(0)
-	if denom1Currency.Denom.Precision != nil {
+	if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
 		denom1Precision = int64(*denom1Currency.Denom.Precision)
 	}
 	denom2Precision := int64(0)
-	if denom2Currency.Denom.Precision != nil {
+	if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
 		denom2Precision = int64(*denom2Currency.Denom.Precision)
 	}
 
@@ -163,8 +164,8 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 			return nil, err
 		}
 		precision := int32(0)
-		if denomCurrency.Denom.Precision != nil {
-			precision = int32(*denomCurrency.Denom.Precision)
+		if denomCurrency.Denom != nil && denomCurrency.Denom.Precision != nil {
+			precision = *denomCurrency.Denom.Precision
 		}
 		walletAssets = append(walletAssets, WalletAsset{
 			Denom:        coin.Denom,

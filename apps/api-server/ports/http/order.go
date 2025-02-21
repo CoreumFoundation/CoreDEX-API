@@ -76,7 +76,7 @@ func (s *httpServer) createOrder() handler.Handler {
 			return err
 		}
 		baseDenomPrecision := int64(0)
-		if baseCurrency.Denom.Precision != nil {
+		if baseCurrency.Denom != nil && baseCurrency.Denom.Precision != nil {
 			baseDenomPrecision = int64(*baseCurrency.Denom.Precision)
 		}
 		coreumPrice, err := coreum.ParsePrice(price.String())
