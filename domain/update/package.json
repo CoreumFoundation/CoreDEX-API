@@ -1,8 +1,8 @@
 {
-  "name": "ohlc",
+  "name": "update",
   "version": "1.0.0",
   "description": "",
-  "main": "build/ohlc.js",
+  "main": "build/update.js",
   "scripts": {
     "build-ts": "rm -rf build/ && npx tsc"
   },
