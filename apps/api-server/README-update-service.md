@@ -33,7 +33,7 @@ wss://api.coreum.com/ws
 ### Connection duration & load management
 
 The connections are terminated when there is no activity for 15 minutes to prevent background usage from users to overload the application. The websocket client should reconnect if the frontend is still alive after that period. This 15 minutes is longer than the 10 minutes as defined in the accompanying frontend application for background tabs, thus essentially the frontend will always be able to reconnect when switching tabs.
-Background tabs might also terminate the websocket connections (timeout) by going to sleep. This can lead to dataloss in the frontend, and on re-activitation of tab it is advised to reload the data from scratch (restful call) and re-subscribe to the topics.
+Background tabs might also terminate the websocket connections (timeout) by going to sleep. This can lead to data loss in the frontend, and on re-activation of tab it is advised to reload the data from scratch (restful call) and re-subscribe to the topics.
 
 The downside of this reconnect policy is that for the personal trades subscription, on no trading activity, the timeout will essentially always occur when a tab is open for a long time. The advice to a frontend developer is to open the subscription when the user does an actual trade. In most reasonable cases (>>99%) the trade is executed within the 15-minute time interval.
 
@@ -123,7 +123,7 @@ The OHLC subscription will (re)produce the data for the last interval and flows 
 
 #### TRADES
 
-There are a few different retrievals possible for trades, depending on the required information. The filters are:
+There are few different retrievals possible for trades, depending on the required information. The filters are:
 
 * `TRADES_FOR_ACCOUNT`: `account`
 * `TRADES_FOR_SYMBOL`: `denom-issuer_denom2-issuer2`

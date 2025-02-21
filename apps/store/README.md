@@ -1,7 +1,7 @@
 # Store
 
 This store implementation uses MySQL to persist the data. The store is a grpc server such that essentially any other database can be used.
-The tables in the store are independent of each other: There are not merge operations by design. By avoiding merge operations, it becomes easier to scale the store by backing it for example with several databases of the same or different architecture.
+The tables in the store are independent of each other: There are no merge operations by design. By avoiding merge operations, it becomes easier to scale the store by backing it, for example, with several databases of the same or different architecture.
 
 The server sizing can be a challenge since the overall application can produce a high load, partially dependent on the number of end users, and on trading activity on the blockchain.
 
@@ -11,7 +11,7 @@ The store contains multiple GRPC services, all exposed on the same port:
 - `OrderData` - Used to store and retrieve orders
 - `OrderDataHistory` - Used to store and retrieve order history
 - `Trade` - Used to store and retrieve trades (executed orders either whole or partial)
-- `TradePairs` - Used to store and retrieve trade pairs (can be used to populating a drop down with active markets)
+- `TradePairs` - Used to store and retrieve trade pairs (can be used to populating a drop-down with active markets)
 - `OHLC` - Used to store and retrieve OHLC data (Open High Low Close = OHLC)
 - `Currency` - Used to retrieve denom/currency information
 

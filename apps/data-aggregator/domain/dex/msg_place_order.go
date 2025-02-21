@@ -275,7 +275,7 @@ func (e *MsgPlaceOrderHandler) Handle(
 				return err
 			}
 			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
-			order.RemainingQuantity = decimal.FromDec(dec.NewFromInt(event.RemainingQuantity.Int64()))
+			order.RemainingQuantity = decimal.FromDec(dec.NewFromInt(event.RemainingBaseQuantity.Int64()))
 			if order.RemainingQuantity.Value == 0 {
 				order.RemainingQuantity.Exp = 0
 			}

@@ -1,6 +1,6 @@
 # Logger with configurable log level
 
-To set a loglevel, configure `LOG_LEVEL` with:
+To set a log level, configure `LOG_LEVEL` with:
 
 - debug
 - info

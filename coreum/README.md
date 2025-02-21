@@ -14,7 +14,7 @@ The network itself is "abstract", however the most common ones are:
 - `testnet`
 - `devnet`
 
-The config is a JSON file which contains the following fields:
+The config is a JSON file that contains the following fields:
 
 GRPC:
 

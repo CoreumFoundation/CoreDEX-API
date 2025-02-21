@@ -4,4 +4,4 @@ The decimal proto is used to represent large values by providing the typical not
 
 ## Go package
 
-There is a accompanying Go package that parses the Coreum chain provided values into the decimal format.
+There is an accompanying Go package that parses the Coreum chain provided values into the decimal format.

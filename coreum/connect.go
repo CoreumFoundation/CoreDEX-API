@@ -113,13 +113,9 @@ func isTemporaryError(err error) bool {
 		}
 	}
 
-	// Tx not found error, should be temporary or we have a chain split:
-	if strings.Contains(err.Error(), "tx not found:") {
-		return true
-	}
-
 	if statusError, ok := status.FromError(err); ok {
-		if statusError.Code() == codes.Unavailable {
+		switch statusError.Code() {
+		case codes.Unavailable, codes.NotFound:
 			return true
 		}
 	}
@@ -131,7 +127,7 @@ var (
 	measureBlockLoadTime       = time.Now()
 	measureTXLoadTime          = time.Now()
 	previousHeight             int64
-	measureTotalTransactions   int // Measure of total transacions loaded in the last 100 blocks (for performance monitoring)
+	measureTotalTransactions   int // Measure of total transactions loaded in the last 100 blocks (for performance monitoring)
 )
 
 func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclient.CometRPC, currentHeight int64) (int64, error) {
