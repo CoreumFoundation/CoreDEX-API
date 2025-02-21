@@ -135,11 +135,11 @@ func (e *MsgPlaceOrderHandler) Handle(
 				})
 				if err1 == nil && err2 == nil {
 					enriched = true
-					if denom1Currency.Denom.Precision != nil {
+					if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
 						denom1Precision = int64(*denom1Currency.Denom.Precision)
 						order.BaseDenom.Precision = denom1Currency.Denom.Precision
 					}
-					if denom2Currency.Denom.Precision != nil {
+					if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
 						denom2Precision = int64(*denom2Currency.Denom.Precision)
 						order.QuoteDenom.Precision = denom2Currency.Denom.Precision
 					}
@@ -190,11 +190,11 @@ func (e *MsgPlaceOrderHandler) Handle(
 				})
 				if err1 == nil && err2 == nil {
 					enriched = true
-					if denom1Currency.Denom.Precision != nil {
+					if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
 						denom1Precision = int64(*denom1Currency.Denom.Precision)
 						order.BaseDenom.Precision = denom1Currency.Denom.Precision
 					}
-					if denom2Currency.Denom.Precision != nil {
+					if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
 						denom2Precision = int64(*denom2Currency.Denom.Precision)
 						order.QuoteDenom.Precision = denom2Currency.Denom.Precision
 					}
