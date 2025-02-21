@@ -10,6 +10,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["domain/update/*.ts"],
+  "include": ["domain/**/*.ts"],
   "exclude": ["node_modules/**", "client/**"]
 }

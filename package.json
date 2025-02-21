@@ -2,11 +2,26 @@
   "name": "coredex-api-types",
   "version": "1.0.0",
   "exports": {
-    "./order": "./domain/order/build/index.js",
-    "./trades": "./domain/trades/build/index.js",
-    "./ohlc": "./domain/ohlc/build/index.js",
-    "./order-properties": "./domain/order-properties/build/index.js",
-    "./update": "./domain/update/build/index.js"
+    "./order": {
+      "import": "./domain/order/build/index.js",
+      "types": "./domain/order/build/index.d.ts"
+    },
+    "./trades": {
+      "import": "./domain/trades/build/index.js",
+      "types": "./domain/trades/build/index.d.ts"
+    },
+    "./ohlc": {
+      "import": "./domain/ohlc/build/index.js",
+      "types": "./domain/ohlc/build/index.d.ts"
+    },
+    "./order-properties": {
+      "import": "./domain/order-properties/build/index.js",
+      "types": "./domain/order-properties/build/index.d.ts"
+    },
+    "./update": {
+      "import": "./domain/update/build/index.js",
+      "types": "./domain/update/build/index.d.ts"
+    }
   },
   "scripts": {
     "build-ts": "rm -rf build/ && npx tsc"
