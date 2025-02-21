@@ -38,8 +38,7 @@ import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
 dayjs.extend(duration);
-import {update} from "update"  
-
+import {} from "coredex-api-types"
 const TABS = {
   OPEN_ORDERS: "OPEN_ORDERS",
   ORDER_HISTORY: "ORDER_HISTORY",
