@@ -65,10 +65,22 @@ func (s *httpServer) createOrder() handler.Handler {
 			w.WriteHeader(http.StatusBadRequest)
 			return err
 		}
-		price, err := decimal.NewFromString(orderReq.Price)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return err
+		price := decimal.NewFromInt(0)
+		if len(orderReq.Price) > 0 {
+			price, err = decimal.NewFromString(orderReq.Price)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return err
+			}
+		}
+		var coreumPrice *dextypes.Price = nil
+		if !price.IsZero() {
+			parsedCoreumPrice, err := coreum.ParsePrice(price.String())
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
+			}
+			coreumPrice = &parsedCoreumPrice
 		}
 		baseCurrency, err := s.app.Currency.GetCurrency(r.Context(), network, orderReq.BaseDenom)
 		if err != nil {
@@ -78,11 +90,6 @@ func (s *httpServer) createOrder() handler.Handler {
 		baseDenomPrecision := int64(0)
 		if baseCurrency.Denom != nil && baseCurrency.Denom.Precision != nil {
 			baseDenomPrecision = int64(*baseCurrency.Denom.Precision)
-		}
-		coreumPrice, err := coreum.ParsePrice(price.String())
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return err
 		}
 
 		quantity, err := decimal.NewFromString(orderReq.Quantity)
@@ -108,7 +115,7 @@ func (s *httpServer) createOrder() handler.Handler {
 			ID:          orderReq.OrderID,
 			BaseDenom:   orderReq.BaseDenom,
 			QuoteDenom:  orderReq.QuoteDenom,
-			Price:       &coreumPrice,
+			Price:       coreumPrice,
 			Quantity:    math.NewIntFromBigInt(quantity.Rat().Num()),
 			Side:        orderReq.Side,
 			TimeInForce: orderReq.TimeInForce,

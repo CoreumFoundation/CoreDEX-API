@@ -3,6 +3,8 @@ package order
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -107,7 +109,14 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		denom2Precision = int64(*denom2Currency.Denom.Precision)
 	}
 
-	return a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
+	res, err := a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
+	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			return nil, fmt.Errorf("there is no orderbook for %s - %s", denom1, denom2)
+		}
+		return nil, err
+	}
+	return res, nil
 }
 
 func (a *Application) OrderBookRelevantOrdersForAccount(network metadata.Network, denom1, denom2, account string) (*coreum.OrderBookOrders, error) {
