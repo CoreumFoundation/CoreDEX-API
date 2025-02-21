@@ -14,6 +14,8 @@ import {
 } from "@/services/websocket";
 import "./orderbook.scss";
 import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { mirage } from "ldrs";
+mirage.register();
 
 enum ORDERBOOK_TYPE {
   BUY = "buy",
@@ -28,7 +30,7 @@ export default function Orderbook({
 }) {
   const { market, network, orderbook, setOrderbook } = useStore();
   const { showTooltip, hideTooltip } = useTooltip();
-
+  const [isLoading, setIsLoading] = useState(false);
   const [spread, setSpread] = useState<BigNumber>(new BigNumber(0));
   const [topBuyVolume, setTopBuyVolume] = useState<number>(0);
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
@@ -61,14 +63,17 @@ export default function Orderbook({
   useEffect(() => {
     const fetchOrderbook = async () => {
       try {
+        setIsLoading(true);
         const response = await getOrderbook(market.pair_symbol);
         if (response.status === 200 && response.data) {
           const data = response.data;
           setOrderbook(data);
         }
+        setIsLoading(false);
       } catch (e) {
         console.log("ERROR GETTING ORDERBOOK DATA >>", e);
         setOrderbook(null);
+        setIsLoading(false);
       }
     };
     fetchOrderbook();
@@ -352,8 +357,16 @@ export default function Orderbook({
           </>
         ) : (
           <div className="no-data-container">
-            <img src="/trade/images/warning.png" alt="warning" />
-            <p className="no-data">No Data Found</p>
+            {isLoading ? (
+              <>
+                <l-mirage size="40" speed="6" color="#25d695"></l-mirage>
+              </>
+            ) : (
+              <>
+                <img src="/trade/images/warning.png" alt="warning" />
+                <p className="no-data">No Data Found</p>
+              </>
+            )}
           </div>
         )}
       </div>

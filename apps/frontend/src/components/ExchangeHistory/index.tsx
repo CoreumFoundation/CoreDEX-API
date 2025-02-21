@@ -14,6 +14,8 @@ import {
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
+import { mirage } from "ldrs";
+mirage.register();
 
 dayjs.extend(duration);
 
@@ -31,6 +33,7 @@ const ExchangeHistory = () => {
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const historyRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,7 @@ const ExchangeHistory = () => {
 
   useEffect(() => {
     const initFetch = async () => {
+      setIsLoading(true);
       let daysBack = 1;
       let dataFound = await fetchHistoryWindow(daysBack);
       while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
@@ -68,6 +72,7 @@ const ExchangeHistory = () => {
         setExchangeHistory([]);
         setHasMore(false);
       }
+      setIsLoading(false);
     };
     initFetch();
   }, [market.pair_symbol, setExchangeHistory]);
@@ -227,8 +232,16 @@ const ExchangeHistory = () => {
         </div>
       ) : (
         <div className="no-data-container">
-          <img src="/trade/images/warning.png" alt="warning" />
-          <p className="no-data">No Data Found</p>
+          {isLoading ? (
+            <>
+              <l-mirage size="40" speed="6" color="#25d695"></l-mirage>
+            </>
+          ) : (
+            <>
+              <img src="/trade/images/warning.png" alt="warning" />
+              <p className="no-data">No Data Found</p>
+            </>
+          )}
         </div>
       )}
     </div>
