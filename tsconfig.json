@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "rootDir": ".",
-    "outDir": "./build",
+    "rootDir": "./domain",
+    "outDir": "./build/domain",
     "esModuleInterop": true,
     "strict": true,
     "declaration": true,
