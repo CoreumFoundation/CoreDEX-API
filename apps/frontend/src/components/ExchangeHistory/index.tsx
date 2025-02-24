@@ -4,7 +4,8 @@ import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
 import { TradeRecord } from "@/types/market";
-import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Side } from "coredex-api-types/order-properties";
+
 import "./exchange-history.scss";
 import {
   UpdateStrategy,
