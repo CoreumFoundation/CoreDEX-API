@@ -28,6 +28,10 @@
     "./denom": {
       "import": "./build/domain/denom/denom.js",
       "types": "./build/domain/denom/denom.d.ts"
+    },
+    "./trade": {
+      "import": "./build/domain/trade/trade.js",
+      "types": "./build/domain/trade/trade.d.ts"
     }
   },
   "dependencies": {
