@@ -32,6 +32,10 @@
     "./trade": {
       "import": "./build/domain/trade/trade.js",
       "types": "./build/domain/trade/trade.d.ts"
+    },
+    "./update": {
+      "import": "./build/domain/update/update.js",
+      "types": "./build/domain/update/update.d.ts"
     }
   },
   "dependencies": {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "build/order-properties.js",
   "scripts": {
-    "build-ts": "rm -rf build/ && npx tsc"
+    "build-ts": "npx tsc"
   },
   "dependencies": {
     "long": "^5.2.3",

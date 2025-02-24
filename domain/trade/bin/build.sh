@@ -34,5 +34,5 @@ git add build/
 git add *.ts
 rm -rf node_modules
 rm package-lock.json
-rm package.json
-rm tsconfig.json
+# rm package.json
+# rm tsconfig.json

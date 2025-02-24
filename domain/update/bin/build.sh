@@ -31,8 +31,8 @@ domain/update/update.proto
 npm run build-ts
 git add build/
 
-# git add *.ts
-# rm -rf node_modules
-# rm package-lock.json
+git add *.ts
+rm -rf node_modules
+rm package-lock.json
 # rm package.json
 # rm tsconfig.json
