@@ -7,12 +7,8 @@ import { TradeRecord } from "@/types/market";
 import { Side } from "coredex-api-types/order-properties";
 
 import "./exchange-history.scss";
-import {
-  UpdateStrategy,
-  wsManager,
-  Method,
-  NetworkToEnum,
-} from "@/services/websocket";
+import { UpdateStrategy, wsManager, NetworkToEnum } from "@/services/websocket";
+import { Method } from "coredex-api-types/update";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";

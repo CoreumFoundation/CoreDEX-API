@@ -7,7 +7,6 @@ import {
   useLayoutEffect,
 } from "react";
 import {
-  OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
   TradeRecord,
@@ -27,16 +26,13 @@ import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { fromByteArray } from "base64-js";
-import {
-  UpdateStrategy,
-  wsManager,
-  Method,
-  NetworkToEnum,
-} from "@/services/websocket";
+import { UpdateStrategy, wsManager, NetworkToEnum } from "@/services/websocket";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
+import { OrderStatus } from "coredex-api-types/order";
+import { Method } from "coredex-api-types/update";
 dayjs.extend(duration);
 
 const TABS = {
@@ -70,15 +66,15 @@ const OrderHistory = () => {
   const [hasMore, setHasMore] = useState(true);
   const listOuterRef = useRef<HTMLDivElement>(null);
 
-  const resolveOrderStatus = (status: OrderHistoryStatus) => {
+  const resolveOrderStatus = (status: OrderStatus) => {
     switch (status) {
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_OPEN:
+      case OrderStatus.ORDER_STATUS_OPEN:
         return "Open";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_EXPIRED:
+      case OrderStatus.ORDER_STATUS_EXPIRED:
         return "Expired";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_CANCELED:
+      case OrderStatus.ORDER_STATUS_CANCELED:
         return "Cancelled";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_FILLED:
+      case OrderStatus.ORDER_STATUS_FILLED:
         return "Filled";
       default:
         return "Unspecified";
@@ -377,7 +373,7 @@ const OrderHistory = () => {
           className="total"
         />
         <p className="date">
-          {dayjs.unix(order.BlockTime.seconds).format("MM/DD/YY h:mm A")}
+          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY h:mm A")}
         </p>
         <svg
           xmlns="http://www.w3.org/2000/svg"

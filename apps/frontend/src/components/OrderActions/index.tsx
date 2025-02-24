@@ -29,12 +29,8 @@ import { DatetimePicker } from "../DatetimePicker";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import advancedFormat from "dayjs/plugin/advancedFormat";
-import {
-  Method,
-  NetworkToEnum,
-  UpdateStrategy,
-  wsManager,
-} from "@/services/websocket";
+import { NetworkToEnum, UpdateStrategy, wsManager } from "@/services/websocket";
+import { Method } from "coredex-api-types/update";
 
 dayjs.extend(utc);
 dayjs.extend(advancedFormat);
@@ -165,7 +161,7 @@ const OrderActions = ({
       const total = multiply(Number(limitPrice), vol);
       BigNumber(volume)
         .multipliedBy(
-          new BigNumber(10).exponentiatedBy(market.base.Denom.Precision)
+          new BigNumber(10).exponentiatedBy(market.base.Denom.Precision ?? 0)
         )
         .toFixed();
       setTotalPrice(
