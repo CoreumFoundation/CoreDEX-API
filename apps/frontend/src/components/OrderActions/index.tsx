@@ -148,8 +148,8 @@ const OrderActions = ({
       const volumeBN = new BigNumber(orderbookAction.volume);
       const priceBN = new BigNumber(orderbookAction.price);
 
-      setVolume(volumeBN.toString());
-      setLimitPrice(priceBN.toString());
+      setVolume(volumeBN.toNumber().toString());
+      setLimitPrice(priceBN.toNumber().toString());
       setTotalPrice(priceBN.times(volumeBN).toNumber());
     }
   }, [orderbookAction]);

@@ -2,7 +2,6 @@ import { ExtensionWallets } from "coreum-js-nightly";
 import {
   Side,
   TimeInForce,
-  OrderType,
 } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { Trade } from "coredex-api-types/trade";
 import { OrderStatus } from "coredex-api-types/order";

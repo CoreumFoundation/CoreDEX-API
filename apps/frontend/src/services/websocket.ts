@@ -1,6 +1,6 @@
 import { CoreumNetwork } from "coreum-js-nightly";
-import { Method, Action } from "coredex-api-types/update";
-import { Network, networkToJSON } from "coredex-api-types/metadata";
+import { Action, Subscription as Sub } from "coredex-api-types/update";
+import { Network } from "coredex-api-types/metadata";
 
 export const NetworkToEnum = (network: CoreumNetwork): Network => {
   switch (network) {
@@ -13,12 +13,9 @@ export const NetworkToEnum = (network: CoreumNetwork): Network => {
   }
 };
 
-export interface Subscription {
-  Network: Network;
-  Method: Method;
-  ID: string;
+export type Subscription = Omit<Sub, "Content"> & {
   Content?: any;
-}
+};
 
 export interface WebSocketMessage {
   Action: Action;
