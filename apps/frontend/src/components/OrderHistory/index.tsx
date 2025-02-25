@@ -459,7 +459,7 @@ const OrderHistory = () => {
                         >
                           {order.Side === Side.SIDE_BUY
                             ? "Buy"
-                            : order.Side === Side.SIDE_BUY
+                            : order.Side === Side.SIDE_SELL
                             ? "Sell"
                             : "Unspecified"}
                         </div>
