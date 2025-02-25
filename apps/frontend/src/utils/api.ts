@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
 import { useStore } from "@/state/store";
 
 export enum APIMethod {
@@ -9,44 +9,53 @@ export enum APIMethod {
   POST_FILE = "postFile",
 }
 
+export interface APIError {
+  error: true;
+  status: number;
+  message: string;
+}
+
 export const request = async (
   body: any,
   endpoint: string,
   method: APIMethod
-): Promise<AxiosResponse> => {
-  let headers: any = {
-    "Content-Type": "application/json",
+): Promise<AxiosResponse | APIError> => {
+  const headers: Record<string, string> = {
+    "Content-Type":
+      method === APIMethod.POST_FILE
+        ? "multipart/form-data"
+        : "application/json",
     Network: useStore.getState().network,
   };
 
-  let response: any;
+  const config: AxiosRequestConfig = {
+    headers,
+    method: method === APIMethod.UPDATE ? "put" : method,
+    url: endpoint,
+  };
 
-  if (method === APIMethod.POST_FILE) {
-    headers["Content-Type"] = "multipart/form-data";
+  if (method === APIMethod.GET) {
+    config.params = body;
+  } else if (method === APIMethod.POST_FILE) {
     const form = new FormData();
     form.append("file", body.Filename);
-    response = await axios
-      .post(`${endpoint}`, form, { headers })
-      .then((res: any) => res)
-      .catch((error: any) => {
-        console.log("E_REQUEST =>", error);
-
-        throw error;
-      });
+    config.data = form;
   } else {
-    response = await axios({
-      headers,
-      method,
-      url: `${endpoint}`,
-      ...(method === APIMethod.GET ? { params: body } : { data: body }),
-    })
-      .then((res: any) => res)
-      .catch((error: any) => {
-        console.log("E_REQUEST =>", error);
-
-        throw error;
-      });
+    config.data = body;
   }
 
-  return response;
+  try {
+    const response = await axios(config);
+    return response;
+  } catch (error: any) {
+    console.error("E_REQUEST =>", error);
+    return {
+      error: true,
+      status: error.response?.status || 500,
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Internal Server Error",
+    };
+  }
 };

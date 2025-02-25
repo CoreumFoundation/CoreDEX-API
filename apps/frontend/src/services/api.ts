@@ -33,7 +33,7 @@ export const getOHLC = async (
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from OHLC API");
   }
 
@@ -59,7 +59,7 @@ export const getTrades = async (
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from Trades API");
   }
 
@@ -79,7 +79,7 @@ export const getTickers = async (
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from Tickers API");
   }
 
@@ -95,7 +95,7 @@ export const getCurrencies = async (): Promise<
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from Currencies API");
   }
 
@@ -109,7 +109,7 @@ export const createOrder = async (order: MsgPlaceOrder) => {
     APIMethod.POST
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from CreateOrder API");
   }
 
@@ -123,7 +123,7 @@ export const submitOrder = async (order: { TX: string }) => {
     APIMethod.POST
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from SubmitOrder API");
   }
 
@@ -145,7 +145,7 @@ export const getOrderbook = async (
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from Orderbook API");
   }
 
@@ -165,7 +165,7 @@ export const getWalletAssets = async (
     APIMethod.GET
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from Wallet Assets API");
   }
 
@@ -182,7 +182,7 @@ export const cancelOrder = async (cancelParams: {
     APIMethod.POST
   );
 
-  if (!response.data) {
+  if ("error" in response || !response.data) {
     throw new Error("No data received from CancelOrder API");
   }
 
