@@ -8,8 +8,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
+	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
@@ -34,12 +36,34 @@ func (a *Application) StartOHLCProcessor() {
 		// Select n trade or x seconds into a map of symbols (denom1-denom2)
 		select {
 		case trade := <-a.tradeChan:
+			// Skip trades that are not enriched (e.g. would have borked data)
+			if !trade.Enriched {
+				continue
+			}
 			// Process the trade
 			symbol := symbol(trade)
 			if _, ok := trades[symbol]; !ok {
 				trades[symbol] = []*tradegrpc.Trade{}
 			}
-			trades[symbol] = append(trades[symbol], trade)
+			/*
+				Trades can be buy or sell.
+				The amounts and price are stored for the associated buy or sell,
+				To be able to build the associated OHLCs we can apply the BUY to one side and the SELL to the other side.
+				Side is defined as Denom1-Denom2 and Denom2-Denom1
+				The associated price and amount need to be inverted for the other side.
+
+			*/
+			switch trade.Side {
+			case orderproperties.Side_SIDE_SELL:
+				trades[symbol] = append(trades[symbol], trade)
+			case orderproperties.Side_SIDE_BUY:
+				// Invert the trade
+				trade.Denom1, trade.Denom2 = trade.Denom2, trade.Denom1
+				r := trade.Amount.Mul(trade.Price)
+				trade.Amount = decimal.FromFloat64(r)
+				trade.Price = 1 / trade.Price
+				trades[symbol] = append(trades[symbol], trade)
+			}
 			a.calculateOHLCS(trades)
 			trades = map[string][]*tradegrpc.Trade{}
 		case <-time.After(5 * time.Second):
