@@ -93,32 +93,34 @@ export const useStore = create<State>((set) => ({
   market: {
     base: {
       Denom: {
-        Currency: "btc",
+        Currency: "nor",
         Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
         Precision: 6,
-        Denom: "btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Name: "BTC",
-        Description: "Wrapped Bitcoin Token",
+        Denom: "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        Name: "NOR",
+        Description: "NOR",
         IsIBC: false,
       },
-      Description: "Wrapped Bitcoin Token",
+
+      Description: "NOR",
     },
     counter: {
       Denom: {
-        Currency: "usdc",
+        Currency: "alb",
         Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
         Precision: 6,
-        Denom: "usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Name: "USDC",
-        Description: "Wrapped USDC Token",
+        Denom: "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        Name: "ALB",
+        Description: "ALB",
         IsIBC: false,
       },
-      Description: "Wrapped USDC Token",
+
+      Description: "ALB",
     },
     pair_symbol:
-      "btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
     reversed_pair_symbol:
-      "usdc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_btc-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
   },
   setMarket: (market: Market) => {
     set({ market: market });

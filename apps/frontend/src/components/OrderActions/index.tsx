@@ -550,7 +550,7 @@ const OrderActions = ({
                   customCss={{
                     fontSize: 16,
                   }}
-                  decimals={13}
+                  decimals={market.counter.Denom.Precision}
                   adornmentRight={market.base.Denom.Currency.toUpperCase()}
                 />
               </div>
@@ -560,7 +560,11 @@ const OrderActions = ({
 
         <div className="order-bottom">
           <div className="order-total">
-            <p className="order-total-label">Total:</p>
+            <p className="order-total-label">
+              {tradeType === OT.ORDER_TYPE_LIMIT
+                ? "Total: "
+                : "Estimated Total: "}
+            </p>
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}
