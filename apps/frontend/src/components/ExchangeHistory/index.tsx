@@ -3,14 +3,12 @@ import dayjs from "dayjs";
 import { FormatNumber } from "../FormatNumber";
 import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
-import { SideBuy, TradeRecord } from "@/types/market";
+import { TradeRecord } from "@/types/market";
+import { Side } from "coredex-api-types/order-properties";
+
 import "./exchange-history.scss";
-import {
-  UpdateStrategy,
-  wsManager,
-  Method,
-  NetworkToEnum,
-} from "@/services/websocket";
+import { UpdateStrategy, wsManager, NetworkToEnum, Subscription } from "@/services/websocket";
+import { Method } from "coredex-api-types/update";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
@@ -37,7 +35,7 @@ const ExchangeHistory = () => {
 
   const historyRef = useRef<HTMLDivElement>(null);
 
-  const subscription = useMemo(
+  const subscription: Subscription = useMemo(
     () => ({
       Network: NetworkToEnum(network),
       Method: Method.TRADES_FOR_SYMBOL,
@@ -195,7 +193,7 @@ const ExchangeHistory = () => {
       <div style={style} className="exchange-history-body-row">
         <div
           className={`exchange-history-body-value ${
-            trade.Side === SideBuy.BUY ? "positive" : "negative"
+            trade.Side === Side.SIDE_BUY ? "positive" : "negative"
           }`}
         >
           <FormatNumber number={trade.HumanReadablePrice} />

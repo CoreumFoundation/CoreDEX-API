@@ -8,12 +8,8 @@ import { useStore } from "@/state/store";
 import "./tradingview.scss";
 import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
-import {
-  Method,
-  NetworkToEnum,
-  UpdateStrategy,
-  wsManager,
-} from "@/services/websocket";
+import { NetworkToEnum, UpdateStrategy, wsManager } from "@/services/websocket";
+import { Method } from "coredex-api-types/update";
 import { mirage } from "ldrs";
 mirage.register();
 

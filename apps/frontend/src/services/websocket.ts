@@ -1,30 +1,6 @@
 import { CoreumNetwork } from "coreum-js-nightly";
-
-export enum Action {
-  SUBSCRIBE = 0,
-  UNSUBSCRIBE = 1,
-  CLOSE = 2,
-  RESPONSE = 3,
-}
-
-export enum Method {
-  METHOD_DO_NOT_USE = 0,
-  TRADES_FOR_SYMBOL = 1,
-  TRADES_FOR_ACCOUNT = 2,
-  TRADES_FOR_ACCOUNT_AND_SYMBOL = 3,
-  OHLC = 4,
-  TICKER = 5,
-  ORDERBOOK = 6,
-  ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT = 7,
-  WALLET = 8,
-}
-
-export enum Network {
-  NETWORK_DO_NOT_USE = 0,
-  MAINNET = 1,
-  TESTNET = 2,
-  DEVNET = 3,
-}
+import { Action, Subscription as Sub } from "coredex-api-types/update";
+import { Network } from "coredex-api-types/metadata";
 
 export const NetworkToEnum = (network: CoreumNetwork): Network => {
   switch (network) {
@@ -37,12 +13,9 @@ export const NetworkToEnum = (network: CoreumNetwork): Network => {
   }
 };
 
-export interface Subscription {
-  Network: Network;
-  Method: Method;
-  ID: string;
+export type Subscription = Omit<Sub, "Content"> & {
   Content?: any;
-}
+};
 
 export interface WebSocketMessage {
   Action: Action;

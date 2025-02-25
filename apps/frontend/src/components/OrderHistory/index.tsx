@@ -7,10 +7,8 @@ import {
   useLayoutEffect,
 } from "react";
 import {
-  OrderHistoryStatus,
   OrderbookRecord,
   OrderbookResponse,
-  SideBuy,
   TradeRecord,
   TransformedOrder,
 } from "@/types/market";
@@ -26,17 +24,15 @@ import { resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
+import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { fromByteArray } from "base64-js";
-import {
-  UpdateStrategy,
-  wsManager,
-  Method,
-  NetworkToEnum,
-} from "@/services/websocket";
+import { UpdateStrategy, wsManager, NetworkToEnum } from "@/services/websocket";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
+import { OrderStatus } from "coredex-api-types/order";
+import { Method } from "coredex-api-types/update";
 dayjs.extend(duration);
 
 const TABS = {
@@ -70,15 +66,15 @@ const OrderHistory = () => {
   const [hasMore, setHasMore] = useState(true);
   const listOuterRef = useRef<HTMLDivElement>(null);
 
-  const resolveOrderStatus = (status: OrderHistoryStatus) => {
+  const resolveOrderStatus = (status: OrderStatus) => {
     switch (status) {
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_OPEN:
+      case OrderStatus.ORDER_STATUS_OPEN:
         return "Open";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_EXPIRED:
+      case OrderStatus.ORDER_STATUS_EXPIRED:
         return "Expired";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_CANCELED:
+      case OrderStatus.ORDER_STATUS_CANCELED:
         return "Cancelled";
-      case OrderHistoryStatus.OrderStatus_ORDER_STATUS_FILLED:
+      case OrderStatus.ORDER_STATUS_FILLED:
         return "Filled";
       default:
         return "Unspecified";
@@ -278,10 +274,7 @@ const OrderHistory = () => {
 
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
-      const transformSide = (
-        orders: OrderbookRecord[],
-        side: SideBuy.BUY | SideBuy.SELL
-      ) =>
+      const transformSide = (orders: OrderbookRecord[], side: Side) =>
         orders.map((order) => {
           return {
             Side: side,
@@ -298,8 +291,8 @@ const OrderHistory = () => {
         });
 
       return [
-        ...transformSide(orderbook.Buy, SideBuy.BUY),
-        ...transformSide(orderbook.Sell, SideBuy.SELL),
+        ...transformSide(orderbook.Buy, Side.SIDE_BUY),
+        ...transformSide(orderbook.Sell, Side.SIDE_SELL),
       ].sort((a, b) => a.Sequence - b.Sequence);
     },
     []
@@ -368,8 +361,8 @@ const OrderHistory = () => {
         href={`${resolveCoreumExplorer(network)}/transactions/${order.TXID}`}
         target="_blank"
       >
-        <div className={order.Side === SideBuy.BUY ? "buy" : "sell"}>
-          {order.Side === SideBuy.BUY ? "Buy" : "Sell"}
+        <div className={order.Side === Side.SIDE_BUY ? "buy" : "sell"}>
+          {order.Side === Side.SIDE_BUY ? "Buy" : "Sell"}
         </div>
         <div className="order-id">{order.Sequence}</div>
         <div className="status">{resolveOrderStatus(order.Status)}</div>
@@ -380,7 +373,7 @@ const OrderHistory = () => {
           className="total"
         />
         <p className="date">
-          {dayjs.unix(order.BlockTime.seconds).format("MM/DD/YY h:mm A")}
+          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY h:mm A")}
         </p>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -461,12 +454,12 @@ const OrderHistory = () => {
                       <div key={index} className="open-row">
                         <div
                           className={
-                            order.Side === SideBuy.BUY ? `buy` : "sell"
+                            order.Side === Side.SIDE_BUY ? `buy` : "sell"
                           }
                         >
-                          {order.Side === SideBuy.BUY
+                          {order.Side === Side.SIDE_BUY
                             ? "Buy"
-                            : order.Side === SideBuy.SELL
+                            : order.Side === Side.SIDE_SELL
                             ? "Sell"
                             : "Unspecified"}
                         </div>

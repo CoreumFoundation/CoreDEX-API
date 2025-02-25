@@ -121,7 +121,7 @@ const MarketSelector = () => {
               items={currencies || []}
               label="Quote Token"
               value={
-                quoteToken ? quoteToken.Denom.Name : market!.counter.Denom.Name
+                quoteToken ? quoteToken.Denom.Name : market!.counter.Denom?.Name
               }
               onClick={(item) => {
                 setQuoteToken(item);

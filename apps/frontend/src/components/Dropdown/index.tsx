@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./dropdown.scss";
 
 interface DropdownProps<T> {
-  value: string;
+  value: string | undefined;
   items: T[];
   renderItem: (item: T, index: number) => React.ReactNode;
   getvalue?: (item: T) => string;
@@ -99,7 +99,9 @@ const Dropdown = <T,>({
                 className="dropdown-selected-image"
               />
             )}
-            <div className="dropdown-value-selected">{selectedvalue}</div>
+            <div className="dropdown-value-selected">
+              {selectedvalue ? selectedvalue : ""}
+            </div>
           </div>
 
           <img

@@ -6,14 +6,10 @@ import { toFixedDown } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
-import {
-  wsManager,
-  UpdateStrategy,
-  NetworkToEnum,
-  Method,
-} from "@/services/websocket";
+import { wsManager, UpdateStrategy, NetworkToEnum } from "@/services/websocket";
 import "./orderbook.scss";
 import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Method } from "coredex-api-types/update";
 import { mirage } from "ldrs";
 mirage.register();
 
@@ -269,6 +265,11 @@ export default function Orderbook({
           hideTooltip();
         }}
         onClick={() => {
+          console.log({
+            type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
+            price: Number(order.HumanReadablePrice),
+            volume: Number(order.SymbolAmount),
+          });
           setOrderbookAction({
             type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
             price: Number(order.HumanReadablePrice),
