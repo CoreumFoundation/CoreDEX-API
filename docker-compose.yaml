@@ -15,7 +15,7 @@ services:
       - ./mysql-init:/docker-entrypoint-initdb.d
 
   store:
-    image: store:latest
+    image: coreumfoundation/store:latest
     container_name: store
     depends_on:
       - mysql
@@ -28,7 +28,7 @@ services:
     entrypoint: ["./wait-for-it.sh", "mysql:3306", "-t", "30", "--", "./app"]
 
   api-server:
-    image: api-server:latest
+    image: coreumfoundation/api-server:latest
     container_name: api-server
     depends_on:
       - store
@@ -49,7 +49,7 @@ services:
 
 
   data-aggregator:
-    image: data-aggregator:latest
+    image: coreumfoundation/data-aggregator:latest
     container_name: data-aggregator
     depends_on:
       - store
@@ -64,7 +64,7 @@ services:
     entrypoint: ["./wait-for-it.sh", "store:50051", "-t", "60", "--", "./app"]
 
   frontend:
-    image: frontend:latest
+    image: coreumfoundation/frontend:latest
     container_name: frontend
     depends_on:
       - store
