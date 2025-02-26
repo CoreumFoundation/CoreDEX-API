@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/rand"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -17,8 +16,8 @@ func main() {
 		GRPCHost: "full-node.devnet-1.coreum.dev:9090",
 		// The token issuer used to issue the assets
 		Issuer: AccountWallet{
-			Address:  "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-			Mnemonic: "final warrior tell admit apology road unlock gadget east airport clever roast whale ability lecture audit slot betray rapid legal crumble receive distance bind",
+			Address:  "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+			Mnemonic: "inmate connect object bid before sting talent interest forget tourist crystal girl estate banner cool crunch scatter industry sick motion hawk fossil seek slam",
 		},
 		// 2 accounts which are buying/selling the assets
 		AccountsWallet: []AccountWallet{
@@ -39,7 +38,7 @@ func main() {
 		panic(err)
 	}
 
-	t := time.NewTicker(time.Second)
+	t := time.NewTicker(10 * time.Second)
 
 	for {
 		select {
@@ -48,14 +47,7 @@ func main() {
 			return
 		case now := <-t.C:
 			rootRnd := rand.New(rand.NewSource(now.Unix()))
-			accounts := application.GetAccounts()
-			wg := sync.WaitGroup{}
-			wg.Add(len(accounts))
-			for _, account := range accounts {
-				application.CreateOrder(ctx, rootRnd, account)
-				wg.Done()
-			}
-			wg.Wait()
+			application.CreateOrder(ctx, rootRnd, application.GetAccounts())
 		}
 	}
 }
