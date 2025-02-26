@@ -364,7 +364,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={market.base.Denom.Precision}
-                  adornmentRight={market.base.Denom.Currency.toUpperCase()}
+                  adornmentRight={market.base.Denom.Name?.toUpperCase()}
                 />
                 <Input
                   maxLength={16}
@@ -381,7 +381,7 @@ const OrderActions = ({
                   }}
                   inputWrapperClassname="order-input"
                   decimals={market.counter.Denom.Precision}
-                  adornmentRight={market.counter.Denom.Currency.toUpperCase()}
+                  adornmentRight={market.counter.Denom.Name?.toUpperCase()}
                 />
 
                 <div className="advanced-settings-header">
@@ -550,8 +550,8 @@ const OrderActions = ({
                   customCss={{
                     fontSize: 16,
                   }}
-                  decimals={market.counter.Denom.Precision}
-                  adornmentRight={market.base.Denom.Currency.toUpperCase()}
+                  decimals={market.base.Denom.Precision}
+                  adornmentRight={market.base.Denom.Name?.toUpperCase()}
                 />
               </div>
             )}
