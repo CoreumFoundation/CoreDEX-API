@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
@@ -54,9 +54,9 @@ func (a *Application) StartOHLCProcessor() {
 
 			*/
 			switch trade.Side {
-			case orderproperties.Side_SIDE_SELL:
-				trades[symbol] = append(trades[symbol], trade)
 			case orderproperties.Side_SIDE_BUY:
+				trades[symbol] = append(trades[symbol], trade)
+			case orderproperties.Side_SIDE_SELL:
 				// Invert the trade
 				trade.Denom1, trade.Denom2 = trade.Denom2, trade.Denom1
 				r := trade.Amount.Mul(trade.Price)
