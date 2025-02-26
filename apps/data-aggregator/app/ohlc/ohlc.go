@@ -3,6 +3,7 @@ package ohlc
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -62,6 +63,9 @@ func (a *Application) StartOHLCProcessor() {
 				r := trade.Amount.Mul(trade.Price)
 				trade.Amount = decimal.FromFloat64(r)
 				trade.Price = 1 / trade.Price
+				// Invert symbol:
+				s := strings.Split(symbol, "_")
+				symbol = fmt.Sprintf("%s_%s", s[1], s[0])
 				trades[symbol] = append(trades[symbol], trade)
 			}
 			a.calculateOHLCS(trades)
