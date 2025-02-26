@@ -262,10 +262,9 @@ func (app *Application) updateTradesForAccountAndSymbol(ctx context.Context, sub
 }
 
 func (app *Application) updateTicker(ctx context.Context, subscription *updateproto.Subscription, wg *sync.WaitGroup) {
-	tickers := app.Ticker.GetTickers(ctx, &dmn.TickerReadOptions{
-		Symbols: []string{subscription.ID},
-		Network: subscription.Network,
-	})
+	opt := dmn.NewTickerReadOptions([]string{subscription.ID}, time.Now().Truncate(time.Second), 24*time.Hour)
+	opt.Network = subscription.Network
+	tickers := app.Ticker.GetTickers(ctx, opt)
 	b, err := json.Marshal(tickers)
 	if err != nil {
 		logger.Errorf("Error marshalling orderbook orders: %v", err)

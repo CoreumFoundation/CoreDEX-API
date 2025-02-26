@@ -136,10 +136,10 @@ A set of single instances is expected to be able to handle 1000s of parallel req
 To support deployment on cloud services, there are 4 docker files in the root of the project. These can be used to build the docker images for the components.
 
 ```bash
-docker build -t api-server -f Dockerfile.api-server .
-docker build -t data-aggregator -f Dockerfile.data-aggregator .
-docker build -t store -f Dockerfile.store .
-docker build -t frontend -f Dockerfile.frontend .
+docker build -t coreumfoundation/api-server:latest -f Dockerfile.api-server .
+docker build -t coreumfoundation/data-aggregator:latest -f Dockerfile.data-aggregator .
+docker build -t coreumfoundation/store:latest -f Dockerfile.store .
+docker build -t coreumfoundation/frontend:latest -f Dockerfile.frontend .
 ```
 
 There are also sample deployment files for Kubernetes in the `apps/kubernetes` directory.

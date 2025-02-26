@@ -11,7 +11,6 @@ import (
 	ordermodel "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/trade"
-	tradeclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
@@ -64,7 +63,7 @@ func (e *MsgCancelOrderHandler) Handle(
 		if !ok {
 			continue
 		}
-		order, err := orderClient.Get(tradeclient.AuthCtx(ctx), &ordermodel.ID{
+		order, err := orderClient.Get(orderclient.AuthCtx(ctx), &ordermodel.ID{
 			Network:  meta.Network,
 			Sequence: int64(event.Sequence), // TODO: decide if we want to change both to unsigned
 		})

@@ -48,6 +48,14 @@ func FromDec(d sdecimal.Decimal) *Decimal {
 	}
 }
 
+func FromFloat64(f float64) *Decimal {
+	d := sdecimal.NewFromFloat(f)
+	return &Decimal{
+		Value: d.CoefficientInt64(),
+		Exp:   d.Exponent(),
+	}
+}
+
 // Non-lossless method to handle values with many decimals
 // Returns lossless if the value fits in an int64 and remainder is of 10^x
 func ToBigInt(dec sdecimal.Decimal) (int64, int32) {

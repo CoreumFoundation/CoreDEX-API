@@ -94,6 +94,36 @@ func (e *MsgPlaceOrderHandler) Parse(txBytes []byte, meta domain.Metadata) proto
 	return tr
 }
 
+func enrichDenoms(ctx context.Context, currencyClient currencygrpc.CurrencyServiceClient,
+	meta domain.Metadata,
+	order *ordergrpc.Order,
+	enriched bool,
+) (bool, int64, int64) {
+	denom1Precision, denom2Precision := int64(0), int64(0)
+	if !enriched {
+		denom1Currency, err1 := currencyClient.Get(ctx, &currencygrpc.ID{
+			Network: meta.Network,
+			Denom:   order.BaseDenom.Denom,
+		})
+		denom2Currency, err2 := currencyClient.Get(ctx, &currencygrpc.ID{
+			Network: meta.Network,
+			Denom:   order.QuoteDenom.Denom,
+		})
+		if err1 == nil && err2 == nil {
+			enriched = true
+			if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
+				denom1Precision = int64(*denom1Currency.Denom.Precision)
+				order.BaseDenom.Precision = denom1Currency.Denom.Precision
+			}
+			if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
+				denom2Precision = int64(*denom2Currency.Denom.Precision)
+				order.QuoteDenom.Precision = denom2Currency.Denom.Precision
+			}
+		}
+	}
+	return enriched, denom1Precision, denom2Precision
+}
+
 func (e *MsgPlaceOrderHandler) Handle(
 	ctx context.Context,
 	orderClient ordergrpc.OrderServiceClient,
@@ -104,9 +134,6 @@ func (e *MsgPlaceOrderHandler) Handle(
 	meta domain.Metadata,
 	tradeChan chan *tradegrpc.Trade,
 ) error {
-	enriched := false
-	denom1Precision := int64(0)
-	denom2Precision := int64(0)
 
 	for _, ev := range action.Events {
 		tr := e.registry.ParseEvent(ev.Type, ev)
@@ -116,6 +143,8 @@ func (e *MsgPlaceOrderHandler) Handle(
 
 		switch event := tr.(type) {
 		case *dextypes.EventOrderPlaced:
+			enriched := false
+			denom1Precision, denom2Precision := int64(0), int64(0)
 			var err error
 			order := message.(*ordergrpc.Order)
 			if order.Account != event.Creator || order.OrderID != event.ID {
@@ -123,28 +152,7 @@ func (e *MsgPlaceOrderHandler) Handle(
 			}
 			order.Sequence = int64(event.Sequence)
 			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPEN
-
-			if !enriched {
-				denom1Currency, err1 := currencyClient.Get(ctx, &currencygrpc.ID{
-					Network: meta.Network,
-					Denom:   order.BaseDenom.Denom,
-				})
-				denom2Currency, err2 := currencyClient.Get(ctx, &currencygrpc.ID{
-					Network: meta.Network,
-					Denom:   order.QuoteDenom.Denom,
-				})
-				if err1 == nil && err2 == nil {
-					enriched = true
-					if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
-						denom1Precision = int64(*denom1Currency.Denom.Precision)
-						order.BaseDenom.Precision = denom1Currency.Denom.Precision
-					}
-					if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
-						denom2Precision = int64(*denom2Currency.Denom.Precision)
-						order.QuoteDenom.Precision = denom2Currency.Denom.Precision
-					}
-				}
-			}
+			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
 			if enriched {
 				exp := int32(denom1Precision - denom2Precision)
@@ -170,6 +178,8 @@ func (e *MsgPlaceOrderHandler) Handle(
 				return err
 			}
 		case *dextypes.EventOrderReduced:
+			enriched := false
+			denom1Precision, denom2Precision := int64(0), int64(0)
 			order, err := orderClient.Get(orderclient.AuthCtx(ctx), &ordergrpc.ID{
 				Network:  meta.Network,
 				Sequence: int64(event.Sequence),
@@ -179,27 +189,7 @@ func (e *MsgPlaceOrderHandler) Handle(
 				continue
 			}
 
-			if !enriched {
-				denom1Currency, err1 := currencyClient.Get(ctx, &currencygrpc.ID{
-					Network: meta.Network,
-					Denom:   order.BaseDenom.Denom,
-				})
-				denom2Currency, err2 := currencyClient.Get(ctx, &currencygrpc.ID{
-					Network: meta.Network,
-					Denom:   order.QuoteDenom.Denom,
-				})
-				if err1 == nil && err2 == nil {
-					enriched = true
-					if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
-						denom1Precision = int64(*denom1Currency.Denom.Precision)
-						order.BaseDenom.Precision = denom1Currency.Denom.Precision
-					}
-					if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
-						denom2Precision = int64(*denom2Currency.Denom.Precision)
-						order.QuoteDenom.Precision = denom2Currency.Denom.Precision
-					}
-				}
-			}
+			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
 			switch order.Side {
 			case orderproperties.Side_SIDE_SELL:
