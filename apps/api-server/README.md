@@ -351,6 +351,7 @@ Example response:
     "good_til": {
         "good_til_block_time": "2025-12-30T12:00:00Z"
     }
+}
 ```
 
 In which the TXBytes is the base64 encoded transaction that needs to be signed and submitted to the blockchain.
@@ -421,28 +422,34 @@ Sample return:
 
 ```json5
 {
-  Buy: [
+  "Buy": [
     {
-      Price: "3140",
-      HumanReadablePrice: "3140",
-      Amount: "2272",
-      SymbolAmount: "0.002272",
-      Sequence: 41567,
-      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      "Price": "3140",
+      "HumanReadablePrice": "3140",
+      "Amount": "2272",
+      "SymbolAmount": "0.002272",
+      "Sequence": 41567,
+      "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      "RemainingAmount": "2272",
+      "RemainingSymbolAmount": "0.002272",
     },
   ],
-  Sell: [
+  "Sell": [
     {
-      Price: "3360",
-      HumanReadablePrice: "3360",
-      Amount: "2071",
-      SymbolAmount: "0.002071",
-      Sequence: 41760,
-      OrderID: "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      "Price": "3360",
+      "HumanReadablePrice": "3360",
+      "Amount": "2071",
+      "SymbolAmount": "0.002071",
+      "Sequence": 41760,
+      "OrderID": "8b341e25-482e-487f-b9e2-9467d98c16ac",
+      "RemainingAmount": "2071",
+      "RemainingSymbolAmount": "0.002071",
     },
   ],
 }
 ```
+
+where a frontend could display `(SymbolAmount-RemainingSymbolAmount)/SymbolAmount` as an indicator of progress of the order.
 
 #### /wallet/assets
 
@@ -457,14 +464,14 @@ Sample return:
 ```json5
 [
   {
-    Denom: "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-    Amount: "1000000000000",
-    SymbolAmount: "1000.0000",
+    "Denom": "dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "Amount": "1000000000000",
+    "SymbolAmount": "1000.0000",
   },
   {
-    Denom: "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-    Amount: "1000000000000",
-    SymbolAmount: "1000.0000",
+    "Denom": "dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "Amount": "1000000000000",
+    "SymbolAmount": "1000.0000",
   },
   //...
 ]

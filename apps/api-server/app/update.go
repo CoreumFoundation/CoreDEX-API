@@ -267,7 +267,7 @@ func (app *Application) updateTicker(ctx context.Context, subscription *updatepr
 	tickers := app.Ticker.GetTickers(ctx, opt)
 	b, err := json.Marshal(tickers)
 	if err != nil {
-		logger.Errorf("Error marshalling orderbook orders: %v", err)
+		logger.Errorf("Error marshalling tickers: %v", err)
 		wg.Done()
 		return
 	}

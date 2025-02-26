@@ -45,14 +45,16 @@ func (r *Reader) QueryOrderBookOrders(
 }
 
 type OrderBookOrder struct {
-	priceDec           decimal.Decimal
-	Price              string
-	HumanReadablePrice string
-	Amount             string
-	SymbolAmount       string
-	Sequence           uint64
-	Account            string
-	OrderID            string
+	priceDec              decimal.Decimal
+	Price                 string
+	HumanReadablePrice    string
+	Amount                string
+	SymbolAmount          string
+	Sequence              uint64
+	Account               string
+	OrderID               string
+	RemainingAmount       string
+	RemainingSymbolAmount string
 }
 
 type OrderBookOrders struct {
@@ -91,15 +93,18 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			humanReadablePrice := price.Mul(precision)
 			symbolAmount := decimal.NewFromBigInt(order.Quantity.BigInt(), 0)
 			symbolAmount = symbolAmount.Div(decimal.New(1, int32(denom1Precision)))
+			remainingSymbolAmount := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0)
 			orders = append(orders, &OrderBookOrder{
-				priceDec:           price,
-				Price:              price.String(),
-				HumanReadablePrice: humanReadablePrice.String(),
-				Amount:             order.Quantity.String(),
-				SymbolAmount:       symbolAmount.String(),
-				Sequence:           order.Sequence,
-				Account:            order.Creator,
-				OrderID:            order.ID,
+				priceDec:              price,
+				Price:                 price.String(),
+				HumanReadablePrice:    humanReadablePrice.String(),
+				Amount:                order.Quantity.String(),
+				SymbolAmount:          symbolAmount.String(),
+				Sequence:              order.Sequence,
+				Account:               order.Creator,
+				OrderID:               order.ID,
+				RemainingAmount:       order.RemainingBaseQuantity.String(),
+				RemainingSymbolAmount: remainingSymbolAmount.String(),
 			})
 		}
 	case true:
@@ -120,16 +125,20 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			}
 			humanReadablePrice := invPrice.Div(precision)
 			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
+			remainingQuantity := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0).Mul(invPrice)
 			symbolAmount := quantity.Div(decimal.New(1, int32(denom1Precision)))
+			remainingSymbolAmount := remainingQuantity.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
-				priceDec:           invPrice,
-				Price:              invPrice.String(),
-				HumanReadablePrice: humanReadablePrice.String(),
-				Amount:             quantity.String(),
-				SymbolAmount:       symbolAmount.String(),
-				Sequence:           order.Sequence,
-				Account:            order.Creator,
-				OrderID:            order.ID,
+				priceDec:              invPrice,
+				Price:                 invPrice.String(),
+				HumanReadablePrice:    humanReadablePrice.String(),
+				Amount:                quantity.String(),
+				SymbolAmount:          symbolAmount.String(),
+				Sequence:              order.Sequence,
+				Account:               order.Creator,
+				OrderID:               order.ID,
+				RemainingAmount:       remainingQuantity.String(),
+				RemainingSymbolAmount: remainingSymbolAmount.String(),
 			})
 		}
 	}
