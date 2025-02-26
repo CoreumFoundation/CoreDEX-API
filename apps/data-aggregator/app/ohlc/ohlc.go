@@ -3,10 +3,12 @@ package ohlc
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
@@ -39,11 +41,7 @@ func (a *Application) StartOHLCProcessor() {
 			if !trade.Enriched {
 				continue
 			}
-			// Process the trade
 			symbol := symbol(trade)
-			if _, ok := trades[symbol]; !ok {
-				trades[symbol] = []*tradegrpc.Trade{}
-			}
 			/*
 				Trades can be buy or sell.
 				The amounts and price are stored for the associated buy or sell,
@@ -54,17 +52,23 @@ func (a *Application) StartOHLCProcessor() {
 			*/
 			switch trade.Side {
 			case orderproperties.Side_SIDE_BUY:
+				if _, ok := trades[symbol]; !ok {
+					trades[symbol] = []*tradegrpc.Trade{}
+				}
 				trades[symbol] = append(trades[symbol], trade)
-				// case orderproperties.Side_SIDE_SELL:
-				// 	// Invert the trade
-				// 	trade.Denom1, trade.Denom2 = trade.Denom2, trade.Denom1
-				// 	r := trade.Amount.Mul(trade.Price)
-				// 	trade.Amount = decimal.FromFloat64(r)
-				// 	trade.Price = 1 / trade.Price
-				// 	// Invert symbol:
-				// 	s := strings.Split(symbol, "_")
-				// 	symbol = fmt.Sprintf("%s_%s", s[1], s[0])
-				// 	trades[symbol] = append(trades[symbol], trade)
+			case orderproperties.Side_SIDE_SELL:
+				// Invert the trade
+				trade.Denom1, trade.Denom2 = trade.Denom2, trade.Denom1
+				r := trade.Amount.Mul(trade.Price)
+				trade.Amount = decimal.FromFloat64(r)
+				trade.Price = 1 / trade.Price
+				// Invert symbol:
+				s := strings.Split(symbol, "_")
+				symbol = fmt.Sprintf("%s_%s", s[1], s[0])
+				if _, ok := trades[symbol]; !ok {
+					trades[symbol] = []*tradegrpc.Trade{}
+				}
+				trades[symbol] = append(trades[symbol], trade)
 			}
 			a.calculateOHLCS(trades)
 			trades = map[string][]*tradegrpc.Trade{}

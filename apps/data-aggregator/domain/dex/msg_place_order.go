@@ -134,9 +134,6 @@ func (e *MsgPlaceOrderHandler) Handle(
 	meta domain.Metadata,
 	tradeChan chan *tradegrpc.Trade,
 ) error {
-	enriched := false
-	denom1Precision := int64(0)
-	denom2Precision := int64(0)
 
 	for _, ev := range action.Events {
 		tr := e.registry.ParseEvent(ev.Type, ev)
@@ -146,14 +143,15 @@ func (e *MsgPlaceOrderHandler) Handle(
 
 		switch event := tr.(type) {
 		case *dextypes.EventOrderPlaced:
+			enriched := false
+			denom1Precision, denom2Precision := int64(0), int64(0)
 			var err error
 			order := message.(*ordergrpc.Order)
 			if order.Account != event.Creator || order.OrderID != event.ID {
 				continue
 			}
 			order.Sequence = int64(event.Sequence)
-			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPEN
-			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
+			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPENin			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
 			if enriched {
 				exp := int32(denom1Precision - denom2Precision)
@@ -179,6 +177,8 @@ func (e *MsgPlaceOrderHandler) Handle(
 				return err
 			}
 		case *dextypes.EventOrderReduced:
+			enriched := false
+			denom1Precision, denom2Precision := int64(0), int64(0)
 			order, err := orderClient.Get(orderclient.AuthCtx(ctx), &ordergrpc.ID{
 				Network:  meta.Network,
 				Sequence: int64(event.Sequence),
