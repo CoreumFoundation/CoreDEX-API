@@ -73,7 +73,8 @@ const MarketSelector = () => {
         }}
       >
         <div className="market-label-selected">
-          {market?.base.Denom.Name}/{market?.counter.Denom.Name}
+          {market?.base.Denom.Name?.toUpperCase()}/
+          {market?.counter.Denom.Name?.toUpperCase()}
         </div>
         <img
           className={`market-arrow ${isOpen ? "rotate" : ""}`}
