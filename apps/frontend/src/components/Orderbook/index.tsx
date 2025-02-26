@@ -252,11 +252,6 @@ export default function Orderbook({
           hideTooltip();
         }}
         onClick={() => {
-          console.log({
-            type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
-            price: Number(order.HumanReadablePrice),
-            volume: Number(order.SymbolAmount),
-          });
           setOrderbookAction({
             type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
             price: Number(order.HumanReadablePrice),
