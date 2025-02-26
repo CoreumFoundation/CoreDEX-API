@@ -254,16 +254,16 @@ func (fa *App) CreateOrder(
 		msgPlaceSellOrder,
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-			slog.Error("it's prohibited to save more than 100 orders per denom",
-				slog.String("account", msgPlaceSellOrder.Sender),
-				slog.String("denom", msgPlaceSellOrder.BaseDenom))
+		if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
+			slog.Error("Unknown error (SELL)", slog.Any("Error:", err))
 			return err
 		}
-		return err
+		slog.Error("it's prohibited to save more than 100 orders per denom",
+			slog.String("account", msgPlaceSellOrder.Sender),
+			slog.String("denom", msgPlaceSellOrder.BaseDenom))
 	}
 
-	slog.Info("new order", slog.Any("TX hash", res.TxHash),
+	slog.Info("new order SELL", slog.Any("TX hash", res.TxHash),
 		slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceSellOrder))
 
 	res, err = client.BroadcastTx(
@@ -273,15 +273,15 @@ func (fa *App) CreateOrder(
 		msgPlaceBuyOrder,
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-			slog.Error("it's prohibited to save more than 100 orders per denom",
-				slog.String("account", msgPlaceBuyOrder.Sender),
-				slog.String("denom", msgPlaceBuyOrder.BaseDenom))
+		if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
+			slog.Error("Unknown error (BUY)", slog.Any("Error:", err))
 			return err
 		}
-		return err
+		slog.Error("it's prohibited to save more than 100 orders per denom",
+			slog.String("account", msgPlaceBuyOrder.Sender),
+			slog.String("denom", msgPlaceBuyOrder.BaseDenom))
 	}
-	slog.Info("new order", slog.Any("TX hash", res.TxHash),
+	slog.Info("new order BUY", slog.Any("TX hash", res.TxHash),
 		slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceBuyOrder))
 
 	took := time.Since(startTime)
@@ -345,7 +345,7 @@ func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetftty
 	coinsToMint = types.NewCoin(quoteDenom, amount)
 
 	buyOrder := &dextypes.MsgPlaceOrder{
-		Sender:     accounts[0].String(),
+		Sender:     accounts[1].String(),
 		Type:       dextypes.ORDER_TYPE_LIMIT,
 		ID:         uuid.New().String(),
 		BaseDenom:  baseDenom,
@@ -375,49 +375,6 @@ func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetftty
 		mintBuy,
 		sellOrder,
 		buyOrder, nil
-}
-
-func (fa *App) GenOrder2(rnd *rand.Rand, sender types.AccAddress) (*assetfttypes.MsgMint, *dextypes.MsgPlaceOrder, error) {
-	baseDenom, quoteDenom := fa.denoms[0], fa.denoms[1]
-	side := getAnyItemByIndex(fa.sides, rnd.Intn(len(fa.sides)))
-
-	priceNum := randIntInRange(rnd, 80, 100)
-	var priceExp int8 = 0
-
-	price, ok := buildNumExpPrice(uint64(priceNum), priceExp)
-	if !ok {
-		return nil, nil, fmt.Errorf("could not parse %de%d as price", priceNum, priceExp)
-	}
-
-	quantity := int64(randIntInRange(rnd, 10, 20)) * int64(gomath.Pow(10, 6))
-	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
-	if side == dextypes.SIDE_BUY {
-		amount, err := mulCeil(math.NewInt(quantity), price)
-		if err != nil {
-			return nil, nil, err
-		}
-		coinsToMint = types.NewCoin(quoteDenom, amount)
-	}
-	return &assetfttypes.MsgMint{
-			Sender:    fa.issuer.String(),
-			Coin:      coinsToMint,
-			Recipient: sender.String(),
-		},
-		&dextypes.MsgPlaceOrder{
-			Sender:     sender.String(),
-			Type:       dextypes.ORDER_TYPE_LIMIT,
-			ID:         uuid.New().String(),
-			BaseDenom:  baseDenom,
-			QuoteDenom: quoteDenom,
-			Price:      &price,
-			Quantity:   math.NewInt(quantity),
-			Side:       side,
-			GoodTil: &dextypes.GoodTil{
-				GoodTilBlockHeight: 0,
-				GoodTilBlockTime:   lo.ToPtr(time.Now().Add(time.Hour)),
-			},
-			TimeInForce: dextypes.TIME_IN_FORCE_GTC,
-		}, nil
 }
 
 func buildNumExpPrice(
