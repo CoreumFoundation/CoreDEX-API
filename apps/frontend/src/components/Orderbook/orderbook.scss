@@ -86,7 +86,12 @@
       justify-content: center;
       height: 100%;
       max-height: 346px;
+
+      #sells_ob {
+        justify-content: flex-end;
+      }
     }
+
     .orderbook-wrapper {
       flex: 1;
       overflow-y: scroll;
@@ -111,16 +116,16 @@
           opacity: 1;
           background-color: #222222;
           &:hover {
-            border-top: #666666 1px dashed;
-            margin-top: -1px;
+            border-bottom: #666666 1px dashed;
+            margin-bottom: -1px;
           }
         }
         &.hovered-sell {
           opacity: 1;
           background-color: #222222;
           &:hover {
-            border-bottom: #666666 1px dashed;
-            margin-bottom: -1px;
+            border-top: #666666 1px dashed;
+            margin-top: -1px;
           }
         }
         .orderbook-numbers-wrapper {
@@ -129,6 +134,7 @@
           grid-template-columns: 1fr 1fr 1fr;
           padding: 0 16px;
           column-gap: 8px;
+
           & > p {
             text-align: right;
           }
@@ -146,22 +152,23 @@
             white-space: nowrap;
             overflow: hidden;
             &.price-buys {
-              color: #ff7386;
+              color: #25d695;
             }
             &.price-sells {
-              color: #25d695;
+              color: #ff7386;
             }
           }
         }
+
         .volume-bar {
           position: absolute;
           height: 100%;
 
           &.buys {
-            background: rgba(222, 15, 62, 0.15);
+            background: rgba(37, 214, 149, 0.15);
           }
           &.sells {
-            background: rgba(37, 214, 149, 0.15);
+            background: rgba(222, 15, 62, 0.15);
           }
         }
       }

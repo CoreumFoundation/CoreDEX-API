@@ -32,12 +32,6 @@ export default function Orderbook({
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
   const componentRef = useRef<HTMLDivElement>(null);
 
-  // note: because we want Sells to display as descending, we reverse the order
-  // we have to do some index manipulation to maintain proper hover and tooltip
-  // in calculateGroupData and renderOrderRow
-  // the alternative is to reverse the Sell array before setting in state but that
-  // would require a lot of array manipulation on every message
-
   const subscription = useMemo(
     () => ({
       Network: NetworkToEnum(network),
@@ -96,21 +90,21 @@ export default function Orderbook({
     setSpread(calculateSpread());
   }, [orderbook, market.pair_symbol]);
 
-  // scroll buys to bottom
+  // scroll sells to bottom
   useEffect(() => {
-    const buysOb = document.getElementById("buys_ob");
-    if (buysOb === null) {
+    const sellsOb = document.getElementById("sells_ob");
+    if (sellsOb === null) {
       const timer = setInterval(function () {
-        const buysObook = document.getElementById("buys_ob");
+        const sellsObook = document.getElementById("sells_ob");
 
-        if (buysObook) {
+        if (sellsObook) {
           clearInterval(timer);
         }
       }, 200);
     } else {
-      buysOb.scrollTop = buysOb.scrollHeight;
+      sellsOb.scrollTop = sellsOb.scrollHeight;
     }
-  }, []);
+  }, [orderbook]);
 
   // find the highest volume in the orderbook
   useEffect(() => {
@@ -132,21 +126,15 @@ export default function Orderbook({
   }, [orderbook]);
 
   const calculateGroupData = useCallback(
-    (lines: OrderbookRecord[], index: number, orderType: ORDERBOOK_TYPE) => {
+    (lines: OrderbookRecord[], index: number) => {
       let avgPriceSum = 0;
       let totalVolume = 0;
       let sum = 0;
       const lineGroup = [];
 
-      // buys are in descending order, sells are in ascending order
-      const increment = orderType === ORDERBOOK_TYPE.BUY ? -1 : 1;
-      const endCondition = orderType === ORDERBOOK_TYPE.BUY ? 0 : lines.length;
-
-      for (
-        let i = index;
-        orderType === ORDERBOOK_TYPE.BUY ? i >= endCondition : i < endCondition;
-        i += increment
-      ) {
+      const increment = -1;
+      const endCondition = -1;
+      for (let i = index; i > endCondition; i += increment) {
         const line = lines[i];
         if (!line) break;
 
@@ -184,8 +172,7 @@ export default function Orderbook({
 
       const { avgPrice, sum, lineGroup, totalVolume } = calculateGroupData(
         lines,
-        index,
-        orderType
+        index
       );
 
       lineGroup.forEach((g) => {
@@ -320,15 +307,17 @@ export default function Orderbook({
             </div>
 
             <div className="orderbook-sections">
-              <div
-                className="orderbook-wrapper"
-                style={{ flexDirection: "column-reverse" }}
-                id="buys_ob"
-              >
-                {orderbook.Buy &&
-                  orderbook.Buy.slice(0, 50).map((buy, i) =>
-                    renderOrderRow(buy, i, ORDERBOOK_TYPE.BUY)
-                  )}
+              <div className="orderbook-wrapper" id="sells_ob">
+                {orderbook.Sell &&
+                  orderbook.Sell.slice(0, 50)
+                    .reverse()
+                    .map((sell, i, arr) =>
+                      renderOrderRow(
+                        sell,
+                        arr.length - 1 - i,
+                        ORDERBOOK_TYPE.SELL
+                      )
+                    )}
               </div>
 
               {spread && (
@@ -338,19 +327,16 @@ export default function Orderbook({
                 </div>
               )}
 
-              <div className="orderbook-wrapper" id="sells_ob">
-                {/* reverse, create array of original indices, take top 5, 
-                  then map back to data to maintain proper hover and tooltip */}
-                {orderbook.Sell &&
-                  orderbook.Sell.map((_, idx) => idx)
+              <div className="orderbook-wrapper" id="buys_ob">
+                {orderbook.Buy &&
+                  orderbook.Buy.map((_, idx) => idx)
                     .slice(0, 50)
-                    .reverse()
                     .map((originalIndex) => {
-                      const sell = orderbook.Sell[originalIndex];
+                      const sell = orderbook.Buy[originalIndex];
                       return renderOrderRow(
                         sell,
                         originalIndex,
-                        ORDERBOOK_TYPE.SELL
+                        ORDERBOOK_TYPE.BUY
                       );
                     })}
               </div>

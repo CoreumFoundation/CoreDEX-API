@@ -550,7 +550,7 @@ const OrderActions = ({
                   customCss={{
                     fontSize: 16,
                   }}
-                  decimals={market.counter.Denom.Precision}
+                  decimals={market.base.Denom.Precision}
                   adornmentRight={market.base.Denom.Currency.toUpperCase()}
                 />
               </div>
