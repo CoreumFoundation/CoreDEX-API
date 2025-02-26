@@ -151,7 +151,8 @@ func (e *MsgPlaceOrderHandler) Handle(
 				continue
 			}
 			order.Sequence = int64(event.Sequence)
-			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPENin			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
+			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPEN
+			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
 			if enriched {
 				exp := int32(denom1Precision - denom2Precision)
