@@ -30,27 +30,17 @@ func (s *httpServer) getTickers() handler.Handler {
 func newTickerReadOptions(r *http.Request) (*dmn.TickerReadOptions, error) {
 	var symbols []string
 
-	if r.Method == "GET" {
-		// Decode the input:
-		base64Symbols := r.URL.Query().Get("symbols")
-		if base64Symbols != "" {
-			decodedSymbols, err := base64.StdEncoding.DecodeString(base64Symbols)
-			if err != nil {
-				return nil, handler.NewAPIError(422, "symbols.invalid")
-			}
-			// The decodedSymbols is a json array: Decode the array into symbols:
-			if err := json.Unmarshal(decodedSymbols, &symbols); err != nil {
-				return nil, handler.NewAPIError(422, "symbols.invalid")
-			}
-		}
-	} else {
-		symbolsBody := struct {
-			Symbols []string `json:"symbols"`
-		}{}
-		if err := json.NewDecoder(r.Body).Decode(&symbolsBody); err != nil {
+	// Decode the input:
+	base64Symbols := r.URL.Query().Get("symbols")
+	if base64Symbols != "" {
+		decodedSymbols, err := base64.StdEncoding.DecodeString(base64Symbols)
+		if err != nil {
 			return nil, handler.NewAPIError(422, "symbols.invalid")
 		}
-		symbols = symbolsBody.Symbols
+		// The decodedSymbols is a json array: Decode the array into symbols:
+		if err := json.Unmarshal(decodedSymbols, &symbols); err != nil {
+			return nil, handler.NewAPIError(422, "symbols.invalid")
+		}
 	}
 
 	tickerReadOptions := dmn.NewTickerReadOptions(symbols, time.Now().Truncate(time.Second), 24*time.Hour)

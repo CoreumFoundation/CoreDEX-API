@@ -24,7 +24,7 @@ set_host_coreum() {
 
 # Function for GET /ohlc
 get_ohlc() {
-    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local symbol="nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     local periods=("1m" "3m" "5m" "15m" "30m" "1h" "3h" "6h" "12h" "1d" "3d" "1w")
 
     # Calculate 'to' as the current time and 'from' as 24 hours before 'to'
@@ -44,7 +44,7 @@ get_ohlc() {
 }
 
 get_trades_with_account() {
-    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local symbol="nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     local account="devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
     local to=1734462880
     local from=$((to - 86400))
@@ -57,7 +57,7 @@ get_trades_with_account() {
 }
 
 get_trades_without_account() {
-    local symbol="dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    local symbol="nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     local to=$(date +%s)
     local from=$((to - 86400))
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
@@ -70,7 +70,7 @@ get_trades_without_account() {
 
 # Function for GET /tickers
 get_tickers() {
-    local symbols=("dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs")
+    local symbols=("nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43")
     local json_symbols=$(printf '%s\n' "${symbols[@]}" | jq -R . | jq -s .)
     local encoded_symbols=""
     if base64 --help 2>&1 | grep -q -- "-w"; then
@@ -147,7 +147,7 @@ get_order_orderbook() {
     echo "Calling GET /order/orderbook"
     # Add your curl or wget command here
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs"
+    -X "GET" "${HOST}/order/orderbook?symbol=nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
 }
 
 # Function for GET /order/orderbook
@@ -155,7 +155,7 @@ get_order_orderbook_for_account() {
     echo "Calling GET /order/orderbook"
     # Add your curl or wget command here
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/order/orderbook?symbol=dextestdenom0-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs&account=devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
+    -X "GET" "${HOST}/order/orderbook?symbol=nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43&account=devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
 }
 
 get_wallet_assets() {
