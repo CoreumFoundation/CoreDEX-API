@@ -7,7 +7,12 @@ import { TradeRecord } from "@/types/market";
 import { Side } from "coredex-api-types/order-properties";
 
 import "./exchange-history.scss";
-import { UpdateStrategy, wsManager, NetworkToEnum, Subscription } from "@/services/websocket";
+import {
+  UpdateStrategy,
+  wsManager,
+  NetworkToEnum,
+  Subscription,
+} from "@/services/websocket";
 import { Method } from "coredex-api-types/update";
 import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
@@ -19,7 +24,7 @@ dayjs.extend(duration);
 
 const MAX_HISTORY_DAYS = 14;
 const ROW_HEIGHT = 26;
-const containerHeight = 152;
+const containerHeight = 212;
 
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
