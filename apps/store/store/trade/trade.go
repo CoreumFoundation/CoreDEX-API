@@ -8,6 +8,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	store "github.com/CoreumFoundation/CoreDEX-API/utils/mysqlstore"
@@ -28,7 +30,8 @@ BlockHeight,
 MetaData, 
 USD, 
 Network,
-Enriched `
+Enriched,
+Inverted`
 
 	tradePairTableFields = `Denom1,
 Denom2,
@@ -39,6 +42,11 @@ type Application struct {
 	client store.StoreBase
 }
 
+// A cache purely a check to see if the value is already in the db (skips a repeated write),
+// set is small enough to stay in memory indefinitely
+// Reduces trade related writes with 50%
+var tradePairCache = make(map[string]bool)
+
 func NewApplication(client *store.StoreBase) *Application {
 	app := &Application{
 		client: *client,
@@ -48,6 +56,33 @@ func NewApplication(client *store.StoreBase) *Application {
 	return app
 }
 
+// Alphabetical order of the denoms by currency and issuer
+func (a *Application) denomInversion(in *tradegrpc.Trade) ([]byte, []byte, string, string, bool, error) {
+	den1, den2, inverted := a.denomInverted(in.Denom1, in.Denom2)
+	denRet1, err := json.Marshal(den1)
+	if err != nil {
+		logger.Errorf("Error marshalling denom1 for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
+		return nil, nil, "", "", false, err
+	}
+	denRet2, err := json.Marshal(den2)
+	if err != nil {
+		logger.Errorf("Error marshalling denom2 for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
+		return nil, nil, "", "", false, err
+	}
+	return denRet1, denRet2, den1.Denom, den2.Denom, inverted, nil
+}
+
+func (*Application) denomInverted(denom1, denom2 *denom.Denom) (*denom.Denom, *denom.Denom, bool) {
+	den1 := *denom1
+	den2 := *denom2
+	inverted := false
+	if strings.Compare(den1.Denom, den2.Denom) > 0 {
+		den1, den2 = den2, den1
+		inverted = true
+	}
+	return &den1, &den2, inverted
+}
+
 func (a *Application) Upsert(in *tradegrpc.Trade) error {
 	// Marshal JSON fields
 	amount, err := json.Marshal(in.Amount)
@@ -55,14 +90,9 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		logger.Errorf("Error marshalling amount for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
 		return err
 	}
-	denom1, err := json.Marshal(in.Denom1)
+	// Check the symbol order and invert if necessary:
+	denom1, denom2, denStr1, denStr2, inverted, err := a.denomInversion(in)
 	if err != nil {
-		logger.Errorf("Error marshalling denom1 for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
-		return err
-	}
-	denom2, err := json.Marshal(in.Denom2)
-	if err != nil {
-		logger.Errorf("Error marshalling denom2 for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
 		return err
 	}
 	blockTime, err := json.Marshal(in.BlockTime)
@@ -79,12 +109,12 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		logger.Errorf("Error marshalling metadata for trade %s-%d-%s: %v", in.TXID, in.Sequence, in.MetaData.Network.String(), err)
 		return err
 	}
-
 	// Use the mysql client to insert the provided data into the table Trade
 	_, err = a.client.Client.Exec(`INSERT INTO Trade (`+tradeTableFields+`) 
         VALUES (?, ?, ?, ?, ?,
 			    ?, ?, ?, ?, ?,
-			    ?, ?, ? ,?, ? ) 
+			    ?, ?, ? ,?, ?,
+				? ) 
         ON DUPLICATE KEY UPDATE 
 		Amount=?, 
 		Price=?, 
@@ -106,6 +136,7 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		in.USD,
 		in.MetaData.Network,
 		in.Enriched,
+		inverted,
 
 		amount,
 		in.Price,
@@ -116,10 +147,19 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		logger.Errorf("Error upserting trade %s-%d-%d-%s: %v", in.TXID, in.BlockHeight, in.Sequence, in.MetaData.Network.String(), err)
 		return err
 	}
-	// Keep the trade pairs up to date (ignore the errors: Would only occur on duplicate key or non-recoverable anyway)
-	a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`)
+	// Reduce the number of writes to the trade pairs table by caching existence of the pairs in memory:
+	tradePairKey := a.tradePairKey(denStr1, denStr2, in.MetaData.Network)
+	if _, ok := tradePairCache[tradePairKey]; !ok {
+		// Keep the trade pairs up to date (ignore the errors: Would only occur on duplicate key or non-recoverable anyway)
+		a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`)
 		VALUES (?, ?, ?)`, denom1, denom2, metaData)
+		tradePairCache[tradePairKey] = true
+	}
 	return nil
+}
+
+func (*Application) tradePairKey(denom1, denom2 string, network metadata.Network) string {
+	return fmt.Sprintf("%s-%s-%d", denom1, denom2, network)
 }
 
 // Get a single trade by ID (Network, TXID, Sequence)
@@ -197,16 +237,19 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 		queryBuilder.WriteString(" AND TXID=?")
 		args = append(args, *filter.TXID)
 	}
-	if filter.Denom1 != nil {
-		if filter.Denom1.Denom != "" {
+	// Trades are stored always in the same denom order:
+	// Get the denoms in the correct order for the query
+	denom1, denom2, _ := a.denomInverted(filter.Denom1, filter.Denom2)
+	if denom1 != nil {
+		if denom1.Denom != "" {
 			queryBuilder.WriteString(" AND Symbol1 = ?")
-			args = append(args, filter.Denom1.Denom)
+			args = append(args, denom1.Denom)
 		}
 	}
-	if filter.Denom2 != nil {
-		if filter.Denom2.Denom != "" {
+	if denom2 != nil {
+		if denom2.Denom != "" {
 			queryBuilder.WriteString(" AND Symbol2 = ?")
-			args = append(args, filter.Denom2.Denom)
+			args = append(args, denom2.Denom)
 		}
 	}
 	if filter.Side != nil {
@@ -263,6 +306,7 @@ func mapToTrade(b *sql.Rows) (*tradegrpc.Trade, error) {
 		&trade.USD,
 		&network,
 		&trade.Enriched,
+		&trade.Inverted,
 	)
 	if err != nil {
 		return nil, err
@@ -272,6 +316,12 @@ func mapToTrade(b *sql.Rows) (*tradegrpc.Trade, error) {
 	json.Unmarshal(denom2, &trade.Denom2)
 	json.Unmarshal(blockTime, &trade.BlockTime)
 	json.Unmarshal(metaData, &trade.MetaData)
+
+	// Uninvert the trade if necessary
+	if trade.Inverted {
+		trade.Denom1, trade.Denom2 = trade.Denom2, trade.Denom1
+		trade.Inverted = false
+	}
 	return trade, nil
 }
 

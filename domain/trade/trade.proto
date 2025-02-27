@@ -31,6 +31,11 @@ message Trade {
 
     // USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc)
     optional float USD = 40; // The USD value of the trade, calculated from the USD value of the currencies and the trading fee.
+
+    // Trades get stored in alphabetical order of the denom pair. 
+    // Data is "uninverted" on retrieval and 
+    // this flag only indicates that the denoms as seen in the record are not in the original order
+    bool Inverted = 50; 
 }
 
 message Trades {

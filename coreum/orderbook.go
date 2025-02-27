@@ -94,6 +94,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			symbolAmount := decimal.NewFromBigInt(order.Quantity.BigInt(), 0)
 			symbolAmount = symbolAmount.Div(decimal.New(1, int32(denom1Precision)))
 			remainingSymbolAmount := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0)
+			remainingSymbolAmount = remainingSymbolAmount.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
 				priceDec:              price,
 				Price:                 price.String(),

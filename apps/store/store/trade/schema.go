@@ -72,14 +72,18 @@ func (a *Application) alterTables() {
 	logger.Infof("Adding enriched column to Trade table")
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Enriched BOOLEAN DEFAULT TRUE`)
+	a.client.Client.Exec(`ALTER TABLE Trade
+	ADD COLUMN Inverted BOOLEAN DEFAULT FALSE`)
 }
 
 func (a *Application) index() {
-	a.client.Client.Exec(`CREATE INDEX trade_1 ON Trade (
+	a.client.Client.Exec(`DROP INDEX trade_1 ON Trade`)
+	a.client.Client.Exec(`CREATE INDEX trade_3 ON Trade (
 		Symbol1,
 		Symbol2,
 		BlockTimeSeconds,
-		Network
+		Network,
+		Side
 	)`)
 	a.client.Client.Exec(`CREATE INDEX trade_2 ON Trade (
 		Account,
