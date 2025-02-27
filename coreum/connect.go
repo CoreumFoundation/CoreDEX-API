@@ -25,7 +25,8 @@ import (
 type Readers map[metadata.Network]*Reader
 
 type Reader struct {
-	Network metadata.Network
+	Network       metadata.Network
+	ClientContext *client.Context
 	// Read transactions get dumped into this socket for processing thus decoupling the block reader from any business logic
 	ProcessBlockChannel chan *ScannedBlock
 	BlockHeight         int64
@@ -36,9 +37,10 @@ type Reader struct {
 const MinimumBlockProductionTime = 100 * time.Millisecond
 const MaximumBlockProductionTime = 10 * time.Second
 
-func NewReader(network metadata.Network) *Reader {
+func NewReader(network metadata.Network, clientContext *client.Context) *Reader {
 	return &Reader{
 		Network:             network,
+		ClientContext:       clientContext,
 		ProcessBlockChannel: make(chan *ScannedBlock, 1000),
 		LastBlockTime:       time.Now(),
 		BlockProductionTime: MinimumBlockProductionTime,
@@ -59,8 +61,8 @@ func InitReaders() Readers {
 	readers := make(Readers)
 	// Setup grpc connections:
 	nodeConnections = NewNodeConnections()
-	for network := range nodeConnections {
-		reader := NewReader(network)
+	for network, clientCtx := range nodeConnections {
+		reader := NewReader(network, clientCtx)
 		readers[network] = reader
 	}
 	return readers

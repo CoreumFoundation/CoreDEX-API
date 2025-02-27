@@ -19,6 +19,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
@@ -29,6 +30,7 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
+	denomproto "github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
@@ -250,7 +252,7 @@ func TestApp(t *testing.T) {
 					MetaData: &metadata.MetaData{
 						Network:   metadata.Network_DEVNET,
 						UpdatedAt: timestamppb.Now(),
-						CreatedAt: timestamppb.Now (),
+						CreatedAt: timestamppb.Now(),
 					},
 					BlockHeight: 103,
 					USD:         nil,
@@ -1307,4 +1309,157 @@ func assertOrdersEquality(t *testing.T, expected, actual []*order.Order) {
 	}
 
 	require.True(t, cmp.Equal(expected, actual, cmpOpt...), cmp.Diff(expected, actual, cmpOpt...))
+}
+
+func TestDenoms(t *testing.T) {
+	ctx := context.Background()
+	network := metadata.Network_DEVNET
+	currencyClient := currency.NewMockCurrencyServiceClient()
+	readers := coreum.InitReaders()
+	reader := readers[network]
+	bankClient := banktypes.NewQueryClient(reader.ClientContext)
+
+	tokenRegistryEntries, err := dmn.GetTokenRegistryEntries(ctx, network)
+	if err != nil {
+		t.Logf("could not get token registry entries : %v", err)
+	}
+
+	var metadataList []banktypes.Metadata
+	var paginationKey []byte = nil
+	for {
+		metadataList, paginationKey, err = reader.QueryDenomsMetadata(ctx, bankClient, paginationKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, meta := range metadataList {
+			meta := meta
+			parsedDenom, err := denomproto.NewDenom(meta.Base)
+			if err != nil {
+				t.Logf("could not parse denom %s : %v", meta.Base, err)
+				continue
+			}
+			parsedDenom.Name = &meta.Display
+			parsedDenom.Description = &meta.Description
+			for _, denomUnit := range meta.DenomUnits {
+				denomUnit := denomUnit
+				if denomUnit.Denom == meta.Display {
+					precision := int32(denomUnit.Exponent)
+					parsedDenom.Precision = &precision
+				}
+			}
+			c := &currency.Currency{
+				Denom:          parsedDenom,
+				SendCommission: nil,
+				BurnRate:       nil,
+				InitialAmount:  nil,
+				Chain:          "",
+				OriginChain:    "",
+				ChainSupply:    "",
+				Description:    meta.Description,
+				SkipDisplay:    false,
+				MetaData: &metadata.MetaData{
+					Network:   network,
+					UpdatedAt: timestamppb.Now(),
+					CreatedAt: timestamppb.Now(),
+				},
+			}
+			cur, err := currencyClient.Get(ctx, &currency.ID{
+				Network: reader.Network,
+				Denom:   meta.Base,
+			})
+			if err != nil || cur.Denom == nil {
+				t.Logf("could not find denom %s in database : %v", meta.Base, err)
+			} else {
+				c = cur
+			}
+			// This occurs on certain denoms, debug line to see which ones
+			if c.Denom == nil {
+				t.Logf("denom is nil for %s", meta.Base)
+				continue
+			}
+			c.MetaData.UpdatedAt = timestamppb.Now()
+			_, err = currencyClient.Upsert(ctx, c)
+			if err != nil {
+				t.Logf("could not upsert denom %s : %v", meta.Base, err)
+				continue
+			}
+		}
+		if paginationKey == nil {
+			break
+		}
+	}
+
+	var denomList types.Coins
+	paginationKey = nil
+	for {
+		denomList, paginationKey, err = reader.QueryDenoms(ctx, bankClient, paginationKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, currentDenom := range denomList {
+			currentDenom := currentDenom
+			d, err := denomproto.NewDenom(currentDenom.Denom)
+			if err != nil {
+				t.Logf("could not parse denom %s : %v", currentDenom.Denom, err)
+				continue
+			}
+			c := &currency.Currency{
+				Denom: d,
+				MetaData: &metadata.MetaData{
+					Network:   network,
+					UpdatedAt: timestamppb.Now(),
+					CreatedAt: timestamppb.Now(),
+				},
+			}
+			cur, err := currencyClient.Get(ctx, &currency.ID{
+				Network: network,
+				Denom:   currentDenom.Denom,
+			})
+			if err != nil {
+				t.Logf("could not get denom %s from database, initializing new currency: %v", currentDenom.Denom, err)
+			} else {
+				c = cur
+			}
+			if c.MetaData == nil {
+				c.MetaData = &metadata.MetaData{
+					Network:   network,
+					UpdatedAt: timestamppb.Now(),
+					CreatedAt: timestamppb.Now(),
+				}
+			}
+			c.ChainSupply = currentDenom.Amount.String()
+			c.MetaData.UpdatedAt = timestamppb.Now()
+			if token, ok := tokenRegistryEntries[currentDenom.Denom]; ok {
+				tokenName := token.TokenName
+				if c.Denom.Name == nil || *c.Denom.Name == "" {
+					c.Denom.Name = &tokenName
+				}
+				tokenPrecision := int32(token.Decimals)
+				if c.Denom.Precision == nil || *c.Denom.Precision == 0 {
+					c.Denom.Precision = &tokenPrecision
+				}
+				tokenIcon := token.LogoURIs.Png
+				if c.Denom.Icon == nil || *c.Denom.Icon == "" {
+					c.Denom.Icon = &tokenIcon
+				}
+				tokenDescription := token.Description
+				if c.Denom.Description == nil || *c.Denom.Description == "" {
+					c.Denom.Description = &tokenDescription
+				}
+			}
+			if c.Denom == nil {
+				t.Logf("denom is nil for %s, unable to persist", currentDenom.Denom)
+				continue
+			}
+			_, err = currencyClient.Upsert(ctx, c)
+			if err != nil {
+				t.Logf("could not upsert denom %s : %v", currentDenom.Denom, err)
+				continue
+			}
+		}
+		if paginationKey == nil {
+			break
+		}
+	}
 }
