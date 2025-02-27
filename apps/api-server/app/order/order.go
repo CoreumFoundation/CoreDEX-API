@@ -55,7 +55,7 @@ func NewApplicationWithClients(currencyClient currencygrpc.CurrencyServiceClient
 		txEncoders[network] = txClient{
 			txFactory:     txFactory,
 			clientContext: *clientCtx,
-			reader:        coreum.NewReader(network),
+			reader:        coreum.NewReader(network, clientCtx),
 		}
 	}
 	return &Application{txEncoders, currencyClient}

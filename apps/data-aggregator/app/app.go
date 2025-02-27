@@ -124,6 +124,7 @@ func (l *Application) startCurrenciesScan(ctx context.Context, reader *coreum.Re
 
 func (l *Application) scanCurrencies(ctx context.Context, reader *coreum.Reader) (err error) {
 	currencyClient := currencyclient.Client()
+	bankClient := banktypes.NewQueryClient(reader.ClientContext)
 
 	tokenRegistryEntries, err := dmn.GetTokenRegistryEntries(ctx, reader.Network)
 	if err != nil {
@@ -133,7 +134,7 @@ func (l *Application) scanCurrencies(ctx context.Context, reader *coreum.Reader)
 	var metadataList []banktypes.Metadata
 	var paginationKey []byte = nil
 	for {
-		metadataList, paginationKey, err = reader.QueryDenomsMetadata(ctx, paginationKey)
+		metadataList, paginationKey, err = reader.QueryDenomsMetadata(ctx, bankClient, paginationKey)
 		if err != nil {
 			return err
 		}
@@ -144,11 +145,11 @@ func (l *Application) scanCurrencies(ctx context.Context, reader *coreum.Reader)
 				logger.Errorf("could not parse denom %s : %v", meta.Base, err)
 				continue
 			}
-			parsedDenom.Name = &meta.Name
+			parsedDenom.Name = &meta.Display
 			parsedDenom.Description = &meta.Description
 			for _, denomUnit := range meta.DenomUnits {
 				denomUnit := denomUnit
-				if denomUnit.Denom == meta.Symbol {
+				if denomUnit.Denom == meta.Display {
 					precision := int32(denomUnit.Exponent)
 					parsedDenom.Precision = &precision
 				}
@@ -198,7 +199,7 @@ func (l *Application) scanCurrencies(ctx context.Context, reader *coreum.Reader)
 	var denomList types.Coins
 	paginationKey = nil
 	for {
-		denomList, paginationKey, err = reader.QueryDenoms(ctx, paginationKey)
+		denomList, paginationKey, err = reader.QueryDenoms(ctx, bankClient, paginationKey)
 		if err != nil {
 			return err
 		}
@@ -238,13 +239,21 @@ func (l *Application) scanCurrencies(ctx context.Context, reader *coreum.Reader)
 			c.MetaData.UpdatedAt = timestamppb.Now()
 			if token, ok := tokenRegistryEntries[currentDenom.Denom]; ok {
 				tokenName := token.TokenName
-				c.Denom.Name = &tokenName
+				if c.Denom.Name == nil || *c.Denom.Name == "" {
+					c.Denom.Name = &tokenName
+				}
 				tokenPrecision := int32(token.Decimals)
-				c.Denom.Precision = &tokenPrecision
+				if c.Denom.Precision == nil || *c.Denom.Precision == 0 {
+					c.Denom.Precision = &tokenPrecision
+				}
 				tokenIcon := token.LogoURIs.Png
-				c.Denom.Icon = &tokenIcon
+				if c.Denom.Icon == nil || *c.Denom.Icon == "" {
+					c.Denom.Icon = &tokenIcon
+				}
 				tokenDescription := token.Description
-				c.Denom.Description = &tokenDescription
+				if c.Denom.Description == nil || *c.Denom.Description == "" {
+					c.Denom.Description = &tokenDescription
+				}
 			}
 			if c.Denom == nil {
 				logger.Warnf("denom is nil for %s, unable to persist", currentDenom.Denom)

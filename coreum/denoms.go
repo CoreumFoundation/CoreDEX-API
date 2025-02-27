@@ -11,9 +11,9 @@ import (
 // QueryDenoms returns list of available denoms. the paginationKey should nil for the first page.
 // the nextPaginationKey will be nil if there are no more pages.
 func (r *Reader) QueryDenoms(
-	ctx context.Context, paginationKey []byte,
+	ctx context.Context, bankClient banktypes.QueryClient, paginationKey []byte,
 ) (data types.Coins, nextPaginationKey []byte, err error) {
-	bankClient := banktypes.NewQueryClient(nodeConnections[r.Network])
+	//bankClient := banktypes.NewQueryClient(nodeConnections[r.Network])
 	res, err := bankClient.TotalSupply(ctx, &banktypes.QueryTotalSupplyRequest{
 		Pagination: &query.PageRequest{Key: paginationKey},
 	})
@@ -26,9 +26,8 @@ func (r *Reader) QueryDenoms(
 // QueryDenomsMetadata returns list of available denoms metadata. the paginationKey should nil for the first page.
 // the nextPaginationKey will be nil if there are no more pages.
 func (r *Reader) QueryDenomsMetadata(
-	ctx context.Context, paginationKey []byte,
+	ctx context.Context, bankClient banktypes.QueryClient, paginationKey []byte,
 ) (data []banktypes.Metadata, nextPaginationKey []byte, err error) {
-	bankClient := banktypes.NewQueryClient(nodeConnections[r.Network])
 	res, err := bankClient.DenomsMetadata(ctx, &banktypes.QueryDenomsMetadataRequest{
 		Pagination: &query.PageRequest{Key: paginationKey},
 	})
