@@ -23,7 +23,7 @@ func NewGrpcServer(store *store.StoreBase) *GrpcServer {
 func (s *GrpcServer) Upsert(ctx context.Context, in *tradegrpc.Trade) (*pb.Empty, error) {
 	err := s.store.Trade.Upsert(in)
 	if err != nil {
-		logger.Errorf("Trade: Upsert failed for %s with error %v", in.TXID, err)
+		logger.Errorf("Trade: Upsert failed for %s with error %v", *in.TXID, err)
 		return nil, err
 	}
 	return &pb.Empty{}, nil
