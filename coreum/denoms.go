@@ -13,7 +13,6 @@ import (
 func (r *Reader) QueryDenoms(
 	ctx context.Context, bankClient banktypes.QueryClient, paginationKey []byte,
 ) (data types.Coins, nextPaginationKey []byte, err error) {
-	//bankClient := banktypes.NewQueryClient(nodeConnections[r.Network])
 	res, err := bankClient.TotalSupply(ctx, &banktypes.QueryTotalSupplyRequest{
 		Pagination: &query.PageRequest{Key: paginationKey},
 	})
