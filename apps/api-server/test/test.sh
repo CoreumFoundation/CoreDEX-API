@@ -63,7 +63,7 @@ get_trades_without_account() {
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
 
     echo "Calling API for trades without account"
-    curl "${HOST}/trades?symbol=${encoded_symbol}&from=${from}&to=${to}" \
+    curl "${HOST}/trades?symbol=${encoded_symbol}&from=${from}&to=${to}&side=1" \
         --header "Network: devnet"
     echo -e "\n"
 }

@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
+	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
@@ -207,6 +209,7 @@ func (app *Application) updateTradesForSymbol(ctx context.Context, subscription 
 		To:      timestamppb.New(to),
 		Denom1:  denoms.Denom1,
 		Denom2:  denoms.Denom2,
+		Side:    lo.ToPtr(orderproperties.Side_SIDE_BUY),
 	})
 	if err != nil {
 		logger.Errorf("Error getting trades: %v", err)
