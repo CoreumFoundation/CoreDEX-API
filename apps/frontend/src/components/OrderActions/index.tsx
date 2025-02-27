@@ -559,12 +559,17 @@ const OrderActions = ({
         </div>
 
         <div className="order-bottom">
+          {totalPrice > Number(marketBalances.counter) && (
+            <p className="order-warning">Insuffient Balance</p>
+          )}
+          
           <div className="order-total">
             <p className="order-total-label">
               {tradeType === OT.ORDER_TYPE_LIMIT
                 ? "Total: "
                 : "Estimated Total: "}
             </p>
+
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}

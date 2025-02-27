@@ -291,13 +291,14 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+
       .order-total {
         display: flex;
         align-items: center;
         width: 100%;
         justify-content: space-between;
         gap: 6px;
+        margin-bottom: 8px;
         .order-total-label {
           @extend %label;
         }
@@ -309,6 +310,11 @@
         .order-total-currency {
           @extend %label;
         }
+      }
+      .order-warning {
+        color: #ff7386;
+        font-size: 11px;
+        text-align: right;
       }
     }
   }
