@@ -9,6 +9,7 @@ import {
 import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
 import { BASE_API_URL } from "@/config/envs";
+import { Side } from "coredex-api-types/order-properties";
 import {
   MsgCancelOrder,
   MsgPlaceOrder,
@@ -40,19 +41,36 @@ export const getOHLC = async (
   return response;
 };
 
-export const getTrades = async (
-  symbol: string,
-  from: number,
-  to: number,
-  account?: string
-): Promise<AxiosResponse<TradeHistoryResponse>> => {
-  const params = new URLSearchParams({
+interface GetTradesParams {
+  symbol: string;
+  from: number;
+  to: number;
+  account?: string;
+  side?: Side.SIDE_BUY | Side.SIDE_SELL;
+}
+
+export const getTrades = async ({
+  symbol,
+  from,
+  to,
+  account,
+  side,
+}: GetTradesParams): Promise<AxiosResponse<TradeHistoryResponse>> => {
+  const query: Record<string, any> = {
     symbol,
     from: from.toString(),
     to: to.toString(),
-    ...(account && { account }),
-  });
+  };
 
+  // Conditionally add optional parameters
+  if (account) {
+    query.account = account;
+  }
+  if (side) {
+    query.side = side;
+  }
+
+  const params = new URLSearchParams(query);
   const response = await request(
     {},
     `${BASE_API_URL}/trades?${params}`,

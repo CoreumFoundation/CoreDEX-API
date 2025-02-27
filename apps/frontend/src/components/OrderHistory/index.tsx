@@ -106,7 +106,11 @@ const OrderHistory = () => {
       .subtract(daysBack - 1, "day")
       .unix();
     try {
-      const response = await getTrades(market.pair_symbol, from, to);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: from,
+        to: to,
+      });
       if (
         response.status === 200 &&
         response.data &&
@@ -207,7 +211,11 @@ const OrderHistory = () => {
       const currentWindow = timeRange.to - timeRange.from;
       const newTo = timeRange.from;
       const newFrom = newTo - currentWindow;
-      const response = await getTrades(market.pair_symbol, newFrom, newTo);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: newFrom,
+        to: newTo,
+      });
       if (response.status === 200) {
         const olderData = response.data;
         if (!olderData || olderData.length === 0) {
