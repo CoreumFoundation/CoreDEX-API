@@ -88,7 +88,7 @@
       max-height: 346px;
 
       #sells_ob {
-        justify-content: flex-end;
+        flex-direction: column-reverse;
       }
     }
 
@@ -99,6 +99,7 @@
       width: 100%;
       display: flex;
       flex-direction: column;
+      max-height: 152px;
 
       &::-webkit-scrollbar {
         width: 2px;

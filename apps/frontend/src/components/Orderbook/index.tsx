@@ -257,7 +257,7 @@ export default function Orderbook({
         }}
         onClick={() => {
           setOrderbookAction({
-            type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
+            type: isBuy ? Side.SIDE_SELL : Side.SIDE_BUY,
             price: Number(order.HumanReadablePrice),
             volume: totalVolume,
           });
@@ -309,15 +309,9 @@ export default function Orderbook({
             <div className="orderbook-sections">
               <div className="orderbook-wrapper" id="sells_ob">
                 {orderbook.Sell &&
-                  orderbook.Sell.slice(0, 50)
-                    .reverse()
-                    .map((sell, i, arr) =>
-                      renderOrderRow(
-                        sell,
-                        arr.length - 1 - i,
-                        ORDERBOOK_TYPE.SELL
-                      )
-                    )}
+                  orderbook.Sell.slice(0, 50).map((sell, i) =>
+                    renderOrderRow(sell, i, ORDERBOOK_TYPE.SELL)
+                  )}
               </div>
 
               {spread && (
