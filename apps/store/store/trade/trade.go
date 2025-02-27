@@ -209,6 +209,10 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 			args = append(args, filter.Denom2.Denom)
 		}
 	}
+	if filter.Side != nil {
+		queryBuilder.WriteString(" AND Side = ?")
+		args = append(args, *filter.Side)
+	}
 	queryBuilder.WriteString(" ORDER BY BlockTimeSeconds DESC")
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)

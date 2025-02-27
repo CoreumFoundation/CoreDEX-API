@@ -102,6 +102,7 @@ Params:
 - `from` _required_ - unix timestamp of trades start
 - `to` _required_ - unix timestamp of trades end
 - `account` _optional_ - account address for which trades should be returned
+- `side` _optional_ - side of the trade (1 - buy, 2 - sell (see enum domain/order-properties))
 
 Returns:
 
@@ -155,6 +156,8 @@ Returns:
   ]
 }
 ```
+
+For retrieving the exchange history, the dev should only retrieve one `side`: If both sides are retrieved the list contains duplicates (party and counter party) of the trades, which would be confusing the end users.
 
 #### tickers
 

@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "domain/trade/trade.proto";
 import "domain/metadata/metadata.proto";
 import "domain/denom/denom.proto";
+import "domain/order-properties/order-properties.proto";
 
 option go_package = "github.com/CoreumFoundation/CoreDEX-API/domain/trade;trade";
 
@@ -39,6 +40,7 @@ message Filter {
     optional denom.Denom Denom1 = 8;
     optional denom.Denom Denom2 = 9;
     optional int64 Offset = 10;
+    optional orderproperties.Side Side = 11;
 }
 
 message TradePairFilter {

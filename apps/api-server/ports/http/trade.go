@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
+	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
 )
@@ -100,6 +102,19 @@ func validateTradeParams(query url.Values) (*tradegrpc.Filter, error) {
 	// Limit interval to 24hrs max to prevent overflows (in all reasonable scenarios)
 	if tf.To.AsTime().Sub(tf.From.AsTime()) > 24*time.Hour {
 		return nil, handler.NewAPIError(422, "interval.too.long")
+	}
+	side := query.Get("side")
+	if side != "" {
+		// Parse side into a valid trade side:
+		sideInt, err := strconv.Atoi(side)
+		if err != nil {
+			return nil, handler.NewAPIError(422, "side.invalid")
+		}
+		// Parse into orderproperties.Side:
+		tf.Side = lo.ToPtr(orderproperties.Side(sideInt))
+		if *tf.Side == orderproperties.Side_SIDE_UNSPECIFIED {
+			return nil, handler.NewAPIError(422, "side.invalid")
+		}
 	}
 	if account != "" {
 		tf.Account = &account
