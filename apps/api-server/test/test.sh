@@ -68,6 +68,18 @@ get_trades_without_account() {
     echo -e "\n"
 }
 
+get_trades_without_account_inverted() {
+    local symbol="alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
+    local to=$(date +%s)
+    local from=$((to - 86400))
+    local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
+
+    echo "Calling API for trades without account currencies inverted"
+    curl "${HOST}/trades?symbol=${encoded_symbol}&from=${from}&to=${to}&side=1" \
+        --header "Network: devnet"
+    echo -e "\n"
+}
+
 # Function for GET /tickers
 get_tickers() {
     local symbols=("nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43")
@@ -206,6 +218,7 @@ show_menu() {
     echo "10. GET /order/orderbook for account"
     echo "11. GET /ws"
     echo "12. GET /currencies"
+    echo "13. GET /trades without account inverted market (currencies inverted compared to case 3)"
 }
 
 # Main loop
@@ -228,6 +241,7 @@ while true; do
         10) get_order_orderbook_for_account ;;
         11) get_ws ;;
         12) get_currencies ;;
+        13) get_trades_without_account_inverted ;;
         *) echo "Invalid choice, please try again." ;;
     esac
 done

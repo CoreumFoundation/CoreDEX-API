@@ -68,6 +68,9 @@ func (a *Application) alterTables() {
 	ADD COLUMN Issuer1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer'))) STORED, 
 	ADD COLUMN Issuer2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer'))) STORED, 
 	ADD COLUMN Network INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))) STORED`)
+	// Add unique key to TradePairs table:
+	a.client.Client.Exec(`ALTER TABLE TradePairs
+	ADD UNIQUE KEY (Currency1, Currency2, Issuer1, Issuer2, Network)`)
 	// Addition of enriched field to have a flexible skip of temporary failures:
 	logger.Infof("Adding enriched column to Trade table")
 	a.client.Client.Exec(`ALTER TABLE Trade
