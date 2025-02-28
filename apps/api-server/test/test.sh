@@ -71,6 +71,7 @@ get_trades_without_account() {
 get_trades_without_account_inverted() {
     local symbol="alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     local to=$(date +%s)
+    to=1740700197
     local from=$((to - 86400))
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
 
