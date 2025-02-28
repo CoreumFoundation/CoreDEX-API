@@ -135,7 +135,7 @@ const MarketSelector = () => {
 
           <div className="button-row">
             <Button
-              label="Continue"
+              label="Confirm"
               width={160}
               disabled={!baseToken || !quoteToken}
               onClick={() => {
