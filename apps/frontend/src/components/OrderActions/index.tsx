@@ -298,6 +298,26 @@ const OrderActions = ({
     }
   };
 
+  const isOrderDisabled = () => {
+    if (isLoading || !volume || volume === "0" || totalPrice === 0) {
+      return true;
+    }
+    if (tradeType === OT.ORDER_TYPE_LIMIT) {
+      if (!limitPrice || limitPrice === "0") {
+        return true;
+      }
+    }
+    if (orderType === Side.SIDE_BUY) {
+      if (totalPrice > Number(marketBalances.counter)) {
+        return true;
+      }
+    } else if (orderType === Side.SIDE_SELL) {
+      if (Number(volume) > Number(marketBalances.base)) {
+        return true;
+      }
+    }
+  };
+
   return (
     <div className="order-actions-container">
       <div className="order-actions-content" style={{ padding: "16px" }}>
@@ -559,10 +579,13 @@ const OrderActions = ({
         </div>
 
         <div className="order-bottom">
-          {totalPrice > Number(marketBalances.counter) && (
+          {((orderType === Side.SIDE_BUY &&
+            totalPrice > Number(marketBalances.counter)) ||
+            (orderType === Side.SIDE_SELL &&
+              Number(volume) > Number(marketBalances.base))) && (
             <p className="order-warning">Insuffient Balance</p>
           )}
-          
+
           <div className="order-total">
             <p className="order-total-label">
               {tradeType === OT.ORDER_TYPE_LIMIT
@@ -605,16 +628,7 @@ const OrderActions = ({
                 width={"100%"}
                 height={37}
                 label="Confirm Order"
-                disabled={
-                  isLoading ||
-                  !volume ||
-                  volume === "0" ||
-                  (tradeType === OT.ORDER_TYPE_LIMIT && !limitPrice) ||
-                  (orderType === Side.SIDE_BUY &&
-                    totalPrice > Number(marketBalances.counter)) ||
-                  (orderType === Side.SIDE_SELL &&
-                    totalPrice > Number(marketBalances.base))
-                }
+                disabled={isOrderDisabled()}
               />
             </>
           )}

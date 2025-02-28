@@ -174,6 +174,8 @@ export interface TransformedOrder {
   Sequence: number;
   Account: string;
   OrderID: string;
+  RemainingAmount: string;
+  RemainingSymbolAmount: string;
 }
 
 export type WalletAsset = {

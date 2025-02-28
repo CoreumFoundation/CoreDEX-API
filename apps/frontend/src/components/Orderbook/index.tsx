@@ -11,7 +11,6 @@ import "./orderbook.scss";
 import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
 import { Method } from "coredex-api-types/update";
 import { mirage } from "ldrs";
-import { set } from "lodash";
 mirage.register();
 
 enum ORDERBOOK_TYPE {

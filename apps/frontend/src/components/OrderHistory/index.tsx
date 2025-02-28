@@ -110,6 +110,7 @@ const OrderHistory = () => {
         symbol: market.pair_symbol,
         from: from,
         to: to,
+        account: wallet?.address,
       });
       if (
         response.status === 200 &&
@@ -215,6 +216,7 @@ const OrderHistory = () => {
         symbol: market.pair_symbol,
         from: newFrom,
         to: newTo,
+        account: wallet?.address,
       });
       if (response.status === 200) {
         const olderData = response.data;
@@ -295,13 +297,15 @@ const OrderHistory = () => {
             Account: order.Account,
             Sequence: order.Sequence,
             OrderID: order.OrderID,
+            RemainingAmount: order.RemainingAmount,
+            RemainingSymbolAmount: order.RemainingSymbolAmount,
           } as TransformedOrder;
         });
 
       return [
         ...transformSide(orderbook.Buy, Side.SIDE_BUY),
         ...transformSide(orderbook.Sell, Side.SIDE_SELL),
-      ].sort((a, b) => a.Sequence - b.Sequence);
+      ].sort((a, b) => Number(a.OrderID) - Number(b.OrderID));
     },
     []
   );
