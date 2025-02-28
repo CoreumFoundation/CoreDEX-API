@@ -110,3 +110,7 @@ func (d *Decimal) Mul(d2 float64) float64 {
 	f, _ := sdecimal.New(d.Value, d.Exp).Mul(sdecimal.NewFromFloat(d2)).Float64()
 	return f
 }
+
+func (d *Decimal) IsZero() bool {
+	return sdecimal.New(d.Value, d.Exp).IsZero()
+}

@@ -8,7 +8,6 @@ import (
 type LockableCache struct {
 	LastUpdated time.Time
 	Value       interface{}
-	Clear       bool
 }
 
 func CleanCache(c map[string]*LockableCache, mutex *sync.RWMutex, maxAge time.Duration) {
