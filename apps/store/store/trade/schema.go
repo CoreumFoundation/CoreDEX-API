@@ -53,7 +53,7 @@ func (a *Application) alterTables() {
 		- BlockTime.seconds
 	*/
 	// Has to succeed or we first have to write logic to check if the columns exist....
-	logger.Infof("Adding virtual columns Symbol1, Symbol2 and BlockTimeSeconds to Trade and TradePairs tables")
+	logger.Infof("Adding virtual columns Symbol1, Symbol2 and BlockTimeSeconds to Trade table")
 	a.client.Client.Exec(`ALTER TABLE Trade 
 	ADD COLUMN Symbol1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom'))) STORED, 
 	ADD COLUMN Symbol2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom'))) STORED, 
