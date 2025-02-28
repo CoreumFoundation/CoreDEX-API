@@ -163,11 +163,7 @@ const OrderActions = ({
           new BigNumber(10).exponentiatedBy(market.base.Denom.Precision ?? 0)
         )
         .toFixed();
-      setTotalPrice(
-        !total.isNaN()
-          ? Number(noExponents(Number(total)).replaceAll(",", ""))
-          : 0
-      );
+      setTotalPrice(!total.isNaN() ? total.toNumber() : 0);
     }
 
     if (orderbook) {
