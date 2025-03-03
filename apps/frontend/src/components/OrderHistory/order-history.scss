@@ -81,7 +81,7 @@
 
   .order-history-labels {
     @extend %grid-layout;
-    grid-template-columns: 0.4fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
+    grid-template-columns: 0.3fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
   }
 
   .open-orders-labels {
@@ -91,8 +91,7 @@
 
   .order-label {
     text-align: right;
-    &:nth-child(1),
-    &:nth-child(2) {
+    &:nth-child(1) {
       text-align: left;
     }
   }
@@ -136,8 +135,7 @@
       }
 
       .buy,
-      .sell,
-      .order-id {
+      .sell {
         text-align: left;
       }
 
@@ -161,8 +159,8 @@
         justify-content: right;
         padding: 0 8px;
         .cancel-order {
-          height: 20px;
-          width: 20px;
+          height: 16px;
+          width: 16px;
           cursor: pointer;
           transition: all 0.15s ease-in-out;
           &:hover {
@@ -173,7 +171,7 @@
     }
 
     .history-row {
-      grid-template-columns: 0.4fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
+      grid-template-columns: 0.3fr 0.3fr 0.4fr 0.8fr 0.8fr 0.7fr 1fr 0.1fr;
 
       .date {
         display: flex;
