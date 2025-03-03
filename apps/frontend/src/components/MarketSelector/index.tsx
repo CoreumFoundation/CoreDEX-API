@@ -137,7 +137,12 @@ const MarketSelector = () => {
             <Button
               label="Confirm"
               width={160}
-              disabled={!baseToken || !quoteToken}
+              disabled={
+                !baseToken ||
+                !quoteToken ||
+                (baseToken.Denom.Currency === quoteToken.Denom.Currency &&
+                  baseToken.Denom.Issuer === quoteToken.Denom.Issuer)
+              }
               onClick={() => {
                 setMarket({
                   base: baseToken!,
