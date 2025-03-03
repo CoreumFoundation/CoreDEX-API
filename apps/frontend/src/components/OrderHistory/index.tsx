@@ -315,7 +315,7 @@ const OrderHistory = () => {
       return [
         ...transformSide(orderbook.Buy, Side.SIDE_BUY),
         ...transformSide(orderbook.Sell, Side.SIDE_SELL),
-      ].sort((a, b) => Number(a.OrderID) - Number(b.OrderID));
+      ].sort((a, b) => Number(b.Sequence) - Number(a.Sequence));
     },
     []
   );
