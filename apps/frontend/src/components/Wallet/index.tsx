@@ -23,7 +23,7 @@ const Wallet = ({}) => {
       dropdownRef.current &&
       !dropdownRef.current.contains(event.target as Node)
     ) {
-      setIsOpen(!isOpen);
+      setIsOpen(false);
     }
   };
 
