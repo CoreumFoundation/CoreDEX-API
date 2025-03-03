@@ -41,7 +41,7 @@ const TABS = {
 };
 
 const MAX_HISTORY_DAYS = 14;
-const containerHeight = 300;
+const containerHeight = 242;
 const ROW_HEIGHT = 26;
 
 const OrderHistory = () => {
@@ -238,11 +238,12 @@ const OrderHistory = () => {
   };
 
   useLayoutEffect(() => {
+    if (activeTab !== TABS.ORDER_HISTORY) return;
     if (!listOuterRef.current) return;
     const container = listOuterRef.current;
-
     const handleScroll = async () => {
       const threshold = 50;
+
       if (
         container.scrollTop + container.clientHeight >=
         container.scrollHeight - threshold
@@ -274,13 +275,22 @@ const OrderHistory = () => {
       }
     };
 
-    const debouncedHandleScroll = debounce(handleScroll, 100);
-    container.addEventListener("scroll", debouncedHandleScroll);
+    const debouncedHandleScroll = debounce(handleScroll, 300);
+    requestAnimationFrame(() => {
+      container.addEventListener("scroll", debouncedHandleScroll);
+    });
     return () => {
       container.removeEventListener("scroll", debouncedHandleScroll);
       debouncedHandleScroll.cancel();
     };
-  }, [orderHistory, timeRange, market.pair_symbol, isFetchingMore, hasMore]);
+  }, [
+    orderHistory,
+    timeRange,
+    market.pair_symbol,
+    isFetchingMore,
+    hasMore,
+    activeTab,
+  ]);
 
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
@@ -385,7 +395,7 @@ const OrderHistory = () => {
           className="total"
         />
         <p className="date">
-          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY h:mm A")}
+          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY HH:mm")}
         </p>
         <svg
           xmlns="http://www.w3.org/2000/svg"

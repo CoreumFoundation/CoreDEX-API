@@ -8,7 +8,7 @@ import {
   TimeInForceStringToEnum,
   WalletBalances,
 } from "@/types/market";
-import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
+import { getAvgPriceFromOBbyVolume, multiply } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
@@ -181,7 +181,7 @@ const OrderActions = ({
         const total = multiply(avgPrice, vol).toNumber();
         setTotalPrice(
           !expRegex.test(total.toString()) && !isNaN(total) ? total : 0
-        ); 
+        );
       }
     }
   }, [volume, limitPrice, orderbook, tradeType, orderType]);

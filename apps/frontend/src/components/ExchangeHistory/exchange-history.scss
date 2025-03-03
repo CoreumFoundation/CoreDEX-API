@@ -74,16 +74,6 @@
         letter-spacing: -0.24px;
         text-align: right;
 
-        &.positive {
-          .format__number {
-            color: #25d695;
-          }
-        }
-        &.negative {
-          .format__number {
-            color: #ff7386;
-          }
-        }
         &.time {
           text-align: right;
           padding-right: 16px;
