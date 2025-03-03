@@ -181,7 +181,7 @@ const OrderActions = ({
         const total = multiply(avgPrice, vol).toNumber();
         setTotalPrice(
           !expRegex.test(total.toString()) && !isNaN(total) ? total : 0
-        );
+        ); 
       }
     }
   }, [volume, limitPrice, orderbook, tradeType, orderType]);

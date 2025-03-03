@@ -177,6 +177,7 @@ const TradingView = ({ height }: { height: number | string }) => {
       timezone: dayjs.tz.guess(),
       ...DEFAULT_CONFIGS,
     };
+
     const widget = (window.tvWidget = new Widget(widgetOptions as any));
 
     widget.onChartReady(() => {
@@ -224,10 +225,16 @@ const TradingView = ({ height }: { height: number | string }) => {
 
   const { chartReady, setReady } = useMountChart(mountChart);
   useSaveAndClear(mountChart, setReady);
+  console.log();
 
   return (
     <div className="chart-wrapper">
       <div className="top-toolbar">
+        {dataFeed?.errorMessage && (
+          <p className="tradingview-error">
+            Error: Something went wrong with chart data
+          </p>
+        )}
         <div className="intervals">
           <div
             className={`interval ${resolution === "1" ? "active" : ""}`}
