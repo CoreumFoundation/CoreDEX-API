@@ -301,7 +301,7 @@ Below is a matrix of possible values for the order object before it can be succe
 | **timeInForce**   | TIME_IN_FORCE_GTC (1)                                               |                                           |
 |                   | TIME_IN_FORCE_IOC (2)                                               | TIME_IN_FORCE_IOC (2)                     |
 |                   | TIME_IN_FORCE_FOK (3)                                               |                                           |
-| **goodTil**       | {goodTilBlockTime: Date Object, goodTilBlockHeight: 0} or undefined | undefined                                 |
+| **goodTil**       | \{goodTilBlockTime: Date Object, goodTilBlockHeight: 0\} or undefined | undefined                                 |
 | **baseDenom**     | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
 | **quoteDenom**    | string (denomName-issuer eg. udevcore)                              | string (denomName-issuer eg. udevcore)    |
 | **quantity**      | string (eg. 10000)                                                  | string (eg. 10000)                        |
