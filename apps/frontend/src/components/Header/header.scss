@@ -24,6 +24,7 @@
     justify-content: center;
     align-items: center;
     flex: 0 0 auto;
+    height: 100%;
     .market {
       display: flex;
       gap: 40px;
@@ -88,5 +89,6 @@
     gap: 8px;
     justify-self: flex-end;
     flex: 0 0 auto;
+    height: 100%;
   }
 }

@@ -8,7 +8,7 @@ import {
   TimeInForceStringToEnum,
   WalletBalances,
 } from "@/types/market";
-import { getAvgPriceFromOBbyVolume, multiply, noExponents } from "@/utils";
+import { getAvgPriceFromOBbyVolume, multiply } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
@@ -163,11 +163,7 @@ const OrderActions = ({
           new BigNumber(10).exponentiatedBy(market.base.Denom.Precision ?? 0)
         )
         .toFixed();
-      setTotalPrice(
-        !total.isNaN()
-          ? Number(noExponents(Number(total)).replaceAll(",", ""))
-          : 0
-      );
+      setTotalPrice(!total.isNaN() ? total.toNumber() : 0);
     }
 
     if (orderbook) {
@@ -295,6 +291,26 @@ const OrderActions = ({
       });
       setIsLoading(false);
       throw e;
+    }
+  };
+
+  const isOrderDisabled = () => {
+    if (isLoading || !volume || volume === "0" || totalPrice === 0) {
+      return true;
+    }
+    if (tradeType === OT.ORDER_TYPE_LIMIT) {
+      if (!limitPrice || limitPrice === "0") {
+        return true;
+      }
+    }
+    if (orderType === Side.SIDE_BUY) {
+      if (totalPrice > Number(marketBalances.counter)) {
+        return true;
+      }
+    } else if (orderType === Side.SIDE_SELL) {
+      if (Number(volume) > Number(marketBalances.base)) {
+        return true;
+      }
     }
   };
 
@@ -559,12 +575,20 @@ const OrderActions = ({
         </div>
 
         <div className="order-bottom">
+          {((orderType === Side.SIDE_BUY &&
+            totalPrice > Number(marketBalances.counter)) ||
+            (orderType === Side.SIDE_SELL &&
+              Number(volume) > Number(marketBalances.base))) && (
+            <p className="order-warning">Insuffient Balance</p>
+          )}
+
           <div className="order-total">
             <p className="order-total-label">
               {tradeType === OT.ORDER_TYPE_LIMIT
                 ? "Total: "
                 : "Estimated Total: "}
             </p>
+
             <div className="right">
               <FormatNumber
                 number={totalPrice || 0}
@@ -600,16 +624,7 @@ const OrderActions = ({
                 width={"100%"}
                 height={37}
                 label="Confirm Order"
-                disabled={
-                  isLoading ||
-                  !volume ||
-                  volume === "0" ||
-                  (tradeType === OT.ORDER_TYPE_LIMIT && !limitPrice) ||
-                  (orderType === Side.SIDE_BUY &&
-                    totalPrice > Number(marketBalances.counter)) ||
-                  (orderType === Side.SIDE_SELL &&
-                    totalPrice > Number(marketBalances.base))
-                }
+                disabled={isOrderDisabled()}
               />
             </>
           )}

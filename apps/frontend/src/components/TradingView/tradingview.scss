@@ -11,13 +11,20 @@
   .top-toolbar {
     width: 100%;
     display: flex;
-    justify-content: end;
+    justify-content: space-between;
     padding: 0 16px;
     font-family: "Noto Sans";
     font-size: 12px;
     font-style: normal;
     font-weight: 400;
     line-height: 18px; /* 150% */
+
+    .tradingview-error {
+      font-family: "Noto Sans";
+      font-size: 11px;
+      color: #f53851;
+    }
+
     .intervals {
       display: flex;
       gap: 8px;

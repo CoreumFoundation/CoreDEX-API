@@ -27,7 +27,7 @@ const MarketSelector = () => {
         const data = await getCurrencies();
         if (data) {
           const currs = data.data.Currencies;
-          handleUdevcore(currs);
+          handleDevcore(currs);
         }
       } catch (e) {
         console.log("ERROR GETTING CURRENCIES DATA >>", e);
@@ -51,14 +51,14 @@ const MarketSelector = () => {
     };
   }, []);
 
-  // rename udevcore to core for display purposes + add to top of list
-  const handleUdevcore = (currs: Token[]) => {
-    const udevcore = currs.find((curr) => curr.Denom.Name === "udevcore");
-    if (udevcore) {
-      udevcore.Denom.Name = "Core";
-      udevcore.Denom.Currency = "Core";
+  // rename devcore to core for display purposes + add to top of list
+  const handleDevcore = (currs: Token[]) => {
+    const devcore = currs.find((curr) => curr.Denom.Name === "devcore");
+    if (devcore) {
+      devcore.Denom.Name = "Core";
+      devcore.Denom.Currency = "Core";
       currs = currs.filter((curr) => curr.Denom.Name !== "Core");
-      currs.unshift(udevcore!);
+      currs.unshift(devcore!);
     }
 
     setCurrencies(currs);
@@ -135,9 +135,14 @@ const MarketSelector = () => {
 
           <div className="button-row">
             <Button
-              label="Continue"
+              label="Confirm"
               width={160}
-              disabled={!baseToken || !quoteToken}
+              disabled={
+                !baseToken ||
+                !quoteToken ||
+                (baseToken.Denom.Currency === quoteToken.Denom.Currency &&
+                  baseToken.Denom.Issuer === quoteToken.Denom.Issuer)
+              }
               onClick={() => {
                 setMarket({
                   base: baseToken!,

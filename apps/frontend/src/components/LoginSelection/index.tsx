@@ -46,6 +46,12 @@ const LoginSelection = ({
       });
     } catch (e: any) {
       console.error("Connection failed:", e);
+      if (e.error === "Extension not installed.") {
+        pushNotification({
+          message: `Please install ${option} the extension`,
+          type: "error",
+        });
+      }
       setIsLoading(false);
     }
   };

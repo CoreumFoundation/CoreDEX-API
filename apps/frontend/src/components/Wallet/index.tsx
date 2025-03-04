@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useStore } from "@/state/store";
 import "./wallet.scss";
@@ -7,8 +7,25 @@ import { resolveCoreumExplorer } from "@/utils";
 const Wallet = ({}) => {
   const [isOpen, setIsOpen] = useState(false);
   const { wallet, setLoginModal, pushNotification, network } = useStore();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const togglewallet = () => setIsOpen((prev) => !prev);
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target as Node)
+    ) {
+      setIsOpen(false);
+    }
+  };
 
   const walletItems = [
     {
@@ -130,7 +147,7 @@ const Wallet = ({}) => {
   ];
 
   return (
-    <div className={`wallet wallet`}>
+    <div className={`wallet wallet`} ref={dropdownRef}>
       <button className="wallet-label" onClick={togglewallet}>
         <div className="wallet-label-selected">{wallet?.address}</div>
         <img

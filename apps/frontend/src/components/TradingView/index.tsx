@@ -10,6 +10,9 @@ import { resolveResolution } from "./tools/utils";
 import { OhlcRecord } from "@/types/market";
 import { NetworkToEnum, UpdateStrategy, wsManager } from "@/services/websocket";
 import { Method } from "coredex-api-types/update";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(timezone);
 import { mirage } from "ldrs";
 mirage.register();
 
@@ -171,8 +174,10 @@ const TradingView = ({ height }: { height: number | string }) => {
         foregroundColor: "#D81D3C",
       },
       locale: "en",
+      timezone: dayjs.tz.guess(),
       ...DEFAULT_CONFIGS,
     };
+
     const widget = (window.tvWidget = new Widget(widgetOptions as any));
 
     widget.onChartReady(() => {
@@ -224,6 +229,11 @@ const TradingView = ({ height }: { height: number | string }) => {
   return (
     <div className="chart-wrapper">
       <div className="top-toolbar">
+        {dataFeed?.errorMessage && (
+          <p className="tradingview-error">
+            Error: Something went wrong with chart data
+          </p>
+        )}
         <div className="intervals">
           <div
             className={`interval ${resolution === "1" ? "active" : ""}`}

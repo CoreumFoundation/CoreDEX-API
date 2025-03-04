@@ -41,7 +41,7 @@ const TABS = {
 };
 
 const MAX_HISTORY_DAYS = 14;
-const containerHeight = 300;
+const containerHeight = 242;
 const ROW_HEIGHT = 26;
 
 const OrderHistory = () => {
@@ -106,7 +106,12 @@ const OrderHistory = () => {
       .subtract(daysBack - 1, "day")
       .unix();
     try {
-      const response = await getTrades(market.pair_symbol, from, to);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: from,
+        to: to,
+        account: wallet?.address,
+      });
       if (
         response.status === 200 &&
         response.data &&
@@ -207,7 +212,12 @@ const OrderHistory = () => {
       const currentWindow = timeRange.to - timeRange.from;
       const newTo = timeRange.from;
       const newFrom = newTo - currentWindow;
-      const response = await getTrades(market.pair_symbol, newFrom, newTo);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: newFrom,
+        to: newTo,
+        account: wallet?.address,
+      });
       if (response.status === 200) {
         const olderData = response.data;
         if (!olderData || olderData.length === 0) {
@@ -228,11 +238,12 @@ const OrderHistory = () => {
   };
 
   useLayoutEffect(() => {
+    if (activeTab !== TABS.ORDER_HISTORY) return;
     if (!listOuterRef.current) return;
     const container = listOuterRef.current;
-
     const handleScroll = async () => {
       const threshold = 50;
+
       if (
         container.scrollTop + container.clientHeight >=
         container.scrollHeight - threshold
@@ -264,13 +275,22 @@ const OrderHistory = () => {
       }
     };
 
-    const debouncedHandleScroll = debounce(handleScroll, 100);
-    container.addEventListener("scroll", debouncedHandleScroll);
+    const debouncedHandleScroll = debounce(handleScroll, 300);
+    requestAnimationFrame(() => {
+      container.addEventListener("scroll", debouncedHandleScroll);
+    });
     return () => {
       container.removeEventListener("scroll", debouncedHandleScroll);
       debouncedHandleScroll.cancel();
     };
-  }, [orderHistory, timeRange, market.pair_symbol, isFetchingMore, hasMore]);
+  }, [
+    orderHistory,
+    timeRange,
+    market.pair_symbol,
+    isFetchingMore,
+    hasMore,
+    activeTab,
+  ]);
 
   const transformOrderbook = useCallback(
     (orderbook: OrderbookResponse): TransformedOrder[] => {
@@ -287,13 +307,15 @@ const OrderHistory = () => {
             Account: order.Account,
             Sequence: order.Sequence,
             OrderID: order.OrderID,
+            RemainingAmount: order.RemainingAmount,
+            RemainingSymbolAmount: order.RemainingSymbolAmount,
           } as TransformedOrder;
         });
 
       return [
         ...transformSide(orderbook.Buy, Side.SIDE_BUY),
         ...transformSide(orderbook.Sell, Side.SIDE_SELL),
-      ].sort((a, b) => a.Sequence - b.Sequence);
+      ].sort((a, b) => Number(b.Sequence) - Number(a.Sequence));
     },
     []
   );
@@ -373,7 +395,7 @@ const OrderHistory = () => {
           className="total"
         />
         <p className="date">
-          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY h:mm A")}
+          {dayjs.unix(order.BlockTime?.seconds ?? 0).format("MM/DD/YY HH:mm")}
         </p>
         <svg
           xmlns="http://www.w3.org/2000/svg"

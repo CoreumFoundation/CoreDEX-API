@@ -86,7 +86,12 @@ const ExchangeHistory = () => {
       .subtract(daysBack - 1, "day")
       .unix();
     try {
-      const response = await getTrades(market.pair_symbol, from, to);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: from,
+        to: to,
+        side: Side.SIDE_BUY,
+      });
       if (
         response.status === 200 &&
         response.data &&
@@ -119,7 +124,11 @@ const ExchangeHistory = () => {
       const currentWindow = timeRange.to - timeRange.from;
       const newTo = timeRange.from;
       const newFrom = newTo - currentWindow;
-      const response = await getTrades(market.pair_symbol, newFrom, newTo);
+      const response = await getTrades({
+        symbol: market.pair_symbol,
+        from: newFrom,
+        to: newTo,
+      });
       if (response.status === 200) {
         const olderData = response.data;
         if (!olderData || olderData.length === 0) {
@@ -196,18 +205,14 @@ const ExchangeHistory = () => {
     const trade = exchangeHistory[index];
     return (
       <div style={style} className="exchange-history-body-row">
-        <div
-          className={`exchange-history-body-value ${
-            trade.Side === Side.SIDE_BUY ? "positive" : "negative"
-          }`}
-        >
+        <div className={`exchange-history-body-value`}>
           <FormatNumber number={trade.HumanReadablePrice} />
         </div>
         <div className="exchange-history-body-value volume">
           <FormatNumber number={trade.SymbolAmount} />
         </div>
         <div className="exchange-history-body-value time">
-          {dayjs.unix(trade.BlockTime.seconds).format("MM/DD/YY h:mm A")}
+          {dayjs.unix(trade.BlockTime.seconds).format("MM/DD HH:mm")}
         </div>
       </div>
     );

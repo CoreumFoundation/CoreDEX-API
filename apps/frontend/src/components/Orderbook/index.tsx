@@ -30,6 +30,7 @@ export default function Orderbook({
   const [spread, setSpread] = useState<BigNumber>(new BigNumber(0));
   const [topBuyVolume, setTopBuyVolume] = useState<number>(0);
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
+  const [totalVolume, setTotalVolume] = useState<number>(0);
   const componentRef = useRef<HTMLDivElement>(null);
 
   const subscription = useMemo(
@@ -110,7 +111,7 @@ export default function Orderbook({
   useEffect(() => {
     if (orderbook?.Buy?.length) {
       const highestBuyVolume = orderbook.Buy.reduce((max, buy) => {
-        const current = new BigNumber(buy.SymbolAmount);
+        const current = new BigNumber(buy.RemainingSymbolAmount);
         return current.isGreaterThan(max) ? current : max;
       }, new BigNumber(0)).toNumber();
       setTopBuyVolume(highestBuyVolume);
@@ -118,7 +119,7 @@ export default function Orderbook({
 
     if (orderbook?.Sell?.length) {
       const highestSellVolume = orderbook.Sell.reduce((max, sell) => {
-        const current = new BigNumber(sell.SymbolAmount);
+        const current = new BigNumber(sell.RemainingSymbolAmount);
         return current.isGreaterThan(max) ? current : max;
       }, new BigNumber(0)).toNumber();
       setTopSellVolume(highestSellVolume);
@@ -140,8 +141,10 @@ export default function Orderbook({
 
         lineGroup.push(line);
         avgPriceSum += Number(line.HumanReadablePrice);
-        totalVolume += Number(line.SymbolAmount);
-        sum += Number(line.HumanReadablePrice) * Number(line.SymbolAmount);
+        totalVolume += Number(line.RemainingSymbolAmount);
+        setTotalVolume(totalVolume);
+        sum +=
+          Number(line.HumanReadablePrice) * Number(line.RemainingSymbolAmount);
       }
 
       return {
@@ -237,7 +240,7 @@ export default function Orderbook({
     const isBuy = type === ORDERBOOK_TYPE.BUY;
     const volBar = Math.max(
       2,
-      (Number(order.SymbolAmount) * 100) /
+      (Number(order.RemainingSymbolAmount) * 100) /
         (isBuy ? topBuyVolume : topSellVolume)
     );
 
@@ -253,9 +256,9 @@ export default function Orderbook({
         }}
         onClick={() => {
           setOrderbookAction({
-            type: isBuy ? Side.SIDE_BUY : Side.SIDE_SELL,
+            type: isBuy ? Side.SIDE_SELL : Side.SIDE_BUY,
             price: Number(order.HumanReadablePrice),
-            volume: Number(order.SymbolAmount),
+            volume: totalVolume,
           });
         }}
       >
@@ -269,12 +272,13 @@ export default function Orderbook({
             className={`orderbook-number price-${isBuy ? "buys" : "sells"}`}
           />
           <FormatNumber
-            number={Number(order.SymbolAmount)}
+            number={Number(order.RemainingSymbolAmount)}
             className="orderbook-number"
           />
           <FormatNumber
             number={
-              Number(order.HumanReadablePrice) * Number(order.SymbolAmount)
+              Number(order.HumanReadablePrice) *
+              Number(order.RemainingSymbolAmount)
             }
             className="orderbook-number"
           />
@@ -304,15 +308,9 @@ export default function Orderbook({
             <div className="orderbook-sections">
               <div className="orderbook-wrapper" id="sells_ob">
                 {orderbook.Sell &&
-                  orderbook.Sell.slice(0, 50)
-                    .reverse()
-                    .map((sell, i, arr) =>
-                      renderOrderRow(
-                        sell,
-                        arr.length - 1 - i,
-                        ORDERBOOK_TYPE.SELL
-                      )
-                    )}
+                  orderbook.Sell.slice(0, 50).map((sell, i) =>
+                    renderOrderRow(sell, i, ORDERBOOK_TYPE.SELL)
+                  )}
               </div>
 
               {spread && (

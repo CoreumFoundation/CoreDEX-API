@@ -144,6 +144,8 @@ export interface OrderbookRecord {
   Sequence: number;
   Account?: string;
   OrderID: string;
+  RemainingAmount: string;
+  RemainingSymbolAmount: string;
 }
 export type OrderbookResponse = {
   Buy: OrderbookRecord[];
@@ -172,6 +174,8 @@ export interface TransformedOrder {
   Sequence: number;
   Account: string;
   OrderID: string;
+  RemainingAmount: string;
+  RemainingSymbolAmount: string;
 }
 
 export type WalletAsset = {

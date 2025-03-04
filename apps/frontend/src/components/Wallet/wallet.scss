@@ -3,7 +3,8 @@
   display: inline-block;
 
   .wallet-label {
-    padding: 8px 16px;
+    height: 100%;
+    padding: 4px 16px;
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -59,7 +60,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 4px 8px;
     cursor: pointer;
     color: #9fa2ac;
     font-family: "Noto Sans";

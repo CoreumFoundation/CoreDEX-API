@@ -23,10 +23,12 @@ export class CoreumDataFeed {
   subscriptions: ChartSubscription[];
   asset: DataFeedAsset;
   searchSymbols: any;
+  errorMessage: boolean | null;
   constructor(asset: DataFeedAsset) {
     this.subscriptions = [];
     this.asset = asset;
     this.searchSymbols = null;
+    this.errorMessage = null;
     return this;
   }
 
@@ -81,6 +83,7 @@ export class CoreumDataFeed {
           onSymbolResolvedCallback(symbol_stub);
         }, 0);
       } else {
+        this.errorMessage = true;
         onResolveErrorCallback(`Could not resolve symbol ${symbolName}`);
       }
     }, 1500);
@@ -143,7 +146,12 @@ export class CoreumDataFeed {
   unsubscribeBars(key: string) {
     this.subscriptions = this.subscriptions.filter((s) => s.key !== key);
   }
+
   reset() {
     this.subscriptions = [];
+  }
+  
+  getErrorMessage() {
+    return this.errorMessage;
   }
 }
