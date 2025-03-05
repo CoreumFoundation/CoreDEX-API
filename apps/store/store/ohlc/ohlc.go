@@ -60,17 +60,17 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 	_, err = a.client.Client.Exec(`INSERT INTO OHLC ( `+OHLCDataFields+` 
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
 	ON DUPLICATE KEY UPDATE 
-		Open=?, 
-		High=?, 
-		Low=?, 
-		Close=?, 
-		Volume=?,
-		QuoteVolume=?,
-		NumberOfTrades=?, 
-		USDValue=?, 
-		MetaData=?, 
-		OpenTime=?, 
-		CloseTime=?`,
+		Open=VALUES(Open), 
+		High=VALUES(High), 
+		Low=Values(Low), 
+		Close=VALUES(Close), 
+		Volume=VALUES(Volume),
+		QuoteVolume=VALUES(QuoteVolume),
+		NumberOfTrades=VALUES(NumberOfTrades), 
+		USDValue=VALUES(USDValue), 
+		MetaData=VALUES(MetaData), 
+		OpenTime=VALUES(OpenTime), 
+		CloseTime=VALUES(CloseTime)`,
 		in.Symbol,
 		in.Timestamp.AsTime(),
 		in.Open,
@@ -82,17 +82,6 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 		in.NumberOfTrades,
 		period,
 		periodStr,
-		in.USDValue,
-		metaData,
-		in.OpenTime.AsTime(),
-		in.CloseTime.AsTime(),
-		in.Open,
-		in.High,
-		in.Low,
-		in.Close,
-		in.Volume,
-		in.QuoteVolume,
-		in.NumberOfTrades,
 		in.USDValue,
 		metaData,
 		in.OpenTime.AsTime(),
@@ -187,16 +176,84 @@ func (a *Application) get(filter *ohlcgrpc.OHLCFilter, backFill bool) ([]*ohlcgr
 }
 
 func (a *Application) BatchUpsert(in *ohlcgrpc.OHLCs) error {
-	for _, ohlc := range in.OHLCs {
-		err := a.Upsert(ohlc)
+	tStart := time.Now()
+	values := []interface{}{}
+	query := `INSERT INTO OHLC (` + OHLCDataFields + `) VALUES `
+	for i, ohlc := range in.OHLCs {
+		if i > 0 {
+			query += ", "
+		}
+		query += `(?, ?, ?, ?, ?, 
+			       ?, ?, ?, ?, ?, 
+				   ?, ?, ?, ?, ?)`
+		// Marshal JSON fields
+		metaData, err := json.Marshal(ohlc.MetaData)
 		if err != nil {
+			logger.Errorf("Error marshalling metadata for OHLC %s-%d: %v", ohlc.Symbol, ohlc.Timestamp.AsTime().Unix(), err)
 			return err
 		}
+
+		period, err := json.Marshal(ohlc.Period)
+		if err != nil {
+			logger.Errorf("Error marshalling period for OHLC %s-%d: %v", ohlc.Symbol, ohlc.Timestamp.AsTime().Unix(), err)
+			return err
+		}
+		periodStr := ohlc.Period.ToString()
+
+		values = append(values,
+			ohlc.Symbol,
+			ohlc.Timestamp.AsTime(),
+			ohlc.Open,
+			ohlc.High,
+			ohlc.Low,
+			ohlc.Close,
+			ohlc.Volume,
+			ohlc.QuoteVolume,
+			ohlc.NumberOfTrades,
+			period,
+			periodStr,
+			ohlc.USDValue,
+			metaData,
+			ohlc.OpenTime.AsTime(),
+			ohlc.CloseTime.AsTime(),
+		)
 	}
+
+	query += ` ON DUPLICATE KEY UPDATE 
+		Open=VALUES(Open), 
+		High=VALUES(High), 
+		Low=VALUES(Low), 
+		Close=VALUES(Close), 
+		Volume=VALUES(Volume),
+		QuoteVolume=VALUES(QuoteVolume),
+		NumberOfTrades=VALUES(NumberOfTrades), 
+		USDValue=VALUES(USDValue), 
+		MetaData=VALUES(MetaData), 
+		OpenTime=VALUES(OpenTime), 
+		CloseTime=VALUES(CloseTime)`
+	tx, err := a.client.Client.Begin()
+	if err != nil {
+		logger.Errorf("Error starting transaction: %v", err)
+		return err
+	}
+	_, err = tx.Exec(query, values...)
+	if err != nil {
+		logger.Errorf("Error batch upserting OHLCs: %v", err)
+		tx.Rollback() // Rollback the transaction on error
+		return err
+	}
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		logger.Errorf("Error committing transaction: %v", err)
+		return err
+	}
+	logger.Infof("BatchUpsert took %d microseconds", time.Since(tStart).Microseconds())
 	return nil
 }
 
 func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcgrpc.OHLCs, error) {
+	tStart := time.Now()
 	var queryBuilder strings.Builder
 	var args []interface{}
 
@@ -220,9 +277,15 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 		}
 		queryBuilder.WriteString(")")
 	}
-
-	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
+	tx, err := a.client.Client.Begin()
 	if err != nil {
+		logger.Errorf("Error starting transaction: %v", err)
+		return nil, err
+	}
+
+	rows, err := tx.Query(queryBuilder.String(), args...)
+	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 	defer rows.Close()
@@ -231,15 +294,22 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 	for rows.Next() {
 		r, err := mapToOHLC(rows)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 		ohlcs = append(ohlcs, r)
 	}
 
 	if err = rows.Err(); err != nil {
+		tx.Rollback()
 		return nil, err
 	}
-
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		logger.Errorf("Error committing transaction: %v", err)
+		return nil, err
+	}
+	logger.Infof("GetOHLCsForPeriods took %d microseconds", time.Since(tStart).Microseconds())
 	return &ohlcgrpc.OHLCs{OHLCs: ohlcs}, nil
 }
 

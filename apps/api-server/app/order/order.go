@@ -12,13 +12,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/shopspring/decimal"
+	sdecimal "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
+	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
@@ -191,6 +192,9 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			From:    timestamppb.New(processStart),
 			To:      timestamppb.Now(),
 		})
+		if err != nil {
+			return nil, err
+		}
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
 		// If the order is not in the orderbook, it is added to the orderbook
 		// If the order is in the orderbook, it is updated with the new data
@@ -198,26 +202,11 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		sellSide := orderbook.Sell
 		buySideRemove := make([]uint64, 0)
 		buySideAppend := make([]*coreum.OrderBookOrder, 0)
+		sellSideRemove := make([]uint64, 0)
+		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
 		for _, order := range orders.Orders {
-			for _, buyOrder := range buySide {
-				if buyOrder.Sequence == uint64(order.Sequence) {
-					if *order.RemainingQuantity.IsZero() || order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED {
-						buySideRemove = append(buySideRemove, buyOrder.Sequence)
-					} else {
-						// TODO: The retrieved data can have duplicates by Sequence (updates/partial executions?)
-						// TODO: Should this all even be from order and not from Trade: Inspect the data
-						buySideAppend = append(buySideAppend, &coreum.OrderBookOrder{
-							Price:    fmt.Sprintf("%f", order.Price),
-							Amount:   order.Quantity.String(),
-							Sequence: uint64(order.Sequence),
-							Account:  order.Account,
-							OrderID:  order.OrderID,
-							// RemainingAmount:       order.RemainingAmount,
-							// RemainingSymbolAmount: order.RemainingSymbolAmount,
-						})
-					}
-				}
-			}
+			a.processOrderForOrderBook(buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend)
+			a.processOrderForOrderBook(sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend)
 		}
 		for _, removeID := range buySideRemove {
 			for i, buyOrder := range buySide {
@@ -228,6 +217,17 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			}
 		}
 		buySide = append(buySide, buySideAppend...)
+		for _, removeID := range sellSideRemove {
+			for i, o := range buySide {
+				if o.Sequence == removeID {
+					sellSide = append(sellSide[:i], sellSide[i+1:]...)
+					break // IDs only appear once in the orderbook
+				}
+			}
+		}
+		sellSide = append(sellSide, sellSideAppend...)
+		orderbook.Buy = buySide
+		orderbook.Sell = sellSide
 	}
 	// Set the orderbook into the cache:
 	a.orderbookCache.data[key] = &dmn.LockableCache{
@@ -236,6 +236,54 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	}
 	a.orderbookCache.mutex.Unlock()
 	return orderbook, nil
+}
+
+func (*Application) processOrderForOrderBook(side []*coreum.OrderBookOrder,
+	order *ordergrpc.Order,
+	denom1Currency *currencygrpc.Currency,
+	denom2Currency *currencygrpc.Currency,
+	removeList []uint64,
+	appendList []*coreum.OrderBookOrder,
+) ([]uint64, []*coreum.OrderBookOrder) {
+	for _, o := range side {
+		if o.Sequence == uint64(order.Sequence) {
+			if (*order.RemainingQuantity).IsZero() || order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED || order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
+				removeList = append(removeList, o.Sequence)
+			} else {
+				denom1Precision := *denom1Currency.Denom.Precision
+				denom2Precision := *denom2Currency.Denom.Precision
+				price := sdecimal.NewFromFloat(order.Price)
+				var precision sdecimal.Decimal
+				precisionDiff := denom1Precision - denom2Precision
+				if precisionDiff < 0 {
+					precision = sdecimal.NewFromInt(1).Div(sdecimal.New(1, int32(-precisionDiff)))
+				} else if precisionDiff > 0 {
+					precision = sdecimal.New(1, int32(-precisionDiff))
+				} else {
+					precision = sdecimal.NewFromInt(1)
+				}
+
+				humanReadablePrice := price.Mul(precision)
+				symbolAmount := *decimal.ToSDec(order.Quantity)
+				symbolAmount = symbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
+				remainingSymbolAmount := *decimal.ToSDec(order.RemainingQuantity)
+				remainingSymbolAmount = remainingSymbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
+
+				appendList = append(appendList, &coreum.OrderBookOrder{
+					Price:                 fmt.Sprintf("%f", order.Price),
+					HumanReadablePrice:    humanReadablePrice.String(),
+					Amount:                order.Quantity.String(),
+					SymbolAmount:          symbolAmount.String(),
+					Sequence:              uint64(order.Sequence),
+					Account:               order.Account,
+					OrderID:               order.OrderID,
+					RemainingAmount:       order.RemainingQuantity.String(),
+					RemainingSymbolAmount: remainingSymbolAmount.String(),
+				})
+			}
+		}
+	}
+	return removeList, appendList
 }
 
 func (a *Application) OrderBookRelevantOrdersForAccount(network metadata.Network, denom1, denom2, account string) (*coreum.OrderBookOrders, error) {
@@ -298,7 +346,7 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 		walletAssets = append(walletAssets, WalletAsset{
 			Denom:        coin.Denom,
 			Amount:       coin.Amount.String(),
-			SymbolAmount: decimal.NewFromBigInt(coin.Amount.BigInt(), 0).Div(decimal.New(1, precision)).String(),
+			SymbolAmount: sdecimal.NewFromBigInt(coin.Amount.BigInt(), 0).Div(sdecimal.New(1, precision)).String(),
 		})
 	}
 	return walletAssets, nil

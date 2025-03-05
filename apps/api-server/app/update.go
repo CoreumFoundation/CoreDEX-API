@@ -24,8 +24,12 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
-const REFRESH_INTERVAL = 10 * time.Second
-const WRITE_CHANNEL_SIZE = 25
+const (
+	REFRESH_INTERVAL   = 1 * time.Second
+	WRITE_CHANNEL_SIZE = 25
+	OHLC_REFRESH       = 10 // Counter based on the REFRESH_INTERVAL in seconds (so 10 is 10 seconds)
+	WALLET_REFRESH     = 10 // Counter based on the REFRESH_INTERVAL in seconds (so 10 is 10 seconds)
+)
 
 type Message struct {
 	Network metadata.Network
@@ -57,11 +61,13 @@ var (
 // StartUpdater Iterates over the listeners and sends the message to the listeners
 func (app *Application) StartUpdater(ctx context.Context) {
 	currentTime := time.Now()
+	refreshCounter := 0
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
+			refreshCounter++
 			uniqueSubscriptions := make(map[string]*updateproto.Subscription)
 			// Identify unique subscriptions:
 			subscriptionMutex.RLock()
@@ -82,27 +88,37 @@ func (app *Application) StartUpdater(ctx context.Context) {
 			// If this does not work out, we can delegate the unique subscriptions (for accounts) to the update process itself
 			wg := sync.WaitGroup{}
 			for _, subscription := range uniqueSubscriptions {
-				wg.Add(1)
 				// Refresh the subscription:
 				switch subscription.Method {
 				case updateproto.Method_TRADES_FOR_ACCOUNT:
+					wg.Add(1)
 					go app.updateTradesForAccount(ctx, subscription, startOfInterval, endOfInterval, &wg)
 				case updateproto.Method_TRADES_FOR_SYMBOL:
+					wg.Add(1)
 					go app.updateTradesForSymbol(ctx, subscription, startOfInterval, endOfInterval, &wg)
 				case updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL:
+					wg.Add(1)
 					go app.updateTradesForAccountAndSymbol(ctx, subscription, startOfInterval, endOfInterval, &wg)
 				case updateproto.Method_TICKER:
+					wg.Add(1)
 					go app.updateTicker(ctx, subscription, &wg)
 				case updateproto.Method_OHLC:
-					go app.updateOHLC(ctx, subscription, startOfInterval, endOfInterval, &wg)
+					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
+					if refreshCounter%OHLC_REFRESH == 0 {
+						wg.Add(1)
+						go app.updateOHLC(ctx, subscription, startOfInterval, endOfInterval, &wg)
+					}
 				case updateproto.Method_ORDERBOOK:
+					wg.Add(1)
 					go app.updateOrderbook(ctx, subscription, &wg)
 				case updateproto.Method_ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT:
+					wg.Add(1)
 					go app.updateOrderbookForSymbolAndAccount(ctx, subscription, &wg)
 				case updateproto.Method_WALLET:
-					go app.updateWallet(subscription, &wg)
-				default:
-					wg.Done()
+					if refreshCounter%WALLET_REFRESH == 0 {
+						wg.Add(1)
+						go app.updateWallet(subscription, &wg)
+					}
 				}
 			}
 			wg.Wait()
