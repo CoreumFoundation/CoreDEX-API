@@ -6,6 +6,7 @@ require (
 	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
 	github.com/google/go-cmp v0.6.0
 	github.com/pkg/errors v0.9.1
+	github.com/samber/lo v1.49.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.69.0
@@ -25,7 +26,6 @@ require (
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
