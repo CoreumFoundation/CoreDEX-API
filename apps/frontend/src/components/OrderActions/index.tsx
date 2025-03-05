@@ -218,6 +218,18 @@ const OrderActions = ({
     }
   }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
+  const extractErrorMessage = (e: any) => {
+    if (e?.error?.message) {
+      return e.error.message;
+    } else if (e?.response?.data?.message) {
+      return e.response.data.message;
+    } else if (e?.message) {
+      return e.message;
+    } else {
+      return JSON.stringify(e);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const goodTil =
@@ -284,12 +296,13 @@ const OrderActions = ({
       setLimitPrice("");
       setIsLoading(false);
     } catch (e: any) {
+      setIsLoading(false);
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
+      const errorMsg = extractErrorMessage(e);
       pushNotification({
         type: "error",
-        message: e.error.message || e.message,
+        message: errorMsg,
       });
-      setIsLoading(false);
       throw e;
     }
   };
