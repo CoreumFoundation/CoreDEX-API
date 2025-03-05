@@ -50,7 +50,6 @@ func (a *Application) StartOHLCProcessor() {
 				To be able to build the associated OHLCs we can apply the BUY to one side and the SELL to the other side.
 				Side is defined as Denom1-Denom2 and Denom2-Denom1
 				The associated price and amount need to be inverted for the other side.
-
 			*/
 			switch trade.Side {
 			case orderproperties.Side_SIDE_BUY:
@@ -163,6 +162,7 @@ func (a *Application) calculateOHLCS(inputTrades map[string][]*tradegrpc.Trade) 
 }
 
 func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol string, wg *sync.WaitGroup) {
+	tStart := time.Now()
 	// Sort trades by block time ascending so that we can handle the same minute optimized
 	// (leads to all other OHLC associated to the same block time to only to be retrieved and written once)
 	sort.Slice(inputTrades, func(i, j int) bool {
@@ -183,6 +183,7 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 		// This location of the comparison if the minute has changed and the use of the pointer
 		// prevent the edge case of missing the first or last set of records (and having to handle those separately)
 		if previousMinute != currentMinute {
+			logger.Infof("Retrieving symbol data for symbol %s, minute: %d", symbol, currentMinute)
 			symbolData = a.getSymbol(trade.BlockTime, symbol, toPersistOHLCs)
 			// Add the pointers to the ohlc data to the toPersistOHLCs set
 			for _, ohlc := range symbolData {
@@ -227,5 +228,6 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 	if err != nil {
 		logger.Errorf("Error upserting ohlcs for symbol %s: %v", symbol, err)
 	}
+	logger.Infof("Processed %d trades for symbol %s in %d microseconds", len(inputTrades), symbol, time.Since(tStart).Microseconds())
 	wg.Done()
 }

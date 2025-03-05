@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/samber/lo"
 	sdecimal "github.com/shopspring/decimal"
 )
 
@@ -46,6 +47,10 @@ func FromDec(d sdecimal.Decimal) *Decimal {
 		Value: d.CoefficientInt64(),
 		Exp:   d.Exponent(),
 	}
+}
+
+func ToSDec(d *Decimal) *sdecimal.Decimal {
+	return lo.ToPtr(sdecimal.New(d.Value, d.Exp))
 }
 
 func FromFloat64(f float64) *Decimal {
@@ -109,4 +114,8 @@ func (d *Decimal) Float64() float64 {
 func (d *Decimal) Mul(d2 float64) float64 {
 	f, _ := sdecimal.New(d.Value, d.Exp).Mul(sdecimal.NewFromFloat(d2)).Float64()
 	return f
+}
+
+func (d *Decimal) IsZero() bool {
+	return sdecimal.New(d.Value, d.Exp).IsZero()
 }
