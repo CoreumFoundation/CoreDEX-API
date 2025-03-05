@@ -102,7 +102,23 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string, cach
 	// The ohlc PeriodsList contains all the periods in the stored notation
 	// These periods represent the buckets which need to be calculated
 	pb := make([]*ohlcgrpc.PeriodBucket, 0)
+	m := make(map[string]*ohlcgrpc.OHLC)
 	for _, v := range ohlcgrpc.PeriodsList {
+		skip := false
+		for _, ohlc := range cachedOHLC {
+			// Filter out intervals we already have in the cachedOHLC
+			if strings.Compare(v.String(), ohlc.Period.String()) == 0 {
+				logger.Infof("v.ToOHLCKeyTimestamppb(base).AsTime() %v, ohlc.Timestamp.AsTime() %v", v.ToOHLCKeyTimestamppb(base).AsTime(), ohlc.Timestamp.AsTime())
+				if v.ToOHLCKeyTimestamppb(base).AsTime().Unix() == ohlc.Timestamp.AsTime().Unix() {
+					m[ohlc.Period.String()] = ohlc
+					skip = true
+					break
+				}
+			}
+		}
+		if skip {
+			continue
+		}
 		pb = append(pb, &ohlcgrpc.PeriodBucket{
 			Period:    v,
 			Timestamp: v.ToOHLCKeyTimestamppb(base),
@@ -122,7 +138,6 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string, cach
 		o.OHLCs = make([]*ohlcgrpc.OHLC, 0)
 	}
 	// Process the return ohlcs into a map of ohlc period:
-	m := make(map[string]*ohlcgrpc.OHLC)
 	for _, ohlc := range o.OHLCs {
 		m[ohlc.Period.String()] = ohlc
 	}
@@ -178,8 +193,8 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 			PeriodType: ohlcgrpc.PeriodType_PERIOD_TYPE_MINUTE,
 			Duration:   1,
 		}
-		logger.Infof("Processing trade %d for symbol %s", i, symbol)
 		currentMinute := p.ToOHLCKeyTimestamppb(trade.BlockTime).Seconds
+		logger.Infof("Processing trade %d for symbol %s, minute: %d", i, symbol, currentMinute)
 		// This location of the comparison if the minute has changed and the use of the pointer
 		// prevent the edge case of missing the first or last set of records (and having to handle those separately)
 		if previousMinute != currentMinute {
