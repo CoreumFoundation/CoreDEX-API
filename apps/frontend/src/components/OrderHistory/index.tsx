@@ -491,7 +491,7 @@ const OrderHistory = () => {
                           className="price"
                         />
                         <FormatNumber
-                          number={order.SymbolAmount}
+                          number={order.RemainingSymbolAmount}
                           className="volume"
                         />
                         <FormatNumber number={order.Total} className="total" />

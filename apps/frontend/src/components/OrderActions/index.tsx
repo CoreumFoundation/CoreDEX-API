@@ -170,7 +170,7 @@ const OrderActions = ({
       if (tradeType === OT.ORDER_TYPE_MARKET) {
         const avgPrice = Number(
           getAvgPriceFromOBbyVolume(
-            orderType === Side.SIDE_BUY ? orderbook.Buy : orderbook.Sell,
+            orderType === Side.SIDE_BUY ? orderbook.Sell : orderbook.Buy,
             volume
           )
         );
