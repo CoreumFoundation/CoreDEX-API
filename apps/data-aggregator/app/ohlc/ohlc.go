@@ -20,14 +20,20 @@ import (
 )
 
 type Application struct {
-	tradeChan  chan *tradegrpc.Trade
-	ohlcClient ohlcgrpc.OHLCServiceClient
+	tradeChan          chan *tradegrpc.Trade
+	ohlcClient         ohlcgrpc.OHLCServiceClient
+	ohlcCache          []*ohlcgrpc.OHLC
+	ohlcCacheResetTime time.Time
+	mutex              *sync.RWMutex
 }
 
 func NewApplication(ctx context.Context, tradeChan chan *tradegrpc.Trade) *Application {
 	app := &Application{
-		tradeChan:  tradeChan,
-		ohlcClient: ohlcclient.Client(),
+		tradeChan:          tradeChan,
+		ohlcClient:         ohlcclient.Client(),
+		ohlcCache:          make([]*ohlcgrpc.OHLC, 0),
+		ohlcCacheResetTime: time.Now(),
+		mutex:              &sync.RWMutex{},
 	}
 	app.StartOHLCProcessor()
 	return app
@@ -98,16 +104,34 @@ func symbol(trade *tradegrpc.Trade) string {
 }
 
 // Retrieve OHLCs for the given symbol
-func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string, cachedOHLC []*ohlcgrpc.OHLC) map[string]*ohlcgrpc.OHLC {
+func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[string]*ohlcgrpc.OHLC {
 	// The ohlc PeriodsList contains all the periods in the stored notation
 	// These periods represent the buckets which need to be calculated
 	pb := make([]*ohlcgrpc.PeriodBucket, 0)
+	m := make(map[string]*ohlcgrpc.OHLC)
+	a.mutex.RLock()
 	for _, v := range ohlcgrpc.PeriodsList {
+		skip := false
+		for _, ohlc := range a.ohlcCache {
+			// Filter out intervals we already have in the cachedOHLC, and prepopulate the required result set with cached data
+			if strings.Compare(v.String(), ohlc.Period.String()) == 0 {
+				if v.ToOHLCKeyTimestamppb(base).AsTime().Unix() == ohlc.Timestamp.AsTime().Unix() &&
+					ohlc.Symbol == symbol {
+					m[ohlc.Period.String()] = ohlc
+					skip = true
+					break
+				}
+			}
+		}
+		if skip {
+			continue
+		}
 		pb = append(pb, &ohlcgrpc.PeriodBucket{
 			Period:    v,
 			Timestamp: v.ToOHLCKeyTimestamppb(base),
 		})
 	}
+	a.mutex.RUnlock()
 	o, err := a.ohlcClient.GetOHLCsForPeriods(context.Background(), &ohlcgrpc.PeriodsFilter{
 		Symbol:  symbol,
 		Periods: pb,
@@ -121,12 +145,11 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string, cach
 	if o.OHLCs == nil {
 		o.OHLCs = make([]*ohlcgrpc.OHLC, 0)
 	}
-	// Process the return ohlcs into a map of ohlc period:
-	m := make(map[string]*ohlcgrpc.OHLC)
+	// Process the returned ohlcs into a map of ohlc period:
 	for _, ohlc := range o.OHLCs {
 		m[ohlc.Period.String()] = ohlc
 	}
-	// Check if all periods are present, if not, add them
+	// Check if all periods are present, if not, add the remainder
 	for _, v := range ohlcgrpc.PeriodsList {
 		if _, ok := m[v.String()]; !ok {
 			m[v.String()] = &ohlcgrpc.OHLC{
@@ -140,20 +163,16 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string, cach
 			}
 		}
 	}
-	// Overwrite the retrieved ohlcs with the cached ohlcs
-	// where the type is the same and the timestamp is the same
-	for _, ohlc := range cachedOHLC {
-		if _, ok := m[ohlc.Period.String()]; ok {
-			if m[ohlc.Period.String()].Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) {
-				m[ohlc.Period.String()] = ohlc
-			}
-		}
-	}
 	return m
 }
 
 func (a *Application) calculateOHLCS(inputTrades map[string][]*tradegrpc.Trade) {
 	wg := &sync.WaitGroup{}
+	// Dump the cache every 15 minutes (very simple way of managing the cache)
+	if len(a.ohlcCache) > 0 && time.Since(a.ohlcCacheResetTime) > 15*time.Minute {
+		a.ohlcCache = make([]*ohlcgrpc.OHLC, 0)
+		a.ohlcCacheResetTime = time.Now()
+	}
 	wg.Add(len(inputTrades))
 	for symbol, trades := range inputTrades {
 		go a.calculateOHLC(trades, symbol, wg)
@@ -178,17 +197,48 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 			PeriodType: ohlcgrpc.PeriodType_PERIOD_TYPE_MINUTE,
 			Duration:   1,
 		}
-		logger.Infof("Processing trade %d for symbol %s", i, symbol)
 		currentMinute := p.ToOHLCKeyTimestamppb(trade.BlockTime).Seconds
+		logger.Infof("Processing trade %d for symbol %s, minute: %d", i, symbol, currentMinute)
 		// This location of the comparison if the minute has changed and the use of the pointer
 		// prevent the edge case of missing the first or last set of records (and having to handle those separately)
 		if previousMinute != currentMinute {
-			logger.Infof("Retrieving symbol data for symbol %s, minute: %d", symbol, currentMinute)
-			symbolData = a.getSymbol(trade.BlockTime, symbol, toPersistOHLCs)
+			symbolData = a.getSymbol(trade.BlockTime, symbol)
 			// Add the pointers to the ohlc data to the toPersistOHLCs set
 			for _, ohlc := range symbolData {
+				// Check if the ohlc is already in the toPersistOHLCs set
+				// If it is, skip it
+				skip := false
+				for _, p := range toPersistOHLCs {
+					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
+						p.Symbol == ohlc.Symbol {
+						skip = true
+						break
+					}
+				}
+				if skip {
+					continue
+				}
 				toPersistOHLCs = append(toPersistOHLCs, ohlc)
 			}
+			// Add the pointers to the cache:
+			a.mutex.Lock()
+			for _, ohlc := range symbolData {
+				// Check if the ohlc is already in the cache
+				// If it is, skip it
+				skip := false
+				for _, p := range a.ohlcCache {
+					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
+						p.Symbol == ohlc.Symbol {
+						skip = true
+						break
+					}
+				}
+				if skip {
+					continue
+				}
+				a.ohlcCache = append(a.ohlcCache, ohlc)
+			}
+			a.mutex.Unlock()
 			previousMinute = currentMinute
 		}
 		// For all the periods, calculate the OHLC
