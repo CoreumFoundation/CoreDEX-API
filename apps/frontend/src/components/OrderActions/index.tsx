@@ -78,6 +78,7 @@ const OrderActions = ({
   const [blockHeight, setBlockHeight] = useState<number>(0);
 
   useEffect(() => {
+    if (!wallet) return;
     fetchWalletAssets();
   }, [wallet, market]);
 
@@ -97,6 +98,7 @@ const OrderActions = ({
   };
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         walletSubscription,
@@ -107,7 +109,7 @@ const OrderActions = ({
     return () => {
       wsManager.unsubscribe(walletSubscription, setWalletBalances);
     };
-  }, [walletSubscription]);
+  }, [walletSubscription, wallet]);
 
   useEffect(() => {
     if (!walletBalances) return;

@@ -172,6 +172,7 @@ const OrderHistory = () => {
   );
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         openOrderSubscription,
@@ -182,9 +183,10 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(openOrderSubscription, handleOpenOrders);
     };
-  }, [openOrderSubscription]);
+  }, [openOrderSubscription, wallet]);
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         orderHistorySubscription,
@@ -195,7 +197,7 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(orderHistorySubscription, setOrderHistory);
     };
-  }, [orderHistorySubscription]);
+  }, [orderHistorySubscription, wallet]);
 
   const mergeUniqueTrades = (
     prevHistory: TradeRecord[],
