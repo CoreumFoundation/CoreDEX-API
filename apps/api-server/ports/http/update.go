@@ -20,13 +20,11 @@ var upgrader = websocket.Upgrader{
 func (s *httpServer) wsEndpoint() handler.Handler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// upgrade this connection to a WebSocket connection
-		logger.Infof("Upgrading connection to websocket %+v", r)
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			logger.Errorf("Error upgrading connection to websocket %+v: %+v", ws, err)
 			return err
 		}
-		logger.Infof("Connected websocket %s,%s", ws.LocalAddr().String(), ws.RemoteAddr().String())
 		s.app.AddSocket(ws)
 		err = ws.WriteMessage(1, []byte("Connected"))
 		if err != nil {

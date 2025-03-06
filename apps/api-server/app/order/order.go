@@ -140,6 +140,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -147,6 +148,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom1Precision := int64(0)
@@ -161,8 +163,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
+				a.orderbookCache.mutex.Unlock()
 				return nil, fmt.Errorf("there is no orderbook for %s - %s", denom1, denom2)
 			}
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 	}
@@ -175,6 +179,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -182,6 +187,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 
@@ -193,6 +199,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			To:      timestamppb.Now(),
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
