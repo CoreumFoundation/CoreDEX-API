@@ -24,6 +24,7 @@ type Application struct {
 	ohlcClient         ohlcgrpc.OHLCServiceClient
 	ohlcCache          []*ohlcgrpc.OHLC
 	ohlcCacheResetTime time.Time
+	mutex              *sync.RWMutex
 }
 
 func NewApplication(ctx context.Context, tradeChan chan *tradegrpc.Trade) *Application {
@@ -32,6 +33,7 @@ func NewApplication(ctx context.Context, tradeChan chan *tradegrpc.Trade) *Appli
 		ohlcClient:         ohlcclient.Client(),
 		ohlcCache:          make([]*ohlcgrpc.OHLC, 0),
 		ohlcCacheResetTime: time.Now(),
+		mutex:              &sync.RWMutex{},
 	}
 	app.StartOHLCProcessor()
 	return app
@@ -107,6 +109,7 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 	// These periods represent the buckets which need to be calculated
 	pb := make([]*ohlcgrpc.PeriodBucket, 0)
 	m := make(map[string]*ohlcgrpc.OHLC)
+	a.mutex.RLock()
 	for _, v := range ohlcgrpc.PeriodsList {
 		skip := false
 		for _, ohlc := range a.ohlcCache {
@@ -128,6 +131,7 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 			Timestamp: v.ToOHLCKeyTimestamppb(base),
 		})
 	}
+	a.mutex.RUnlock()
 	o, err := a.ohlcClient.GetOHLCsForPeriods(context.Background(), &ohlcgrpc.PeriodsFilter{
 		Symbol:  symbol,
 		Periods: pb,
@@ -161,6 +165,7 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 	}
 	// Overwrite the retrieved ohlcs with the cached ohlcs
 	// where the type is the same and the timestamp is the same
+	a.mutex.RLock()
 	for _, ohlc := range a.ohlcCache {
 		if _, ok := m[ohlc.Period.String()]; ok {
 			if m[ohlc.Period.String()].Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
@@ -169,6 +174,7 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 			}
 		}
 	}
+	a.mutex.RUnlock()
 	return m
 }
 
@@ -216,7 +222,8 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 				// If it is, skip it
 				skip := false
 				for _, p := range toPersistOHLCs {
-					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) {
+					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
+						p.Symbol == ohlc.Symbol {
 						skip = true
 						break
 					}
@@ -227,12 +234,14 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 				toPersistOHLCs = append(toPersistOHLCs, ohlc)
 			}
 			// Add the pointers to the cache:
+			a.mutex.Lock()
 			for _, ohlc := range symbolData {
 				// Check if the ohlc is already in the cache
 				// If it is, skip it
 				skip := false
 				for _, p := range a.ohlcCache {
-					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) {
+					if p.Period.String() == ohlc.Period.String() && p.Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
+						p.Symbol == ohlc.Symbol {
 						skip = true
 						break
 					}
@@ -242,6 +251,7 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 				}
 				a.ohlcCache = append(a.ohlcCache, ohlc)
 			}
+			a.mutex.Unlock()
 			previousMinute = currentMinute
 		}
 		// For all the periods, calculate the OHLC
