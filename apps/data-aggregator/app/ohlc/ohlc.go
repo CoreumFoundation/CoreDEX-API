@@ -113,7 +113,7 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 	for _, v := range ohlcgrpc.PeriodsList {
 		skip := false
 		for _, ohlc := range a.ohlcCache {
-			// Filter out intervals we already have in the cachedOHLC
+			// Filter out intervals we already have in the cachedOHLC, and prepopulate the required result set with cached data
 			if strings.Compare(v.String(), ohlc.Period.String()) == 0 {
 				if v.ToOHLCKeyTimestamppb(base).AsTime().Unix() == ohlc.Timestamp.AsTime().Unix() &&
 					ohlc.Symbol == symbol {
@@ -145,11 +145,11 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 	if o.OHLCs == nil {
 		o.OHLCs = make([]*ohlcgrpc.OHLC, 0)
 	}
-	// Process the return ohlcs into a map of ohlc period:
+	// Process the returned ohlcs into a map of ohlc period:
 	for _, ohlc := range o.OHLCs {
 		m[ohlc.Period.String()] = ohlc
 	}
-	// Check if all periods are present, if not, add them
+	// Check if all periods are present, if not, add the remainder
 	for _, v := range ohlcgrpc.PeriodsList {
 		if _, ok := m[v.String()]; !ok {
 			m[v.String()] = &ohlcgrpc.OHLC{
@@ -163,18 +163,6 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 			}
 		}
 	}
-	// Overwrite the retrieved ohlcs with the cached ohlcs
-	// where the type is the same and the timestamp is the same
-	a.mutex.RLock()
-	for _, ohlc := range a.ohlcCache {
-		if _, ok := m[ohlc.Period.String()]; ok {
-			if m[ohlc.Period.String()].Timestamp.AsTime().Equal(ohlc.Timestamp.AsTime()) &&
-				m[ohlc.Period.String()].Symbol == ohlc.Symbol {
-				m[ohlc.Period.String()] = ohlc
-			}
-		}
-	}
-	a.mutex.RUnlock()
 	return m
 }
 
@@ -214,7 +202,6 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 		// This location of the comparison if the minute has changed and the use of the pointer
 		// prevent the edge case of missing the first or last set of records (and having to handle those separately)
 		if previousMinute != currentMinute {
-			logger.Infof("Retrieving symbol data for symbol %s, minute: %d", symbol, currentMinute)
 			symbolData = a.getSymbol(trade.BlockTime, symbol)
 			// Add the pointers to the ohlc data to the toPersistOHLCs set
 			for _, ohlc := range symbolData {
