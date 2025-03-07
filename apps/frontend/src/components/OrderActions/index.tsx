@@ -388,7 +388,6 @@ const OrderActions = ({
             {tradeType === OT.ORDER_TYPE_LIMIT ? (
               <div className="limit-type-wrapper">
                 <Input
-                  maxLength={16}
                   placeholder="Enter Amount"
                   type={InputType.NUMBER}
                   onValueChange={(val: string) => {
@@ -405,7 +404,6 @@ const OrderActions = ({
                   adornmentRight={market.base.Denom.Name?.toUpperCase()}
                 />
                 <Input
-                  maxLength={16}
                   placeholder="Enter Limit Price"
                   type={InputType.NUMBER}
                   onValueChange={(val: string) => {
@@ -550,7 +548,6 @@ const OrderActions = ({
                                 }
                               />
                               <Input
-                                maxLength={16}
                                 placeholder="Block Height"
                                 type={InputType.NUMBER}
                                 onValueChange={(val: any) => {
@@ -576,7 +573,6 @@ const OrderActions = ({
             ) : (
               <div className="market-type-wrapper">
                 <Input
-                  maxLength={16}
                   placeholder="Enter Amount"
                   label="Amount"
                   type={InputType.NUMBER}
