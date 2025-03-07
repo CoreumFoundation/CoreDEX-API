@@ -21,16 +21,27 @@ VITE_ENV_WS: Websocket URL used in services/websocket.ts
 VITE_ENV_MODE: Development flag for how the app imports envs when in development vs when in production
 ```
 
-In this project, envs are imported in `services/general.ts` and `services/websocket.ts`.
+In this project, envs are imported in `/config/envs.ts`.
 
 If you are using a different framework or build tool, you will need to adjust how envs are named and imported in these files:
 
 ```
 // for vite
-const API_URL =
+interface CoreumEnv {
+  VITE_ENV_BASE_API: string;
+  VITE_ENV_WS: string;
+}
+
+const env: CoreumEnv =
   import.meta.env.VITE_ENV_MODE === "development"
-    ? import.meta.env.VITE_ENV_BASE_API
-    : (window as any).COREUM.env.VITE_ENV_BASE_API;
+    ? {
+        VITE_ENV_BASE_API: import.meta.env.VITE_ENV_BASE_API,
+        VITE_ENV_WS: import.meta.env.VITE_ENV_WS,
+      }
+    : (window as any).COREUM?.env;
+
+export const BASE_API_URL = env.VITE_ENV_BASE_API;
+export const WS_URL = env.VITE_ENV_WS;
 ```
 
 ## Websocket
@@ -40,8 +51,6 @@ This app uses primarily React and Zustand on the front-end. But for your applica
 The websocket manager takes care of data handling and manages its own state.
 
 You may choose to create a wrapper like a React hook for the websocket manager in your project. But below is an example of how you would connect and subscribe using only the websocket manager:
-
-
 
 ```
 import { useEffect, useMemo } from 'react';
