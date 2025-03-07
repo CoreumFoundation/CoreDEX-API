@@ -272,7 +272,14 @@ const OrderActions = ({
           orderMessage.value.goodTil.goodTilBlockTime
         );
       }
-      const signedTx = await coreum?.signTx([orderMessage]);
+
+      const test = await coreum?.stargate?.getAccount(wallet.address);
+
+      const signedTx = await coreum?.signTx(
+        [orderMessage],
+        undefined,
+        test?.sequence
+      );
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
       const submitResponse = await submitOrder({ TX: base64Tx });

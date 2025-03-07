@@ -63,7 +63,7 @@ const TradingView = ({ height }: { height: number | string }) => {
       wsManager.subscribe(
         ohlcSubscription,
         setLastUpdate,
-        UpdateStrategy.REPLACE
+        UpdateStrategy.APPEND
       );
     });
     return () => {

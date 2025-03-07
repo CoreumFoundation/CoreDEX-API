@@ -150,7 +150,7 @@ export class CoreumDataFeed {
   reset() {
     this.subscriptions = [];
   }
-  
+
   getErrorMessage() {
     return this.errorMessage;
   }
