@@ -75,17 +75,16 @@ export default function Orderbook({
     if (!orderbook || !orderbook.Buy || !orderbook.Sell) return;
 
     const calculateSpread = () => {
-      const bestBid = orderbook.Buy[0]?.HumanReadablePrice;
-      const bestAsk =
-        orderbook.Sell[orderbook.Sell.length - 1]?.HumanReadablePrice;
+      const highestBuy = orderbook.Buy[0]?.HumanReadablePrice;
+      const lowestSell = orderbook.Sell[0]?.HumanReadablePrice;
 
-      if (!bestBid && !bestAsk) return new BigNumber(0);
+      if (!highestBuy && !lowestSell) return new BigNumber(0);
 
-      if (bestBid && bestAsk) {
-        return new BigNumber(bestAsk).minus(bestBid);
+      if (highestBuy && lowestSell) {
+        return new BigNumber(lowestSell).minus(highestBuy);
       }
 
-      return new BigNumber(bestAsk || bestBid || 0);
+      return new BigNumber(lowestSell || highestBuy || 0);
     };
 
     setSpread(calculateSpread());
@@ -105,7 +104,7 @@ export default function Orderbook({
     } else {
       sellsOb.scrollTop = sellsOb.scrollHeight;
     }
-  }, [orderbook]);
+  }, []);
 
   // find the highest volume in the orderbook
   useEffect(() => {
