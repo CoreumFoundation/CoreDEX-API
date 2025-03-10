@@ -196,6 +196,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		}
 	}
 	// Refresh from DB it the process start time is more than 1 second ago
+	tStartUpdate := time.Now()
 	if time.Since(processStart) > time.Second {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -221,7 +222,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom1:  denom1Currency.Denom,
 			Denom2:  denom2Currency.Denom,
 			From:    timestamppb.New(processStart),
-			To:      timestamppb.Now(),
+			To:      timestamppb.New(tStartUpdate),
 		})
 		if err != nil {
 			a.orderbookCache.mutex.Unlock()
@@ -263,7 +264,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	}
 	// Set the orderbook into the cache:
 	a.orderbookCache.data[key] = &dmn.LockableCache{
-		LastUpdated: time.Now(), // TODO: This has to be the time we started retrieval from the database (once implemented)
+		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}
 	a.orderbookCache.mutex.Unlock()
