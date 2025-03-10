@@ -132,12 +132,16 @@ func (a *Application) getSymbol(base *timestamppb.Timestamp, symbol string) map[
 		})
 	}
 	a.mutex.RUnlock()
-	o, err := a.ohlcClient.GetOHLCsForPeriods(context.Background(), &ohlcgrpc.PeriodsFilter{
-		Symbol:  symbol,
-		Periods: pb,
-	})
-	if err != nil {
-		logger.Errorf("Error getting ohlc for symbol %s at %v: %v", symbol, base, err)
+	o := &ohlcgrpc.OHLCs{}
+	if len(pb) > 0 {
+		var err error
+		o, err = a.ohlcClient.GetOHLCsForPeriods(context.Background(), &ohlcgrpc.PeriodsFilter{
+			Symbol:  symbol,
+			Periods: pb,
+		})
+		if err != nil {
+			logger.Errorf("Error getting ohlc for symbol %s at %v: %v", symbol, base, err)
+		}
 	}
 	if o == nil {
 		o = &ohlcgrpc.OHLCs{}
