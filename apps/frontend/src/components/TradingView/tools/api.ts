@@ -110,7 +110,17 @@ export class CoreumDataFeed {
           }))
           .sort((a, b) => a.time - b.time);
 
-        onHistoryCallback(sortedBars, { noData: sortedBars.length === 0 });
+        const uniqueBars = [];
+        for (let bar of sortedBars) {
+          if (
+            uniqueBars.length === 0 ||
+            uniqueBars[uniqueBars.length - 1].time !== bar.time
+          ) {
+            uniqueBars.push(bar);
+          }
+        }
+
+        onHistoryCallback(uniqueBars, { noData: uniqueBars.length === 0 });
       })
       .catch((err) => {
         onErrorCallback(err);

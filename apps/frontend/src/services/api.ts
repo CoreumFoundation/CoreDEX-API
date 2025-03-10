@@ -138,8 +138,6 @@ export const submitOrder = async (order: { TX: string }) => {
     APIMethod.POST
   );
 
-  console.log(response);
-
   if (!response.data) {
     throw new Error("No data received from SubmitOrder API");
   }
