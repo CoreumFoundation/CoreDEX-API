@@ -263,7 +263,7 @@ const OrderActions = ({
 
       setIsLoading(true);
       const orderCreateResponse = await createOrder(orderCreate);
-      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data);
+      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data.OrderData);
 
       // have to convert date back to date object
       // createOrder returns a stringified date
@@ -272,13 +272,10 @@ const OrderActions = ({
           orderMessage.value.goodTil.goodTilBlockTime
         );
       }
-
-      const test = await coreum?.stargate?.getAccount(wallet.address);
-
       const signedTx = await coreum?.signTx(
         [orderMessage],
         undefined,
-        test?.sequence
+        orderCreateResponse.data.Sequence
       );
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);

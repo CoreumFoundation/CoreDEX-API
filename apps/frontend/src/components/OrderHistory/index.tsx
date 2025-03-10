@@ -338,8 +338,14 @@ const OrderHistory = () => {
         OrderID: id,
       };
       const orderCancelResponse = await cancelOrder(orderCancel);
-      const cancelMessage = DEX.CancelOrder(orderCancelResponse);
-      const signedTx = await coreum?.signTx([cancelMessage]);
+      const cancelMessage = DEX.CancelOrder(
+        orderCancelResponse.data.OrderCancel
+      );
+      const signedTx = await coreum?.signTx(
+        [cancelMessage],
+        undefined,
+        orderCancelResponse.data.Sequence
+      );
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
       const submitResponse = await submitOrder({ TX: base64Tx });

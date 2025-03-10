@@ -141,6 +141,8 @@ export const submitOrder = async (order: { TX: string }) => {
     APIMethod.POST
   );
 
+  console.log(response);
+
   if (!response.data) {
     throw new Error("No data received from SubmitOrder API");
   }
@@ -193,7 +195,7 @@ export const getWalletAssets = async (
 export const cancelOrder = async (cancelParams: {
   Sender: string;
   OrderID: string;
-}): Promise<MsgCancelOrder> => {
+}) => {
   const response = await request(
     cancelParams,
     `${BASE_API_URL}/order/cancel`,
@@ -204,5 +206,5 @@ export const cancelOrder = async (cancelParams: {
     throw new Error("No data received from CancelOrder API");
   }
 
-  return response.data;
+  return response;
 };
