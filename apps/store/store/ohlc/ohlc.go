@@ -309,7 +309,7 @@ func (a *Application) GetOHLCsForPeriods(filter *ohlcgrpc.PeriodsFilter) (*ohlcg
 		logger.Errorf("Error committing transaction: %v", err)
 		return nil, err
 	}
-	logger.Infof("GetOHLCsForPeriods took %d microseconds", time.Since(tStart).Microseconds())
+	logger.Infof("GetOHLCsForPeriods:%s: %d OHLCs in %d us", len(ohlcs), filter.Symbol, time.Since(tStart).Microseconds())
 	return &ohlcgrpc.OHLCs{OHLCs: ohlcs}, nil
 }
 
