@@ -18,6 +18,8 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
+const TICKER_CACHE = 1 * time.Minute
+
 type Application struct {
 	client      ohlcgrpc.OHLCServiceClient
 	rates       *rates.Fetchers
@@ -46,7 +48,7 @@ func NewApplication() *Application {
 		},
 	}
 	go dmn.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
-	go dmn.CleanCache(app.tickerCache.data, app.tickerCache.mutex, 30*time.Minute)
+	go dmn.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
 	return app
 }
 
@@ -234,6 +236,7 @@ func calculateTickerOHLC(ohlcs *ohlcgrpc.OHLCs, domainOptions *dmn.TickerReadOpt
 		low = open
 		close = open
 		firstPrice = 0.0
+		invertedVolume = 0.0
 	}
 
 	t := &dmn.TickerPoint{

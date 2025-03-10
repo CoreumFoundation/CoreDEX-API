@@ -35,7 +35,7 @@ func main() {
 		fmt.Println("6) Test Trades for Account")
 		fmt.Println("7) Test Trades for Account and Symbol")
 		fmt.Println("8) Test Wallet")
-		fmt.Println("9) Events stream (select one or more options first) (Use CTRL+C to exit, or wait 100s)")
+		fmt.Println("9) Events stream (select one or more options first) (Use CTRL+C to exit, or wait 1000s)")
 
 		reader := bufio.NewReader(os.Stdin)
 		input, err := reader.ReadString('\n')
@@ -274,7 +274,7 @@ func testEventsStream(c *websocket.Conn) {
 			}
 		}
 		log.Printf("Received message: %s", string(p))
-		if time.Since(tStart) > 100*time.Second {
+		if time.Since(tStart) > 1000*time.Second {
 			break
 		}
 	}

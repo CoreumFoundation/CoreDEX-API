@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	sdecimal "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -23,6 +24,7 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
@@ -105,6 +107,29 @@ func (a *Application) SubmitTx(network metadata.Network, rawTx []byte) (*sdk.TxR
 	return client.BroadcastRawTx(context.Background(), a.TxEncoder[network].clientContext, rawTx)
 }
 
+func (a *Application) AccountSequence(network metadata.Network, address string) (uint64, error) {
+	clientCtx := a.TxEncoder[network].clientContext
+
+	req := &authtypes.QueryAccountRequest{
+		Address: address,
+	}
+	authQueryClient := authtypes.NewQueryClient(clientCtx)
+	ctx := context.Background()
+	res, err := authQueryClient.Account(ctx, req)
+	if err != nil {
+		logger.Errorf("Error querying account %s: %v", address, err)
+		return 0, err
+	}
+
+	var acc sdk.AccountI
+	if err := clientCtx.InterfaceRegistry().UnpackAny(res.Account, &acc); err != nil {
+		logger.Errorf("Error unpacking account: %v", err)
+		return 0, err
+	}
+
+	return acc.GetSequence(), nil
+}
+
 func orderbookCacheKey(denom1, denom2 string) string {
 	return fmt.Sprintf("%s-%s", denom1, denom2)
 }
@@ -140,6 +165,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -147,6 +173,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom1Precision := int64(0)
@@ -161,8 +188,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
+				a.orderbookCache.mutex.Unlock()
 				return nil, fmt.Errorf("there is no orderbook for %s - %s", denom1, denom2)
 			}
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 	}
@@ -175,6 +204,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -182,6 +212,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 
@@ -193,6 +224,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			To:      timestamppb.Now(),
 		})
 		if err != nil {
+			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook

@@ -123,10 +123,10 @@ post_order_create_dry() {
     curl -s -H "Network: devnet" \
     -X "POST" "${HOST}/order/create" \
     -d '{
-    "Sender": "devcore1878pk82zlndhldglx26r606qcd886562mad59y",
+    "Sender": "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
     "Type": 1,
-    "BaseDenom": "dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-    "QuoteDenom": "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "BaseDenom": "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+    "QuoteDenom": "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
     "Price": "0.25",
     "Quantity": "1000",
     "Side": 1,
@@ -183,22 +183,23 @@ post_order_cancel() {
     response=$(curl -H "Network: devnet" \
     -X "POST" "${HOST}/order/cancel" \
     -d '{
-    "Sender": "devcore1878pk82zlndhldglx26r606qcd886562mad59y",
+    "Sender": "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
     "OrderID": "d92cc4a6-24f0-42e6-bb2f-6a69bef1f2ce"
     }')
+    echo "Cancel response: ${response}"
     # Sign the TXBytes with the app in test/sign
-    tx_bytes=$(echo "${response}" | jq -r '.TXBytes')
-    signedTX=$(go run sign/main.go ${tx_bytes} ${senderMnemonic})
-    # Split by space in signed base64 tx and the account (present in output for verification purposes):
-    IFS=' ' read -r -a txSigned <<< "$signedTX"
+    # tx_bytes=$(echo "${response}" | jq -r '.TXBytes')
+    # signedTX=$(go run sign/main.go ${tx_bytes} ${senderMnemonic})
+    # # Split by space in signed base64 tx and the account (present in output for verification purposes):
+    # IFS=' ' read -r -a txSigned <<< "$signedTX"
 
-    echo "Submitting the signed cancel tx to the order/submit endpoint: ${txSigned[0]} for account ${txSigned[1]}"
+    # echo "Submitting the signed cancel tx to the order/submit endpoint: ${txSigned[0]} for account ${txSigned[1]}"
 
-    # Submit the txSigned[0] to the order/submit endpoint:
-    response=$(curl -H "Network: devnet" -X "POST" \
-    "${HOST}/order/submit" \
-    -d '{"TX": "'${txSigned[0]}'"}')
-    echo "Cancel result: ${response}"
+    # # Submit the txSigned[0] to the order/submit endpoint:
+    # response=$(curl -H "Network: devnet" -X "POST" \
+    # "${HOST}/order/submit" \
+    # -d '{"TX": "'${txSigned[0]}'"}')
+    # echo "Cancel result: ${response}"
 }
 
 # Display menu
