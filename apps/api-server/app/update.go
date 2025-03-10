@@ -110,7 +110,8 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
 					if refreshCounter%OHLC_REFRESH == 0 {
 						wg.Add(1)
-						go app.updateOHLC(ctx, subscription, startOfInterval, endOfInterval, &wg)
+						soi := currentTime.Add(-2 * OHLC_REFRESH * time.Second)
+						go app.updateOHLC(ctx, subscription, soi, endOfInterval, &wg)
 					}
 				case updateproto.Method_ORDERBOOK:
 					wg.Add(1)
