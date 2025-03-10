@@ -59,7 +59,7 @@ const OrderHistory = () => {
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
   const [timeRange, setTimeRange] = useState({
-    from: dayjs().subtract(1, "day").unix(),
+    from: dayjs().subtract(1, "hour").unix(),
     to: dayjs().unix(),
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -85,11 +85,11 @@ const OrderHistory = () => {
   useEffect(() => {
     const initFetch = async () => {
       if (!wallet?.address) return;
-      let daysBack = 1;
-      let dataFound = await fetchHistoryWindow(daysBack);
-      while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
-        daysBack++;
-        dataFound = await fetchHistoryWindow(daysBack);
+      let unitsBack = 1;
+      let dataFound = await fetchHistoryWindow(unitsBack);
+      while (!dataFound && unitsBack < MAX_HISTORY_DAYS) {
+        unitsBack++;
+        dataFound = await fetchHistoryWindow(unitsBack);
       }
       if (!dataFound) {
         setOrderHistory([]);
@@ -100,10 +100,10 @@ const OrderHistory = () => {
     initFetch();
   }, [market.pair_symbol, wallet]);
 
-  const fetchHistoryWindow = async (daysBack: number): Promise<boolean> => {
-    const from = dayjs().subtract(daysBack, "day").unix();
+  const fetchHistoryWindow = async (unitsBack: number): Promise<boolean> => {
+    const from = dayjs().subtract(unitsBack, "hour").unix();
     const to = dayjs()
-      .subtract(daysBack - 1, "day")
+      .subtract(unitsBack - 1, "hour")
       .unix();
     try {
       const response = await getTrades({
