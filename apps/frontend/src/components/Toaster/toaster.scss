@@ -1,11 +1,18 @@
 .Toastify__close-button > svg {
-  // transform: translateY(90%);
   color: #696666;
 }
 
 .toaster-container {
   & > .Toastify__toast-theme--colored {
     background: linear-gradient(225deg, #25d695 0%, #179b69 100%);
+
+    &.Toastify__toast--error {
+      background: #da3249 !important;
+    }
+
+    &.Toastify__toast--warning {
+      background: #f5a623 !important;
+    }
   }
 }
 
