@@ -13,6 +13,7 @@ import (
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ticker"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
@@ -100,8 +101,11 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					wg.Add(1)
 					go app.updateTradesForAccountAndSymbol(ctx, subscription, startOfInterval, endOfInterval, &wg)
 				case updateproto.Method_TICKER:
-					wg.Add(1)
-					go app.updateTicker(ctx, subscription, &wg)
+					// dynamic refresh interval based on the cache duration TICKER_CACHE
+					if refreshCounter%(int(ticker.TICKER_CACHE.Seconds())) == 0 {
+						wg.Add(1)
+						go app.updateTicker(ctx, subscription, &wg)
+					}
 				case updateproto.Method_OHLC:
 					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
 					if refreshCounter%OHLC_REFRESH == 0 {
