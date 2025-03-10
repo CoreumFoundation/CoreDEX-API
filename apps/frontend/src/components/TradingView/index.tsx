@@ -99,42 +99,10 @@ const TradingView = ({ height }: { height: number | string }) => {
 
     dataFeed.subscriptions.forEach((sub) => {
       if (bars.length > 0) {
-        handleWebsocketTick(sub, bars[bars.length - 1]);
+        sub.onRealtimeCallback(bars[bars.length - 1]);
       }
     });
-  }, [lastUpdate, dataFeed]);
-
-  const handleWebsocketTick = (sub: any, newTick: any) => {
-    const lastBar = sub.lastBar;
-
-    if (!lastBar) {
-      sub.lastBar = newTick;
-      sub.onRealtimeCallback(newTick);
-      return;
-    }
-
-    if (newTick.time > lastBar.time) {
-      sub.lastBar = newTick;
-      sub.onRealtimeCallback(newTick);
-    } else if (newTick.time === lastBar.time) {
-      const updatedBar = {
-        ...lastBar,
-        close: newTick.close,
-        high: Math.max(lastBar.high, newTick.high),
-        low: Math.min(lastBar.low, newTick.low),
-        volume: newTick.volume,
-      };
-      sub.lastBar = updatedBar;
-      sub.onRealtimeCallback(updatedBar);
-    } else {
-      console.warn(
-        `Out-of-order tick ignored. Last bar time: ${new Date(
-          lastBar.time
-        ).toISOString()}, ` +
-          `new tick time: ${new Date(newTick.time).toISOString()}`
-      );
-    }
-  };
+  }, [lastUpdate]);
 
   const coreumConstructorFeed = () => {
     const { base: baseDenom, counter: counterDenom } = market;
