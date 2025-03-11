@@ -157,6 +157,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	It is assumed that the database does not contain all the orders (due to the inception time of the database possibly
 	being after the inception of the given orderbook), so only orders with remaining quantity of 0 are removed from the orderbook.
 	*/
+	// Set the time to be used for the moment of the update of the orderbook. If updates are "slow" this takes care of filling the gap
+	tStartUpdate := time.Now()
 	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
 		processStart = time.Now()
 		ctx := context.Background()
@@ -195,8 +197,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			return nil, err
 		}
 	}
-	// Refresh from DB it the process start time is more than 1 second ago
-	tStartUpdate := time.Now()
+	// If the process has taken more than a second, update the orderbook with the latest orders from the database
+	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
 	if time.Since(processStart) > time.Second {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -221,8 +223,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Network: network,
 			Denom1:  denom1Currency.Denom,
 			Denom2:  denom2Currency.Denom,
-			From:    timestamppb.New(processStart),
-			To:      timestamppb.New(tStartUpdate),
+			// This causes a slight overlap in data retrieved with the previous read, which is on purpose:
+			// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
+			From: timestamppb.New(processStart.Add(-5 * time.Second)),
+			To:   timestamppb.Now(), // This causes a slight overlap in data retrieved with the next read, which is on purpose
 		})
 		if err != nil {
 			a.orderbookCache.mutex.Unlock()

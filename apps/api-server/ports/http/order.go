@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -241,11 +240,6 @@ func (s *httpServer) getOrders() handler.Handler {
 		if err != nil {
 			return fmt.Errorf("symbol %q is not provided in the correct format: %v", symbol, err)
 		}
-		limitStr := q.Get("limit")
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil {
-			limit = 50
-		}
 		network, err := networklib.Network(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -254,7 +248,7 @@ func (s *httpServer) getOrders() handler.Handler {
 		account := q.Get("account")
 		var res *coreum.OrderBookOrders
 		if account == "" {
-			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, limit, true)
+			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, 100, true)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return nil
