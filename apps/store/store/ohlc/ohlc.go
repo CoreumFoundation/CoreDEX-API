@@ -248,7 +248,7 @@ func (a *Application) BatchUpsert(in *ohlcgrpc.OHLCs) error {
 		logger.Errorf("Error committing transaction: %v", err)
 		return err
 	}
-	logger.Infof("BatchUpsert took %d microseconds", time.Since(tStart).Microseconds())
+	logger.Infof("BatchUpsert took %d us", time.Since(tStart).Microseconds())
 	return nil
 }
 

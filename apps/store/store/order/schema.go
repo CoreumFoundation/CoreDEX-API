@@ -134,4 +134,12 @@ func (a *Application) index() {
 	a.client.Client.Exec(`CREATE INDEX orderdata_4 ON OrderData (
 		Sequence
 	)`)
+	a.client.Client.Exec(`CREATE INDEX orderdata_5 ON OrderData (
+		Network, 
+		BlockTimeSeconds, 
+		BaseCurrency(50), 
+		BaseIssuer(50), 
+		QuoteCurrency(50), 
+		QuoteIssuer(50)
+	)`)
 }
