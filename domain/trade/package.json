@@ -1,8 +1,8 @@
 {
-  "name": "ohlc",
+  "name": "trade",
   "version": "1.0.0",
   "description": "",
-  "main": "build/ohlc.js",
+  "main": "build/trade.js",
   "scripts": {
     "build-ts": "npx tsc"
   },

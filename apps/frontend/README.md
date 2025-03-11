@@ -13,8 +13,6 @@ There are two utility files in this project that are intended for you to use for
 
 ### Start Parameters
 
-//TODO better description
-
 ```
 VITE_ENV_BASE_API: API server URL used in services/api.ts
 VITE_ENV_WS: Websocket URL used in services/websocket.ts

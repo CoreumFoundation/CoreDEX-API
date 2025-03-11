@@ -1,8 +1,8 @@
 {
-  "name": "ohlc",
+  "name": "order",
   "version": "1.0.0",
   "description": "",
-  "main": "build/ohlc.js",
+  "main": "build/order.js",
   "scripts": {
     "build-ts": "npx tsc"
   },

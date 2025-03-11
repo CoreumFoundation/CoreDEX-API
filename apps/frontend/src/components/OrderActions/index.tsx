@@ -132,6 +132,7 @@ const OrderActions = ({
       const response = await getWalletAssets(wallet?.address);
       if (response.status === 200 && response.data.length > 0) {
         const data = response.data;
+        console.log(data);
         setWalletBalances(data);
         wsManager.setInitialState(walletSubscription, data);
       }
