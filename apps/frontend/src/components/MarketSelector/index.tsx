@@ -101,7 +101,10 @@ const MarketSelector = () => {
                 setBaseToken(item);
               }}
               renderItem={(item: Token) => (
-                <div className="create-pair-token">{item.Denom.Name}</div>
+                <div className="create-pair-token">
+                  <p className="create-pair-name">{item.Denom.Name}</p>
+                  <p className="create-pair-issuer">{item.Denom.Issuer}</p>
+                </div>
               )}
             />
 
@@ -128,7 +131,10 @@ const MarketSelector = () => {
                 setQuoteToken(item);
               }}
               renderItem={(item: Token) => (
-                <div className="create-pair-token">{item.Denom.Name}</div>
+                <div className="create-pair-token">
+                  <p className="create-pair-name">{item.Denom.Name}</p>
+                  <p className="create-pair-issuer">{item.Denom.Issuer}</p>
+                </div>
               )}
             />
           </div>
