@@ -59,7 +59,7 @@ const OrderHistory = () => {
 
   const [activeTab, setActiveTab] = useState(TABS.OPEN_ORDERS);
   const [timeRange, setTimeRange] = useState({
-    from: dayjs().subtract(1, "day").unix(),
+    from: dayjs().subtract(1, "hour").unix(),
     to: dayjs().unix(),
   });
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -85,11 +85,11 @@ const OrderHistory = () => {
   useEffect(() => {
     const initFetch = async () => {
       if (!wallet?.address) return;
-      let daysBack = 1;
-      let dataFound = await fetchHistoryWindow(daysBack);
-      while (!dataFound && daysBack < MAX_HISTORY_DAYS) {
-        daysBack++;
-        dataFound = await fetchHistoryWindow(daysBack);
+      let unitsBack = 1;
+      let dataFound = await fetchHistoryWindow(unitsBack);
+      while (!dataFound && unitsBack < MAX_HISTORY_DAYS) {
+        unitsBack++;
+        dataFound = await fetchHistoryWindow(unitsBack);
       }
       if (!dataFound) {
         setOrderHistory([]);
@@ -100,10 +100,10 @@ const OrderHistory = () => {
     initFetch();
   }, [market.pair_symbol, wallet]);
 
-  const fetchHistoryWindow = async (daysBack: number): Promise<boolean> => {
-    const from = dayjs().subtract(daysBack, "day").unix();
+  const fetchHistoryWindow = async (unitsBack: number): Promise<boolean> => {
+    const from = dayjs().subtract(unitsBack, "hour").unix();
     const to = dayjs()
-      .subtract(daysBack - 1, "day")
+      .subtract(unitsBack - 1, "hour")
       .unix();
     try {
       const response = await getTrades({
@@ -172,6 +172,7 @@ const OrderHistory = () => {
   );
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         openOrderSubscription,
@@ -182,9 +183,10 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(openOrderSubscription, handleOpenOrders);
     };
-  }, [openOrderSubscription]);
+  }, [openOrderSubscription, wallet]);
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         orderHistorySubscription,
@@ -195,7 +197,7 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(orderHistorySubscription, setOrderHistory);
     };
-  }, [orderHistorySubscription]);
+  }, [orderHistorySubscription, wallet]);
 
   const mergeUniqueTrades = (
     prevHistory: TradeRecord[],
@@ -336,8 +338,14 @@ const OrderHistory = () => {
         OrderID: id,
       };
       const orderCancelResponse = await cancelOrder(orderCancel);
-      const cancelMessage = DEX.CancelOrder(orderCancelResponse);
-      const signedTx = await coreum?.signTx([cancelMessage]);
+      const cancelMessage = DEX.CancelOrder(
+        orderCancelResponse.data.OrderCancel
+      );
+      const signedTx = await coreum?.signTx(
+        [cancelMessage],
+        undefined,
+        orderCancelResponse.data.Sequence
+      );
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
       const submitResponse = await submitOrder({ TX: base64Tx });
@@ -491,7 +499,7 @@ const OrderHistory = () => {
                           className="price"
                         />
                         <FormatNumber
-                          number={order.SymbolAmount}
+                          number={order.RemainingSymbolAmount}
                           className="volume"
                         />
                         <FormatNumber number={order.Total} className="total" />

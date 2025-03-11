@@ -32,7 +32,7 @@ func (s *GrpcServer) Upsert(ctx context.Context, in *ordergrpc.Order) (*pb.Empty
 func (s *GrpcServer) Get(ctx context.Context, in *ordergrpc.ID) (*ordergrpc.Order, error) {
 	st, err := s.store.Order.Get(in)
 	if err != nil {
-		logger.Errorf("Get failed for %+v with error %v", *in, err)
+		logger.Warnf("Get failed for %+v with error %v", *in, err)
 		return nil, err
 	}
 	return st, nil

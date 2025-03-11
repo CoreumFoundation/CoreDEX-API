@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	sdecimal "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -23,6 +24,7 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
@@ -105,6 +107,29 @@ func (a *Application) SubmitTx(network metadata.Network, rawTx []byte) (*sdk.TxR
 	return client.BroadcastRawTx(context.Background(), a.TxEncoder[network].clientContext, rawTx)
 }
 
+func (a *Application) AccountSequence(network metadata.Network, address string) (uint64, error) {
+	clientCtx := a.TxEncoder[network].clientContext
+
+	req := &authtypes.QueryAccountRequest{
+		Address: address,
+	}
+	authQueryClient := authtypes.NewQueryClient(clientCtx)
+	ctx := context.Background()
+	res, err := authQueryClient.Account(ctx, req)
+	if err != nil {
+		logger.Errorf("Error querying account %s: %v", address, err)
+		return 0, err
+	}
+
+	var acc sdk.AccountI
+	if err := clientCtx.InterfaceRegistry().UnpackAny(res.Account, &acc); err != nil {
+		logger.Errorf("Error unpacking account: %v", err)
+		return 0, err
+	}
+
+	return acc.GetSequence(), nil
+}
+
 func orderbookCacheKey(denom1, denom2 string) string {
 	return fmt.Sprintf("%s-%s", denom1, denom2)
 }
@@ -132,6 +157,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	It is assumed that the database does not contain all the orders (due to the inception time of the database possibly
 	being after the inception of the given orderbook), so only orders with remaining quantity of 0 are removed from the orderbook.
 	*/
+	// Set the time to be used for the moment of the update of the orderbook. If updates are "slow" this takes care of filling the gap
+	tStartUpdate := time.Now()
 	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
 		processStart = time.Now()
 		ctx := context.Background()
@@ -170,7 +197,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			return nil, err
 		}
 	}
-	// Refresh from DB it the process start time is more than 1 second ago
+	// If the process has taken more than a second, update the orderbook with the latest orders from the database
+	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
 	if time.Since(processStart) > time.Second {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -195,8 +223,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Network: network,
 			Denom1:  denom1Currency.Denom,
 			Denom2:  denom2Currency.Denom,
-			From:    timestamppb.New(processStart),
-			To:      timestamppb.Now(),
+			// This causes a slight overlap in data retrieved with the previous read, which is on purpose:
+			// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
+			From: timestamppb.New(processStart.Add(-5 * time.Second)),
+			To:   timestamppb.Now(), // This causes a slight overlap in data retrieved with the next read, which is on purpose
 		})
 		if err != nil {
 			a.orderbookCache.mutex.Unlock()
@@ -238,7 +268,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	}
 	// Set the orderbook into the cache:
 	a.orderbookCache.data[key] = &dmn.LockableCache{
-		LastUpdated: time.Now(), // TODO: This has to be the time we started retrieval from the database (once implemented)
+		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}
 	a.orderbookCache.mutex.Unlock()

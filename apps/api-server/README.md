@@ -337,6 +337,8 @@ Example response:
 
 ```json
 {
+  "Sequence":126378,
+  "OrderData":{
     "sender": "devcore1878pk82zlndhldglx26r606qcd886562mad59y",
     "type": 1,
     "baseDenom": "dextestdenom5-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
@@ -354,6 +356,7 @@ Example response:
     "good_til": {
         "good_til_block_time": "2025-12-30T12:00:00Z"
     }
+  }
 }
 ```
 
@@ -378,8 +381,11 @@ The response object is:
 
 ```json
 {
-  "sender": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-  "id": "8b341e25-482e-487f-b9e2-9467d98c16ac"
+  "Sequence":126378,
+  "OrderCancel":{
+    "sender": "devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "id": "8b341e25-482e-487f-b9e2-9467d98c16ac"
+  }
 }
 ```
 

@@ -15,7 +15,7 @@
     "bignumber": "^1.1.0",
     "classnames": "^2.5.1",
     "coredex-api-types": "github:CoreumFoundation/CoreDEX-API#types/enums",
-    "coreum-js-nightly": "^2.19.2",
+    "coreum-js-nightly": "^2.19.4",
     "dayjs": "^1.11.13",
     "ldrs": "^1.0.2",
     "lodash": "^4.17.21",

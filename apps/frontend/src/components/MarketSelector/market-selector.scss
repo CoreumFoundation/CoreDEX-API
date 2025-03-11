@@ -218,10 +218,28 @@
         gap: 10px;
       }
       .create-pair-token {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 8px 16px;
+        .create-pair-name {
+          font-family: "Noto Sans";
+
+          display: flex;
+          align-items: center;
+          width: 100%;
+          padding: 4px 16px;
+        }
+        .create-pair-issuer {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 250px;
+          padding: 0px 16px;
+          position: relative;
+          color: #5e6773;
+          font-family: "Noto Sans";
+          font-size: 12px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: 18px;
+        }
       }
     }
     .button-row {

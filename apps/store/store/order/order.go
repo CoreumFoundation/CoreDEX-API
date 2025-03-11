@@ -134,7 +134,11 @@ func (a *Application) GetAll(filter *ordergrpc.Filter) (*ordergrpc.Orders, error
 		args = append(args, *filter.OrderStatus)
 	}
 	queryBuilder.WriteString(" ORDER BY BlockTimeSeconds DESC")
-
+	logger.Infof("Query: %s", queryBuilder.String())
+	// Log all the arguments
+	for i, arg := range args {
+		logger.Infof("Arg %d: %v", i, arg)
+	}
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
 		return nil, err

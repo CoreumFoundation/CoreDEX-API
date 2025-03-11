@@ -78,6 +78,7 @@ const OrderActions = ({
   const [blockHeight, setBlockHeight] = useState<number>(0);
 
   useEffect(() => {
+    if (!wallet) return;
     fetchWalletAssets();
   }, [wallet, market]);
 
@@ -97,6 +98,7 @@ const OrderActions = ({
   };
 
   useEffect(() => {
+    if (!wallet) return;
     wsManager.connected().then(() => {
       wsManager.subscribe(
         walletSubscription,
@@ -107,7 +109,7 @@ const OrderActions = ({
     return () => {
       wsManager.unsubscribe(walletSubscription, setWalletBalances);
     };
-  }, [walletSubscription]);
+  }, [walletSubscription, wallet]);
 
   useEffect(() => {
     if (!walletBalances) return;
@@ -130,6 +132,7 @@ const OrderActions = ({
       const response = await getWalletAssets(wallet?.address);
       if (response.status === 200 && response.data.length > 0) {
         const data = response.data;
+        console.log(data);
         setWalletBalances(data);
         wsManager.setInitialState(walletSubscription, data);
       }
@@ -170,7 +173,7 @@ const OrderActions = ({
       if (tradeType === OT.ORDER_TYPE_MARKET) {
         const avgPrice = Number(
           getAvgPriceFromOBbyVolume(
-            orderType === Side.SIDE_BUY ? orderbook.Buy : orderbook.Sell,
+            orderType === Side.SIDE_BUY ? orderbook.Sell : orderbook.Buy,
             volume
           )
         );
@@ -218,6 +221,18 @@ const OrderActions = ({
     }
   }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
+  const extractErrorMessage = (e: any) => {
+    if (e?.error?.message) {
+      return e.error.message;
+    } else if (e?.response?.data?.message) {
+      return e.response.data.message;
+    } else if (e?.message) {
+      return e.message;
+    } else {
+      return JSON.stringify(e);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const goodTil =
@@ -249,7 +264,7 @@ const OrderActions = ({
 
       setIsLoading(true);
       const orderCreateResponse = await createOrder(orderCreate);
-      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data);
+      const orderMessage = DEX.PlaceOrder(orderCreateResponse.data.OrderData);
 
       // have to convert date back to date object
       // createOrder returns a stringified date
@@ -258,7 +273,11 @@ const OrderActions = ({
           orderMessage.value.goodTil.goodTilBlockTime
         );
       }
-      const signedTx = await coreum?.signTx([orderMessage]);
+      const signedTx = await coreum?.signTx(
+        [orderMessage],
+        undefined,
+        orderCreateResponse.data.Sequence
+      );
       const encodedTx = TxRaw.encode(signedTx!).finish();
       const base64Tx = fromByteArray(encodedTx);
       const submitResponse = await submitOrder({ TX: base64Tx });
@@ -284,12 +303,13 @@ const OrderActions = ({
       setLimitPrice("");
       setIsLoading(false);
     } catch (e: any) {
+      setIsLoading(false);
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
+      const errorMsg = extractErrorMessage(e);
       pushNotification({
         type: "error",
-        message: e.error.message || e.message,
+        message: errorMsg,
       });
-      setIsLoading(false);
       throw e;
     }
   };
@@ -366,7 +386,6 @@ const OrderActions = ({
             {tradeType === OT.ORDER_TYPE_LIMIT ? (
               <div className="limit-type-wrapper">
                 <Input
-                  maxLength={16}
                   placeholder="Enter Amount"
                   type={InputType.NUMBER}
                   onValueChange={(val: string) => {
@@ -383,7 +402,6 @@ const OrderActions = ({
                   adornmentRight={market.base.Denom.Name?.toUpperCase()}
                 />
                 <Input
-                  maxLength={16}
                   placeholder="Enter Limit Price"
                   type={InputType.NUMBER}
                   onValueChange={(val: string) => {
@@ -528,7 +546,6 @@ const OrderActions = ({
                                 }
                               />
                               <Input
-                                maxLength={16}
                                 placeholder="Block Height"
                                 type={InputType.NUMBER}
                                 onValueChange={(val: any) => {
@@ -554,7 +571,6 @@ const OrderActions = ({
             ) : (
               <div className="market-type-wrapper">
                 <Input
-                  maxLength={16}
                   placeholder="Enter Amount"
                   label="Amount"
                   type={InputType.NUMBER}

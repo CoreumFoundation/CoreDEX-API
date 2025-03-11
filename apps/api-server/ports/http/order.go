@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +20,14 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
 )
+
+type rawTxBody struct {
+	TX string
+}
+
+type SubmitResponse struct {
+	TXHash string
+}
 
 // GoodTil is a good til order settings.
 type GoodTil struct {
@@ -43,12 +50,22 @@ type MsgPlaceOrderRequest struct {
 	TimeInForce dextypes.TimeInForce `json:"TimeInForce,omitempty"`
 }
 
+type OrderResponse struct {
+	Sequence  uint64
+	OrderData OrderData
+}
+
 type OrderData struct {
 	dextypes.MsgPlaceOrder
 	BaseDenom   string               `json:"baseDenom"`
 	QuoteDenom  string               `json:"quoteDenom"`
 	TimeInForce dextypes.TimeInForce `json:"timeInForce"`
 	GoodTil     *GoodTil             `json:"goodTil,omitempty"`
+}
+
+type OrderCancelResponse struct {
+	Sequence    uint64
+	OrderCancel dextypes.MsgCancelOrder
 }
 
 func (s *httpServer) createOrder() handler.Handler {
@@ -58,19 +75,19 @@ func (s *httpServer) createOrder() handler.Handler {
 		err := json.NewDecoder(r.Body).Decode(&orderReq)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		network, err := networklib.Network(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		price := decimal.NewFromInt(0)
 		if len(orderReq.Price) > 0 {
 			price, err = decimal.NewFromString(orderReq.Price)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				return err
+				return nil
 			}
 		}
 		var coreumPrice *dextypes.Price = nil
@@ -78,14 +95,14 @@ func (s *httpServer) createOrder() handler.Handler {
 			parsedCoreumPrice, err := coreum.ParsePrice(price.String())
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				return err
+				return nil
 			}
 			coreumPrice = &parsedCoreumPrice
 		}
 		baseCurrency, err := s.app.Currency.GetCurrency(r.Context(), network, orderReq.BaseDenom)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return err
+			return nil
 		}
 		baseDenomPrecision := int64(0)
 		if baseCurrency.Denom != nil && baseCurrency.Denom.Precision != nil {
@@ -95,17 +112,13 @@ func (s *httpServer) createOrder() handler.Handler {
 		quantity, err := decimal.NewFromString(orderReq.Quantity)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		quantity = quantity.Mul(decimal.New(1, int32(baseDenomPrecision)))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return err
-		}
 		if quantity.Rat().Denom().Cmp(math.OneInt().BigInt()) != 0 {
 			// entered quantity is outside the precision range
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		// Generate a UUID for the ID:
 		orderReq.OrderID = uuid.New().String()
@@ -126,6 +139,11 @@ func (s *httpServer) createOrder() handler.Handler {
 				GoodTilBlockTime:   orderReq.GoodTil.GoodTilBlockTime,
 			}
 		}
+		sequence, err := s.app.Order.AccountSequence(network, orderReq.Sender)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return nil
+		}
 		o := OrderData{
 			MsgPlaceOrder: msgPlaceOrder,
 			BaseDenom:     orderReq.BaseDenom,
@@ -133,7 +151,10 @@ func (s *httpServer) createOrder() handler.Handler {
 			TimeInForce:   orderReq.TimeInForce,
 			GoodTil:       orderReq.GoodTil,
 		}
-		return json.NewEncoder(w).Encode(o)
+		return json.NewEncoder(w).Encode(OrderResponse{
+			Sequence:  sequence,
+			OrderData: o,
+		})
 	}
 }
 
@@ -147,22 +168,27 @@ func (s *httpServer) cancelOrder() handler.Handler {
 		err := json.NewDecoder(r.Body).Decode(&orderReq)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
+		}
+		network, err := networklib.Network(r)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return nil
+		}
+		sequence, err := s.app.Order.AccountSequence(network, orderReq.Sender)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return nil
 		}
 		msgCancelOrder := dextypes.MsgCancelOrder{
 			Sender: orderReq.Sender,
 			ID:     orderReq.OrderID,
 		}
-		return json.NewEncoder(w).Encode(msgCancelOrder)
+		return json.NewEncoder(w).Encode(OrderCancelResponse{
+			Sequence:    sequence,
+			OrderCancel: msgCancelOrder,
+		})
 	}
-}
-
-type rawTxBody struct {
-	TX string
-}
-
-type SubmitResponse struct {
-	TXHash string
 }
 
 func (s *httpServer) submitOrder() handler.Handler {
@@ -171,28 +197,28 @@ func (s *httpServer) submitOrder() handler.Handler {
 		rawTx, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		network, err := networklib.Network(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		txData := &rawTxBody{}
 		err = json.Unmarshal(rawTx, txData)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		rawTx, err = base64.StdEncoding.DecodeString(txData.TX)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		res, err := s.app.Order.SubmitTx(network, rawTx)
 		if err != nil {
 			logger.Errorf("Error submitting tx: %v", err)
-			return err
+			return nil
 		}
 		submitResponse := SubmitResponse{
 			TXHash: res.TxHash,
@@ -214,29 +240,24 @@ func (s *httpServer) getOrders() handler.Handler {
 		if err != nil {
 			return fmt.Errorf("symbol %q is not provided in the correct format: %v", symbol, err)
 		}
-		limitStr := q.Get("limit")
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil {
-			limit = 50
-		}
 		network, err := networklib.Network(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			return err
+			return nil
 		}
 		account := q.Get("account")
 		var res *coreum.OrderBookOrders
 		if account == "" {
-			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, limit, true)
+			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, 100, true)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				return err
+				return nil
 			}
 		} else {
 			res, err = s.app.Order.OrderBookRelevantOrdersForAccount(network, denoms.Denom1.Denom, denoms.Denom2.Denom, account)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				return err
+				return nil
 			}
 		}
 		return json.NewEncoder(w).Encode(res)

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "rootDir": "./domain",
+    "outDir": "./build/domain",
+    "esModuleInterop": true,
+    "strict": true,
+    "declaration": true,
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  },
+  "include": ["domain/**/*"],
+  "exclude": ["node_modules", "client"]
+}
