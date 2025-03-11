@@ -221,18 +221,6 @@ const OrderActions = ({
     }
   }, [timeInForce, goodTilUnit, customTime, goodTilValue]);
 
-  const extractErrorMessage = (e: any) => {
-    if (e?.error?.message) {
-      return e.error.message;
-    } else if (e?.response?.data?.message) {
-      return e.response.data.message;
-    } else if (e?.message) {
-      return e.message;
-    } else {
-      return JSON.stringify(e);
-    }
-  };
-
   const handleSubmit = async () => {
     try {
       const goodTil =
@@ -305,10 +293,9 @@ const OrderActions = ({
     } catch (e: any) {
       setIsLoading(false);
       console.log("ERROR HANDLING SUBMIT ORDER >>", e);
-      const errorMsg = extractErrorMessage(e);
       pushNotification({
         type: "error",
-        message: errorMsg,
+        message: "There was an error submitting your order. Please try again.",
       });
       throw e;
     }
