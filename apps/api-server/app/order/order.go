@@ -23,6 +23,7 @@ import (
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
+	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
@@ -143,6 +144,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	key := orderbookCacheKey(denom1, denom2)
 	orderbook := &coreum.OrderBookOrders{}
 	a.orderbookCache.mutex.Lock()
+	defer a.orderbookCache.mutex.Unlock()
 	if cache, ok := a.orderbookCache.data[key]; ok {
 		orderbook = cache.Value.(*coreum.OrderBookOrders)
 		processStart = cache.LastUpdated
@@ -167,7 +169,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -175,7 +176,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom1Precision := int64(0)
@@ -193,7 +193,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 				a.orderbookCache.mutex.Unlock()
 				return nil, fmt.Errorf("there is no orderbook for %s - %s", denom1, denom2)
 			}
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 	}
@@ -207,7 +206,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom1,
 		})
 		if err != nil {
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
@@ -215,7 +213,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom:   denom2,
 		})
 		if err != nil {
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 
@@ -229,7 +226,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			To:   timestamppb.Now(), // This causes a slight overlap in data retrieved with the next read, which is on purpose
 		})
 		if err != nil {
-			a.orderbookCache.mutex.Unlock()
 			return nil, err
 		}
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
@@ -242,8 +238,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		sellSideRemove := make([]uint64, 0)
 		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
 		for _, order := range orders.Orders {
-			a.processOrderForOrderBook(buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend)
-			a.processOrderForOrderBook(sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend)
+			buySideRemove, buySideAppend = a.processOrderForOrderBook(buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
+			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
 		}
 		for _, removeID := range buySideRemove {
 			for i, buyOrder := range buySide {
@@ -271,55 +267,67 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}
-	a.orderbookCache.mutex.Unlock()
 	return orderbook, nil
 }
 
-func (*Application) processOrderForOrderBook(side []*coreum.OrderBookOrder,
+// Function generates 2 lists: A remove list and an append list
+// Apply the remove list first, then apply the append list on the orderbook to get to a correct orderbook
+func (*Application) processOrderForOrderBook(orderbook []*coreum.OrderBookOrder,
 	order *ordergrpc.Order,
 	denom1Currency *currencygrpc.Currency,
 	denom2Currency *currencygrpc.Currency,
 	removeList []uint64,
 	appendList []*coreum.OrderBookOrder,
+	side orderproperties.Side,
 ) ([]uint64, []*coreum.OrderBookOrder) {
-	for _, o := range side {
+	if order.Side != side {
+		return removeList, appendList
+	}
+	// Remove all orders which we already have in the orderbook (if it was required, we add it back later)
+	for _, o := range orderbook {
 		if o.Sequence == uint64(order.Sequence) {
-			if (*order.RemainingQuantity).IsZero() || order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED || order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
-				removeList = append(removeList, o.Sequence)
-			} else {
-				denom1Precision := *denom1Currency.Denom.Precision
-				denom2Precision := *denom2Currency.Denom.Precision
-				price := sdecimal.NewFromFloat(order.Price)
-				var precision sdecimal.Decimal
-				precisionDiff := denom1Precision - denom2Precision
-				if precisionDiff < 0 {
-					precision = sdecimal.NewFromInt(1).Div(sdecimal.New(1, int32(-precisionDiff)))
-				} else if precisionDiff > 0 {
-					precision = sdecimal.New(1, int32(-precisionDiff))
-				} else {
-					precision = sdecimal.NewFromInt(1)
-				}
-
-				humanReadablePrice := price.Mul(precision)
-				symbolAmount := *decimal.ToSDec(order.Quantity)
-				symbolAmount = symbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-				remainingSymbolAmount := *decimal.ToSDec(order.RemainingQuantity)
-				remainingSymbolAmount = remainingSymbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-
-				appendList = append(appendList, &coreum.OrderBookOrder{
-					Price:                 fmt.Sprintf("%f", order.Price),
-					HumanReadablePrice:    humanReadablePrice.String(),
-					Amount:                order.Quantity.String(),
-					SymbolAmount:          symbolAmount.String(),
-					Sequence:              uint64(order.Sequence),
-					Account:               order.Account,
-					OrderID:               order.OrderID,
-					RemainingAmount:       order.RemainingQuantity.String(),
-					RemainingSymbolAmount: remainingSymbolAmount.String(),
-				})
-			}
+			removeList = append(removeList, o.Sequence)
+			// Once the order is found, we can exit the loop
+			break
 		}
 	}
+	// // Do not add orders which are not valid anymore
+	if (*order.RemainingQuantity).IsZero() ||
+		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
+		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
+		return removeList, appendList
+	}
+	// Add the order to the orderbook which is actually valid
+	denom1Precision := *denom1Currency.Denom.Precision
+	denom2Precision := *denom2Currency.Denom.Precision
+	price := sdecimal.NewFromFloat(order.Price)
+	var precision sdecimal.Decimal
+	precisionDiff := denom1Precision - denom2Precision
+	if precisionDiff < 0 {
+		precision = sdecimal.NewFromInt(1).Div(sdecimal.New(1, int32(-precisionDiff)))
+	} else if precisionDiff > 0 {
+		precision = sdecimal.New(1, int32(-precisionDiff))
+	} else {
+		precision = sdecimal.NewFromInt(1)
+	}
+
+	humanReadablePrice := price.Mul(precision)
+	symbolAmount := *decimal.ToSDec(order.Quantity)
+	symbolAmount = symbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
+	remainingSymbolAmount := *decimal.ToSDec(order.RemainingQuantity)
+	remainingSymbolAmount = remainingSymbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
+
+	appendList = append(appendList, &coreum.OrderBookOrder{
+		Price:                 fmt.Sprintf("%f", order.Price),
+		HumanReadablePrice:    humanReadablePrice.String(),
+		Amount:                order.Quantity.String(),
+		SymbolAmount:          symbolAmount.String(),
+		Sequence:              uint64(order.Sequence),
+		Account:               order.Account,
+		OrderID:               order.OrderID,
+		RemainingAmount:       order.RemainingQuantity.String(),
+		RemainingSymbolAmount: remainingSymbolAmount.String(),
+	})
 	return removeList, appendList
 }
 

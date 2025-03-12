@@ -22,13 +22,13 @@ func (s *httpServer) wsEndpoint() handler.Handler {
 		// upgrade this connection to a WebSocket connection
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			logger.Errorf("Error upgrading connection to websocket %+v: %+v", ws, err)
+			logger.Warnf("Error upgrading connection to websocket %+v: %+v", ws, err)
 			return err
 		}
 		s.app.AddSocket(ws)
 		err = ws.WriteMessage(1, []byte("Connected"))
 		if err != nil {
-			logger.Errorf("Error acknowledging websocket connection %+v: %+v", ws, err)
+			logger.Warnf("Error acknowledging websocket connection %+v: %+v", ws, err)
 			return err
 		}
 		// listen indefinitely for new messages coming through on the WebSocket
@@ -45,12 +45,13 @@ func (s *httpServer) reader(ws *websocket.Conn) {
 			if s.app.IsClosed(ws, err) {
 				logger.Warnf("reader: Invalid message. Socket is closing? ws: %s, %s: %+v", ws.LocalAddr().String(), ws.RemoteAddr().String(), err)
 			}
+			logger.Warnf("reader: Error reading message. ws: %s, %s: %+v", ws.LocalAddr().String(), ws.RemoteAddr().String(), err)
 			return
 		}
 		m := &updateproto.Subscribe{}
 		err = json.Unmarshal(p, m)
 		if err != nil {
-			logger.Errorf("invalid json %v: %v", p, err)
+			logger.Warnf("reader: invalid json %v: %v", p, err)
 			continue
 		}
 		switch m.Action {
