@@ -195,14 +195,13 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 	previousMinute := int64(0)
 	var symbolData map[string]*ohlcgrpc.OHLC
 	toPersistOHLCs := make([]*ohlcgrpc.OHLC, 0)
-	for i, trade := range inputTrades {
+	for _, trade := range inputTrades {
 		// Retrieve the symbol data but only if we do not have symbolData and the minute has changed
 		p := ohlcgrpc.Period{
 			PeriodType: ohlcgrpc.PeriodType_PERIOD_TYPE_MINUTE,
 			Duration:   1,
 		}
 		currentMinute := p.ToOHLCKeyTimestamppb(trade.BlockTime).Seconds
-		logger.Infof("Processing trade %d for symbol %s, minute: %d", i, symbol, currentMinute)
 		// This location of the comparison if the minute has changed and the use of the pointer
 		// prevent the edge case of missing the first or last set of records (and having to handle those separately)
 		if previousMinute != currentMinute {
@@ -282,6 +281,6 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 	if err != nil {
 		logger.Errorf("Error upserting ohlcs for symbol %s: %v", symbol, err)
 	}
-	logger.Infof("Processed %d trades for symbol %s in %d microseconds", len(inputTrades), symbol, time.Since(tStart).Microseconds())
+	logger.Infof("Processed %d trades for symbol %s in %d us", len(inputTrades), symbol, time.Since(tStart).Microseconds())
 	wg.Done()
 }

@@ -308,7 +308,7 @@ const OrderActions = ({
       const errorMsg = extractErrorMessage(e);
       pushNotification({
         type: "error",
-        message: errorMsg,
+        message: "There was an error submitting your order. Please try again.",
       });
       throw e;
     }

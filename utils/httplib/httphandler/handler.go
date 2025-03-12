@@ -34,7 +34,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			logger.Errorf("ServeHTTP error %v", err)
 			serveAPIError(w, internalServerError)
 		}
 	}()
