@@ -3,8 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 // TODO: Add multiple errors handling.
@@ -50,8 +48,6 @@ var internalServerError = &APIError{
 }
 
 func serveAPIError(w http.ResponseWriter, err *APIError) {
-	logger.Warnf("HTTP %d - %s", err.Status, err)
-
 	w.WriteHeader(err.Status)
 	if err := json.NewEncoder(w).Encode(err); err != nil {
 		panic(err)
