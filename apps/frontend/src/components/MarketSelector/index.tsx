@@ -103,7 +103,12 @@ const MarketSelector = () => {
               renderItem={(item: Token) => (
                 <div className="create-pair-token">
                   <p className="create-pair-name">{item.Denom.Name}</p>
-                  <p className="create-pair-issuer">{item.Denom.Issuer}</p>
+                  {item.Denom.Issuer && (
+                    <p className="create-pair-issuer">
+                      {item.Denom.Issuer.slice(0, 12)}...
+                      {item.Denom.Issuer.slice(-6)}
+                    </p>
+                  )}
                 </div>
               )}
             />
