@@ -56,8 +56,13 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 		return err
 	}
 	periodStr := in.Period.ToString()
+	tx, err := a.client.Client.Begin()
+	if err != nil {
+		logger.Errorf("Error starting transaction: %v", err)
+		return err
+	}
 	// Use the mysql client to insert the provided data into the table OHLC
-	_, err = a.client.Client.Exec(`INSERT INTO OHLC ( `+OHLCDataFields+` 
+	_, err = tx.Exec(`INSERT INTO OHLC ( `+OHLCDataFields+` 
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
 	ON DUPLICATE KEY UPDATE 
 		Open=VALUES(Open), 
@@ -88,6 +93,12 @@ func (a *Application) Upsert(in *ohlcgrpc.OHLC) error {
 		in.CloseTime.AsTime())
 	if err != nil {
 		logger.Errorf("Error upserting OHLC %s-%d: %v", in.Symbol, in.Timestamp.AsTime().Unix(), err)
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		logger.Errorf("Error committing transaction: %v", err)
 		return err
 	}
 	return nil
@@ -175,78 +186,23 @@ func (a *Application) get(filter *ohlcgrpc.OHLCFilter, backFill bool) ([]*ohlcgr
 	return ohlcs, nil
 }
 
+/*
+Using MySQL there is a locking issue when multiple batch upserts are done concurrently.
+It is possible to deadlock on index updates under a low load already.
+The solutions possible are:
+* Table partitioning: Needs extensive testing plus it is limited to 8192 partitions (which is just too small)
+* Single record inserts: Slower due to more roundtrips to the database
+* Different database (google cloud datastore does not have this issue)
+
+For now it uses single record inserts.
+*/
 func (a *Application) BatchUpsert(in *ohlcgrpc.OHLCs) error {
 	tStart := time.Now()
-	values := []interface{}{}
-	query := `INSERT INTO OHLC (` + OHLCDataFields + `) VALUES `
-	for i, ohlc := range in.OHLCs {
-		if i > 0 {
-			query += ", "
-		}
-		query += `(?, ?, ?, ?, ?, 
-			       ?, ?, ?, ?, ?, 
-				   ?, ?, ?, ?, ?)`
-		// Marshal JSON fields
-		metaData, err := json.Marshal(ohlc.MetaData)
+	for _, ohlc := range in.OHLCs {
+		err := a.Upsert(ohlc)
 		if err != nil {
-			logger.Errorf("Error marshalling metadata for OHLC %s-%d: %v", ohlc.Symbol, ohlc.Timestamp.AsTime().Unix(), err)
 			return err
 		}
-
-		period, err := json.Marshal(ohlc.Period)
-		if err != nil {
-			logger.Errorf("Error marshalling period for OHLC %s-%d: %v", ohlc.Symbol, ohlc.Timestamp.AsTime().Unix(), err)
-			return err
-		}
-		periodStr := ohlc.Period.ToString()
-
-		values = append(values,
-			ohlc.Symbol,
-			ohlc.Timestamp.AsTime(),
-			ohlc.Open,
-			ohlc.High,
-			ohlc.Low,
-			ohlc.Close,
-			ohlc.Volume,
-			ohlc.QuoteVolume,
-			ohlc.NumberOfTrades,
-			period,
-			periodStr,
-			ohlc.USDValue,
-			metaData,
-			ohlc.OpenTime.AsTime(),
-			ohlc.CloseTime.AsTime(),
-		)
-	}
-
-	query += ` ON DUPLICATE KEY UPDATE 
-		Open=VALUES(Open), 
-		High=VALUES(High), 
-		Low=VALUES(Low), 
-		Close=VALUES(Close), 
-		Volume=VALUES(Volume),
-		QuoteVolume=VALUES(QuoteVolume),
-		NumberOfTrades=VALUES(NumberOfTrades), 
-		USDValue=VALUES(USDValue), 
-		MetaData=VALUES(MetaData), 
-		OpenTime=VALUES(OpenTime), 
-		CloseTime=VALUES(CloseTime)`
-	tx, err := a.client.Client.Begin()
-	if err != nil {
-		logger.Errorf("Error starting transaction: %v", err)
-		return err
-	}
-	_, err = tx.Exec(query, values...)
-	if err != nil {
-		logger.Errorf("Error batch upserting OHLCs: %v", err)
-		tx.Rollback() // Rollback the transaction on error
-		return err
-	}
-	// Commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Errorf("Error committing transaction: %v", err)
-		return err
 	}
 	logger.Infof("BatchUpsert took %d us", time.Since(tStart).Microseconds())
 	return nil
