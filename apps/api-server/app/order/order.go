@@ -16,10 +16,10 @@ import (
 	sdecimal "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
+	precision "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
@@ -31,14 +31,14 @@ import (
 
 type cache struct {
 	mutex *sync.RWMutex
-	data  map[string]*dmn.LockableCache
+	data  map[string]*dmncache.LockableCache
 }
 
 type Application struct {
-	TxEncoder      map[metadata.Network]txClient
-	currencyClient currencygrpc.CurrencyServiceClient
-	orderClient    ordergrpc.OrderServiceClient
-	orderbookCache *cache
+	TxEncoder       map[metadata.Network]txClient
+	orderClient     ordergrpc.OrderServiceClient
+	orderbookCache  *cache
+	precisionClient *precision.Application
 }
 
 type txClient struct {
@@ -53,14 +53,14 @@ type WalletAsset struct {
 	SymbolAmount string
 }
 
-func NewApplication() *Application {
-	currencyClient := currencygrpclient.Client()
+func NewApplication(precisionClient *precision.Application) *Application {
 	orderbookClient := ordergrpcclient.Client()
-	return NewApplicationWithClients(currencyClient, orderbookClient)
+	return NewApplicationWithClients(orderbookClient, precisionClient)
 }
 
-func NewApplicationWithClients(currencyClient currencygrpc.CurrencyServiceClient,
-	orderClient ordergrpc.OrderServiceClient) *Application {
+func NewApplicationWithClients(orderClient ordergrpc.OrderServiceClient,
+	precisionClient *precision.Application) *Application {
+
 	txEncoders := make(map[metadata.Network]txClient)
 	coreum.InitReaders()
 	nodeConnections := coreum.NewNodeConnections()
@@ -79,10 +79,10 @@ func NewApplicationWithClients(currencyClient currencygrpc.CurrencyServiceClient
 	}
 	orderbookCache := &cache{
 		mutex: &sync.RWMutex{},
-		data:  make(map[string]*dmn.LockableCache),
+		data:  make(map[string]*dmncache.LockableCache),
 	}
-	go dmn.CleanCache(orderbookCache.data, orderbookCache.mutex, 15*time.Minute)
-	return &Application{txEncoders, currencyClient, orderClient, orderbookCache}
+	go dmncache.CleanCache(orderbookCache.data, orderbookCache.mutex, 15*time.Minute)
+	return &Application{txEncoders, orderClient, orderbookCache, precisionClient}
 }
 
 func (a *Application) EncodeTx(network metadata.Network, from sdk.AccAddress, msgs ...sdk.Msg) ([]byte, error) {
@@ -164,30 +164,9 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
 		processStart = time.Now()
 		ctx := context.Background()
-		denom1Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom1,
-		})
-		if err != nil {
-			return nil, err
-		}
-		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom2,
-		})
-		if err != nil {
-			return nil, err
-		}
-		denom1Precision := int64(0)
-		if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
-			denom1Precision = int64(*denom1Currency.Denom.Precision)
-		}
-		denom2Precision := int64(0)
-		if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
-			denom2Precision = int64(*denom2Currency.Denom.Precision)
-		}
 
-		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
+		var err error
+		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit), aggregate)
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
 				a.orderbookCache.mutex.Unlock()
@@ -201,17 +180,11 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	if time.Since(processStart) > time.Second {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		denom1Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom1,
-		})
+		denom1Currency, err := a.precisionClient.GetCurrency(ctx, network, denom1)
 		if err != nil {
 			return nil, err
 		}
-		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom2,
-		})
+		denom2Currency, err := a.precisionClient.GetCurrency(ctx, network, denom2)
 		if err != nil {
 			return nil, err
 		}
@@ -228,6 +201,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		if err != nil {
 			return nil, err
 		}
+		// Convert all the orders to have the precision of the currencies involved
+		// Add SymbolAmount, RemainingSymbolAmount, HumanReadablePrice
+		a.precisionClient.NormalizeOrder(ctx, order)
+
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
 		// If the order is not in the orderbook, it is added to the orderbook
 		// If the order is in the orderbook, it is updated with the new data
@@ -263,7 +240,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		orderbook.Sell = sellSide
 	}
 	// Set the orderbook into the cache:
-	a.orderbookCache.data[key] = &dmn.LockableCache{
+	a.orderbookCache.data[key] = &dmncache.LockableCache{
 		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}

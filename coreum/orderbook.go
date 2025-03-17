@@ -64,7 +64,6 @@ type OrderBookOrders struct {
 
 func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 	denom1, denom2 string,
-	denom1Precision, denom2Precision int64,
 	limit uint64,
 	side dextypes.Side,
 	reverse bool,
@@ -81,31 +80,14 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			var precision decimal.Decimal
-			precisionDiff := denom1Precision - denom2Precision
-			if precisionDiff < 0 {
-				precision = decimal.NewFromInt(1).Div(decimal.New(1, int32(-precisionDiff)))
-			} else if precisionDiff > 0 {
-				precision = decimal.New(1, int32(-precisionDiff))
-			} else {
-				precision = decimal.NewFromInt(1)
-			}
-			humanReadablePrice := price.Mul(precision)
-			symbolAmount := decimal.NewFromBigInt(order.Quantity.BigInt(), 0)
-			symbolAmount = symbolAmount.Div(decimal.New(1, int32(denom1Precision)))
-			remainingSymbolAmount := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0)
-			remainingSymbolAmount = remainingSymbolAmount.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
-				priceDec:              price,
-				Price:                 price.String(),
-				HumanReadablePrice:    humanReadablePrice.String(),
-				Amount:                order.Quantity.String(),
-				SymbolAmount:          symbolAmount.String(),
-				Sequence:              order.Sequence,
-				Account:               order.Creator,
-				OrderID:               order.ID,
-				RemainingAmount:       order.RemainingBaseQuantity.String(),
-				RemainingSymbolAmount: remainingSymbolAmount.String(),
+				priceDec:        price,
+				Price:           price.String(),
+				Amount:          order.Quantity.String(),
+				Sequence:        order.Sequence,
+				Account:         order.Creator,
+				OrderID:         order.ID,
+				RemainingAmount: order.RemainingBaseQuantity.String(),
 			})
 		}
 	case true:
@@ -115,31 +97,16 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 				return nil, err
 			}
 			invPrice := decimal.NewFromInt(1).Div(orderPrice)
-			var precision decimal.Decimal
-			precisionDiff := denom1Precision - denom2Precision
-			if precisionDiff < 0 {
-				precision = decimal.NewFromInt(1).Div(decimal.New(1, int32(-precisionDiff)))
-			} else if precisionDiff > 0 {
-				precision = decimal.New(1, int32(-precisionDiff))
-			} else {
-				precision = decimal.NewFromInt(1)
-			}
-			humanReadablePrice := invPrice.Div(precision)
 			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
 			remainingQuantity := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0).Mul(invPrice)
-			symbolAmount := quantity.Div(decimal.New(1, int32(denom1Precision)))
-			remainingSymbolAmount := remainingQuantity.Div(decimal.New(1, int32(denom1Precision)))
 			orders = append(orders, &OrderBookOrder{
-				priceDec:              invPrice,
-				Price:                 invPrice.String(),
-				HumanReadablePrice:    humanReadablePrice.String(),
-				Amount:                quantity.String(),
-				SymbolAmount:          symbolAmount.String(),
-				Sequence:              order.Sequence,
-				Account:               order.Creator,
-				OrderID:               order.ID,
-				RemainingAmount:       remainingQuantity.String(),
-				RemainingSymbolAmount: remainingSymbolAmount.String(),
+				priceDec:        invPrice,
+				Price:           invPrice.String(),
+				Amount:          quantity.String(),
+				Sequence:        order.Sequence,
+				Account:         order.Creator,
+				OrderID:         order.ID,
+				RemainingAmount: remainingQuantity.String(),
 			})
 		}
 	}
@@ -147,7 +114,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 }
 
 // QueryOrderBookRelevantOrders returns orders inside an order book around the spread.
-func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, denom1Precision, denom2Precision int64, limit uint64, aggregate bool) (orders *OrderBookOrders, err error) {
+func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, limit uint64, aggregate bool) (orders *OrderBookOrders, err error) {
 	orderBookOrders := &OrderBookOrders{
 		Buy:  make([]*OrderBookOrder, 0),
 		Sell: make([]*OrderBookOrder, 0),
@@ -160,7 +127,7 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 
 	go func() {
 		defer wg.Done()
-		orders, err := r.QueryOrderBookBySide(ctx, denom1, denom2, denom1Precision, denom2Precision,
+		orders, err := r.QueryOrderBookBySide(ctx, denom1, denom2,
 			limit, dextypes.SIDE_SELL, false, false)
 		if err != nil {
 			queryError = err
@@ -173,7 +140,7 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 
 	go func() {
 		defer wg.Done()
-		orders, err := r.QueryOrderBookBySide(ctx, denom1, denom2, denom1Precision, denom2Precision,
+		orders, err := r.QueryOrderBookBySide(ctx, denom1, denom2,
 			limit, dextypes.SIDE_BUY, true, false)
 		if err != nil {
 			queryError = err
@@ -186,7 +153,7 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 
 	go func() {
 		defer wg.Done()
-		orders, err := r.QueryOrderBookBySide(ctx, denom2, denom1, denom1Precision, denom2Precision,
+		orders, err := r.QueryOrderBookBySide(ctx, denom2, denom1,
 			limit, dextypes.SIDE_SELL, true, true)
 		if err != nil {
 			queryError = err
@@ -199,7 +166,7 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 
 	go func() {
 		defer wg.Done()
-		orders, err := r.QueryOrderBookBySide(ctx, denom2, denom1, denom1Precision, denom2Precision,
+		orders, err := r.QueryOrderBookBySide(ctx, denom2, denom1,
 			limit, dextypes.SIDE_BUY, false, true)
 		if err != nil {
 			queryError = err

@@ -4,8 +4,10 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ohlc"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/order"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ticker"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/trade"
+	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
 )
 
 type Application struct {
@@ -17,11 +19,14 @@ type Application struct {
 }
 
 func NewApplication() *Application {
+	currencyClient := currencygrpclient.Client()
+	precisionClient := precision.NewApplication(currencyClient)
+
 	return &Application{
-		Trade:    trade.NewApplication(),
+		Trade:    trade.NewApplication(precisionClient),
 		Ticker:   ticker.NewApplication(),
 		OHLC:     ohlc.NewApplication(),
-		Order:    order.NewApplication(),
+		Order:    order.NewApplication(precisionClient),
 		Currency: currency.NewApplication(),
 	}
 }

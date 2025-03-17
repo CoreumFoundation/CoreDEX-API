@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
@@ -16,8 +17,9 @@ import (
 )
 
 type Application struct {
-	tradeClient tradegrpc.TradeServiceClient
-	orderClient ordergrpc.OrderServiceClient
+	tradeClient    tradegrpc.TradeServiceClient
+	orderClient    ordergrpc.OrderServiceClient
+	currencyClient currencygrpc.CurrencyServiceClient
 }
 
 type Trade struct {
@@ -29,10 +31,11 @@ type Trade struct {
 
 type Trades []*Trade
 
-func NewApplication() *Application {
+func NewApplication(currencyClient currencygrpc.CurrencyServiceClient) *Application {
 	app := &Application{
-		tradeClient: tradegrpclient.Client(),
-		orderClient: ordergrpcclient.Client(),
+		tradeClient:    tradegrpclient.Client(),
+		orderClient:    ordergrpcclient.Client(),
+		currencyClient: currencyClient,
 	}
 	return app
 }

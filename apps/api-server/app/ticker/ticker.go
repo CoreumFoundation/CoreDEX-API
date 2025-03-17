@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
+	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
@@ -29,7 +30,7 @@ type Application struct {
 
 type cache struct {
 	mutex *sync.RWMutex
-	data  map[string]*dmn.LockableCache
+	data  map[string]*dmncache.LockableCache
 }
 
 func NewApplication() *Application {
@@ -40,15 +41,15 @@ func NewApplication() *Application {
 		rates:  rf,
 		rateCache: &cache{
 			mutex: &sync.RWMutex{},
-			data:  make(map[string]*dmn.LockableCache),
+			data:  make(map[string]*dmncache.LockableCache),
 		},
 		tickerCache: &cache{
 			mutex: &sync.RWMutex{},
-			data:  make(map[string]*dmn.LockableCache),
+			data:  make(map[string]*dmncache.LockableCache),
 		},
 	}
-	go dmn.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
-	go dmn.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
+	go dmncache.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
+	go dmncache.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
 	return app
 }
 
@@ -185,7 +186,7 @@ func (s *Application) ohlcsToTickers(ohlcs []*ohlcgrpc.OHLCs, domainOptions *dmn
 		tickerPoint := calculateTickerOHLC(ohlc, domainOptions)
 		tickerPoints[ohlc.OHLCs[0].Symbol] = tickerPoint
 		s.tickerCache.mutex.Lock()
-		s.tickerCache.data[ohlc.OHLCs[0].Symbol] = &dmn.LockableCache{
+		s.tickerCache.data[ohlc.OHLCs[0].Symbol] = &dmncache.LockableCache{
 			Value:       tickerPoint,
 			LastUpdated: time.Now(),
 		}
@@ -279,7 +280,7 @@ func (s *Application) getRate(ctx context.Context, symbol string, network metada
 	}
 	// Cache the rate:
 	s.rateCache.mutex.Lock()
-	s.rateCache.data[key(symbol, network)] = &dmn.LockableCache{
+	s.rateCache.data[key(symbol, network)] = &dmncache.LockableCache{
 		Value:       usd,
 		LastUpdated: time.Now(),
 	}
