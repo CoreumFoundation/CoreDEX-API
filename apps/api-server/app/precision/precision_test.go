@@ -320,12 +320,10 @@ func Test_NormalizeOrder(t *testing.T) {
 }
 
 type normalizedTradeResult struct {
-	Price                 float64
-	HumanReadablePrice    string
-	Amount                *decimal.Decimal
-	SymbolAmount          string
-	RemainingAmount       string
-	RemainingSymbolAmount string
+	Price              float64
+	HumanReadablePrice string
+	Amount             *decimal.Decimal
+	SymbolAmount       string
 }
 
 type normalizedTradeTest struct {
@@ -347,7 +345,7 @@ func Test_NormalizeTrade(t *testing.T) {
 	}
 	normalizedTradeTests := []normalizedTradeTest{
 		{
-			name: "Base and quote denom precision are the same",
+			name: "Base and quote denom precision are the same (BUY)",
 			Input: normalizedOrderInput{
 				Price:               1.0,
 				Quantity:            1.0,
@@ -357,16 +355,14 @@ func Test_NormalizeTrade(t *testing.T) {
 				QuoteDenomPrecision: 0,
 			},
 			Result: normalizedTradeResult{
-				Price:                 1.0,
-				HumanReadablePrice:    "1",
-				Amount:                &decimal.Decimal{Value: 1, Exp: 0},
-				SymbolAmount:          "1",
-				RemainingAmount:       "1",
-				RemainingSymbolAmount: "1",
+				Price:              1.0,
+				HumanReadablePrice: "1",
+				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
+				SymbolAmount:       "1",
 			},
 		},
 		{
-			name: "Base and quote denom precision are the same",
+			name: "Base and quote denom precision are the same (SELL)",
 			Input: normalizedOrderInput{
 				Price:               1.0,
 				Quantity:            1.0,
@@ -376,18 +372,34 @@ func Test_NormalizeTrade(t *testing.T) {
 				QuoteDenomPrecision: 0,
 			},
 			Result: normalizedTradeResult{
-				Price:                 1.0,
-				HumanReadablePrice:    "1",
-				Amount:                &decimal.Decimal{Value: 1, Exp: 0},
-				SymbolAmount:          "1",
-				RemainingAmount:       "1",
-				RemainingSymbolAmount: "1",
+				Price:              1.0,
+				HumanReadablePrice: "1",
+				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
+				SymbolAmount:       "1",
+			},
+		},
+		{
+			name: "Base > quote denom precision (BUY)",
+			Input: normalizedOrderInput{
+				Price:               1.0,
+				Quantity:            1.0,
+				RemainingQuantity:   1.0,
+				Side:                orderproperties.Side_SIDE_SELL,
+				BaseDenomPrecision:  1,
+				QuoteDenomPrecision: 0,
+			},
+			Result: normalizedTradeResult{
+				Price:              1.0,
+				HumanReadablePrice: "10",
+				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
+				SymbolAmount:       "0.1",
 			},
 		},
 	}
 	for _, test := range normalizedTradeTests {
 		trade.Price = test.Input.Price
 		trade.Amount = decimal.FromFloat64(test.Input.Quantity)
+		trade.Side = test.Input.Side
 		baseDenom.Precision = &test.Input.BaseDenomPrecision
 		quoteDenom.Precision = &test.Input.QuoteDenomPrecision
 		normalizedTrade, err := app.NormalizeTrade(context.Background(), trade)
@@ -403,22 +415,17 @@ func Test_NormalizeTrade(t *testing.T) {
 		if normalizedTrade.HumanReadablePrice != test.Result.HumanReadablePrice {
 			t.Errorf("%s Error: normalizedTrade.HumanReadablePrice is %s, expected %s", test.name, normalizedTrade.HumanReadablePrice, test.Result.HumanReadablePrice)
 		}
-		if decCompare(normalizedTrade.Amount, test.Result.Amount) {
+		if !decCompare(normalizedTrade.Amount, test.Result.Amount) {
 			t.Errorf("%s Error: normalizedTrade.Amount is %s, expected %s", test.name, normalizedTrade.Amount, test.Result.Amount)
 		}
 		if normalizedTrade.SymbolAmount != test.Result.SymbolAmount {
 			t.Errorf("%s Error: normalizedTrade.SymbolAmount is %s, expected %s", test.name, normalizedTrade.SymbolAmount, test.Result.SymbolAmount)
 		}
 	}
-
 }
 
 func decCompare(a, b *decimal.Decimal) bool {
-	if a.Value != b.Value {
-		return false
-	}
-	if a.Exp != b.Exp {
-		return false
-	}
-	return true
+	r := decimal.ToSDec(a)
+	s := decimal.ToSDec(b)
+	return r.Sub(*s).IsZero()
 }

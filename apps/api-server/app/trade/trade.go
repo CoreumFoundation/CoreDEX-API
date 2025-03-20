@@ -15,6 +15,7 @@ import (
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradegrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
@@ -70,17 +71,11 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 	// cast trs into Trades type:
 	// Take into account that the data can be inverted (Denom1-Denom2 vs Denom2-Denom1)
 	for _, trade := range trades.Trades {
-		tr := &dmn.Trade{}
-		tr.Trade = trade
-		if strings.Compare(tr.Trade.Denom1.Denom, filter.Denom1.Denom) != 0 {
-			tr.Trade.Denom1, tr.Trade.Denom2 = tr.Trade.Denom2, tr.Trade.Denom1
-			r := tr.Trade.Amount.Mul(tr.Trade.Price)
-			tr.Trade.Amount = decimal.FromFloat64(r)
-			tr.Trade.Price = 1 / tr.Trade.Price
+		tr, err := app.precisionClient.NormalizeTrade(ctx, trade)
+		if err != nil {
+			logger.Errorf("Error normalizing trade %s: %v", *trade.TXID, err)
+			continue
 		}
-		app.precisionClient.NormalizeTrade(ctx, tr.Trade)
-		tr.HumanReadablePrice = fmt.Sprintf("%f", trade.Price)
-		tr.SymbolAmount = fmt.Sprintf("%f", trade.Amount.Float64())
 		tr.Status = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
 		trs = append(trs, tr)
 	}

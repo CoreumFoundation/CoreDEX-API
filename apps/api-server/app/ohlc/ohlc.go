@@ -5,18 +5,22 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcgrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
-	client ohlcgrpc.OHLCServiceClient
+	client          ohlcgrpc.OHLCServiceClient
+	precisionClient precision.Application
 }
 
-func NewApplication() *Application {
+func NewApplication(precisionClient *precision.Application) *Application {
 	return &Application{
-		client: ohlcgrpclient.Client(),
+		client:          ohlcgrpclient.Client(),
+		precisionClient: *precisionClient,
 	}
 }
 
@@ -47,6 +51,12 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	if len(d.OHLCs) > 0 {
 		minTs := d.OHLCs[0].Timestamp.Seconds
 		for index, v := range d.OHLCs {
+			var err error
+			v, err = app.precisionClient.NormalizeOHLC(ctx, v)
+			if err != nil {
+				logger.Errorf("Error normalizing OHLC %v: %v", *v, err)
+				continue
+			}
 			// Smooth the outliers first: That way when we backfill the data we do not have to take the actual backfill into account.
 			v = dmn.SmoothOutliers(d.OHLCs, index)
 			// t := time.Unix(0, v.TimeStamp).Unix()

@@ -3,7 +3,6 @@ package precision
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
@@ -15,11 +14,12 @@ import (
 	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	currencyclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
-	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
+	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 )
 
@@ -55,22 +55,18 @@ func (app *Application) NormalizeOrder(ctx context.Context, order *ordergrpc.Ord
 
 	price := dec.NewFromFloat(order.Price)
 	quoteAmountSubunit := dec.New(order.Quantity.Value, order.Quantity.Exp)
-
 	remainingQuantity := dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp)
-	symbolAmount := toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side)
-
-	remainingSymbolAmount:=toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side)
 
 	return &coreum.OrderBookOrder{
 		Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
 		HumanReadablePrice:    toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, order.Side).String(),
 		Amount:                quoteAmountSubunit.String(),
-		SymbolAmount:          symbolAmount.String(),
+		SymbolAmount:          toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
 		Sequence:              uint64(order.Sequence),
 		Account:               order.Account,
 		OrderID:               order.OrderID,
 		RemainingAmount:       remainingQuantity.String(),
-		RemainingSymbolAmount: remainingSymbolAmount.String(),
+		RemainingSymbolAmount: toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
 	}, nil
 }
 
@@ -95,56 +91,25 @@ func toSymbolAmount(baseDenomPrecision, quoteDenomPrecision int32, quantity *dec
 	switch side {
 	case orderproperties.Side_SIDE_SELL:
 		symbolAmount = symbolAmount.Div(dec.New(1, int32(baseDenomPrecision)))
-		// remainingSymbolAmount = remainingQuantity.Div(dec.New(1, int32(baseDenomPrecision)))
 	case orderproperties.Side_SIDE_BUY:
 		symbolAmount = symbolAmount.Div(dec.New(1, int32(quoteDenomPrecision)))
-		// remainingSymbolAmount = remainingQuantity.Div(dec.New(1, int32(quoteDenomPrecision)))
 	}
 	return symbolAmount
 }
 
 // Returns human readable price and amount
 func (app *Application) NormalizeTrade(ctx context.Context, trade *tradegrpc.Trade) (*dmn.Trade, error) {
-	tr := &dmn.Trade{}
 	baseDenomPrecision, quoteDenomPrecision, err := app.precisions(ctx, trade.MetaData.Network, trade.Denom1, trade.Denom2)
 	if err != nil {
 		return nil, err
 	}
-	amount := dec.New(trade.Amount.Value, trade.Amount.Exp)
-	humanReadablePrice := toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, trade.Price, &amount, trade.Side)
-	// TODO Price has to be corrected by the divider of baseDenomPrecision/quoteDenomPrecision (or the other way around?)
-	af := amount.InexactFloat64() / math.Pow(10, float64(baseDenomPrecision))
-
-	tr.Price = humanReadablePrice.InexactFloat64()
-	tr.Amount = decimal.FromFloat64(af)
-	tr.HumanReadablePrice = fmt.Sprintf("%f", trade.Price)
-	tr.SymbolAmount = fmt.Sprintf("%f", trade.Amount.Float64())
-
-	return tr, nil
-}
-
-// Returns human readable price and amount
-func (app *Application) OrderToTrade(ctx context.Context, order *ordergrpc.Order) (*dmn.Trade, error) {
-	tr := &dmn.Trade{}
-	denom1Precision, denom2Precision, err := app.precisions(ctx, order.MetaData.Network, order.BaseDenom, order.QuoteDenom)
-	if err != nil {
-		return nil, err
+	tr := &dmn.Trade{
+		Trade: trade,
 	}
-	amount := *decimal.ToSDec(order.Quantity)
-	// TODO Price has to be corrected by the divider of baseDenomPrecision/quoteDenomPrecision (or the other way around?)
-	price, _ := dec.NewFromFloat(order.Price).Div(amount).Float64()
-	price = price * (math.Pow(10, float64(denom1Precision)) / math.Pow(10, float64(denom2Precision)))
-	af := amount.InexactFloat64() / math.Pow(10, float64(denom1Precision))
-
-	tr.Trade = &tradegrpc.Trade{
-		Price:  order.Price,
-		Amount: order.Quantity,
-	}
-	tr.Price = price
-	tr.Amount = decimal.FromFloat64(af)
-	tr.HumanReadablePrice = fmt.Sprintf("%f", price)
-	tr.SymbolAmount = fmt.Sprintf("%f", af)
-
+	quoteAmountSubunit := dec.New(trade.Amount.Value, trade.Amount.Exp)
+	tr.HumanReadablePrice = toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, trade.Price,
+		&quoteAmountSubunit, trade.Side).String()
+	tr.SymbolAmount = toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, trade.Side).String()
 	return tr, nil
 }
 
@@ -213,5 +178,34 @@ func (app *Application) GetCurrency(ctx context.Context, network metadata.Networ
 	}
 	app.currencyCache.mutex.Unlock()
 	return denomCurrency, nil
+}
 
+/*
+OHLC data is stored in the subunit price and volume notation of the orders.
+This function converts the subunit price and volume to human readable price and volume.
+*/
+func (app *Application) NormalizeOHLC(ctx context.Context, ohlc *ohlcgrpc.OHLC) (*ohlcgrpc.OHLC, error) {
+	// ohlc symbol to denoms base and quote:
+	sym, err := symbol.NewSymbol(ohlc.Symbol)
+	if err != nil {
+		return nil, err
+	}
+	baseDenomPrecision, quoteDenomPrecision, err := app.precisions(ctx, ohlc.MetaData.Network, sym.Denom1, sym.Denom2)
+	if err != nil {
+		return nil, err
+	}
+	// Price is in subunit notation (subunitBase/subunitQuote)
+	// We need the prices in unit notation: (base/quote) => price * 10^basePrecision/10^quotePrecision
+	mult := dec.New(1, baseDenomPrecision).Div(dec.New(1, quoteDenomPrecision)).InexactFloat64()
+	ohlc.Close = ohlc.Close * mult
+	ohlc.Open = ohlc.Open * mult
+	ohlc.High = ohlc.High * mult
+	ohlc.Low = ohlc.Low * mult
+	// Volume is in subunit notation
+	// We need the volume in unit notation: volume * 10^-baseDenomPrecision
+	ohlc.Volume = ohlc.Volume * dec.New(1, -baseDenomPrecision).InexactFloat64()
+	// Inverted volume is in subunit notation
+	// We need the quote volume in unit notation: volume * 10^-quoteDenomPrecision
+	ohlc.QuoteVolume = ohlc.QuoteVolume * dec.New(1, -quoteDenomPrecision).InexactFloat64()
+	return ohlc, nil
 }
