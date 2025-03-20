@@ -20,7 +20,6 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
@@ -201,10 +200,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		if err != nil {
 			return nil, err
 		}
-		// Convert all the orders to have the precision of the currencies involved
-		// Add SymbolAmount, RemainingSymbolAmount, HumanReadablePrice
-		a.precisionClient.NormalizeOrder(ctx, order)
-
 		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
 		// If the order is not in the orderbook, it is added to the orderbook
 		// If the order is in the orderbook, it is updated with the new data
@@ -215,8 +210,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		sellSideRemove := make([]uint64, 0)
 		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
 		for _, order := range orders.Orders {
-			buySideRemove, buySideAppend = a.processOrderForOrderBook(buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
-			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
+			buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
+			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
 		}
 		for _, removeID := range buySideRemove {
 			for i, buyOrder := range buySide {
@@ -236,6 +231,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			}
 		}
 		sellSide = append(sellSide, sellSideAppend...)
+
 		orderbook.Buy = buySide
 		orderbook.Sell = sellSide
 	}
@@ -249,7 +245,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 
 // Function generates 2 lists: A remove list and an append list
 // Apply the remove list first, then apply the append list on the orderbook to get to a correct orderbook
-func (*Application) processOrderForOrderBook(orderbook []*coreum.OrderBookOrder,
+func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []*coreum.OrderBookOrder,
 	order *ordergrpc.Order,
 	denom1Currency *currencygrpc.Currency,
 	denom2Currency *currencygrpc.Currency,
@@ -274,37 +270,12 @@ func (*Application) processOrderForOrderBook(orderbook []*coreum.OrderBookOrder,
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
 		return removeList, appendList
 	}
-	// Add the order to the orderbook which is actually valid
-	denom1Precision := *denom1Currency.Denom.Precision
-	denom2Precision := *denom2Currency.Denom.Precision
-	price := sdecimal.NewFromFloat(order.Price)
-	var precision sdecimal.Decimal
-	precisionDiff := denom1Precision - denom2Precision
-	if precisionDiff < 0 {
-		precision = sdecimal.NewFromInt(1).Div(sdecimal.New(1, int32(-precisionDiff)))
-	} else if precisionDiff > 0 {
-		precision = sdecimal.New(1, int32(-precisionDiff))
-	} else {
-		precision = sdecimal.NewFromInt(1)
+	o, err := a.precisionClient.NormalizeOrder(ctx, order)
+	if err != nil {
+		logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+		return removeList, appendList
 	}
-
-	humanReadablePrice := price.Mul(precision)
-	symbolAmount := *decimal.ToSDec(order.Quantity)
-	symbolAmount = symbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-	remainingSymbolAmount := *decimal.ToSDec(order.RemainingQuantity)
-	remainingSymbolAmount = remainingSymbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-
-	appendList = append(appendList, &coreum.OrderBookOrder{
-		Price:                 fmt.Sprintf("%f", order.Price),
-		HumanReadablePrice:    humanReadablePrice.String(),
-		Amount:                order.Quantity.String(),
-		SymbolAmount:          symbolAmount.String(),
-		Sequence:              uint64(order.Sequence),
-		Account:               order.Account,
-		OrderID:               order.OrderID,
-		RemainingAmount:       order.RemainingQuantity.String(),
-		RemainingSymbolAmount: remainingSymbolAmount.String(),
-	})
+	appendList = append(appendList, o)
 	return removeList, appendList
 }
 
@@ -354,10 +325,7 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 	// Transform the coins to WalletAsset and add the symbol amount (apply precision)
 	walletAssets := make([]WalletAsset, 0)
 	for _, coin := range coins {
-		denomCurrency, err := a.currencyClient.Get(context.Background(), &currencygrpc.ID{
-			Network: network,
-			Denom:   coin.Denom,
-		})
+		denomCurrency, err := a.precisionClient.GetCurrency(context.Background(), network, coin.Denom)
 		if err != nil {
 			return nil, err
 		}

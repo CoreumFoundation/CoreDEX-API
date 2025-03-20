@@ -8,7 +8,8 @@ import (
 
 	"github.com/samber/lo"
 
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
+	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
+	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
@@ -17,25 +18,18 @@ import (
 )
 
 type Application struct {
-	tradeClient    tradegrpc.TradeServiceClient
-	orderClient    ordergrpc.OrderServiceClient
-	currencyClient currencygrpc.CurrencyServiceClient
+	tradeClient     tradegrpc.TradeServiceClient
+	orderClient     ordergrpc.OrderServiceClient
+	precisionClient precision.Application
 }
 
-type Trade struct {
-	*tradegrpc.Trade
-	HumanReadablePrice string
-	SymbolAmount       string
-	Status             ordergrpc.OrderStatus
-}
+type Trades []*dmn.Trade
 
-type Trades []*Trade
-
-func NewApplication(currencyClient currencygrpc.CurrencyServiceClient) *Application {
+func NewApplication(precisionClient *precision.Application) *Application {
 	app := &Application{
-		tradeClient:    tradegrpclient.Client(),
-		orderClient:    ordergrpcclient.Client(),
-		currencyClient: currencyClient,
+		tradeClient:     tradegrpclient.Client(),
+		orderClient:     ordergrpcclient.Client(),
+		precisionClient: *precisionClient,
 	}
 	return app
 }
@@ -72,11 +66,11 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 	if err != nil {
 		return nil, err
 	}
-	trs := Trades(make([]*Trade, 0))
+	trs := Trades(make([]*dmn.Trade, 0))
 	// cast trs into Trades type:
 	// Take into account that the data can be inverted (Denom1-Denom2 vs Denom2-Denom1)
 	for _, trade := range trades.Trades {
-		tr := &Trade{}
+		tr := &dmn.Trade{}
 		tr.Trade = trade
 		if strings.Compare(tr.Trade.Denom1.Denom, filter.Denom1.Denom) != 0 {
 			tr.Trade.Denom1, tr.Trade.Denom2 = tr.Trade.Denom2, tr.Trade.Denom1
@@ -84,6 +78,7 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 			tr.Trade.Amount = decimal.FromFloat64(r)
 			tr.Trade.Price = 1 / tr.Trade.Price
 		}
+		app.precisionClient.NormalizeTrade(ctx, tr.Trade)
 		tr.HumanReadablePrice = fmt.Sprintf("%f", trade.Price)
 		tr.SymbolAmount = fmt.Sprintf("%f", trade.Amount.Float64())
 		tr.Status = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
@@ -94,7 +89,7 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 
 // GetCancelledOrders returns all orders that are cancelled. It transforms the trade filter into an order filter for correct results.
 // The filter is only active if we have an Account in the filter
-func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrpc.Filter) ([]*Trade, error) {
+func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrpc.Filter) ([]*dmn.Trade, error) {
 	if filter.Account == nil || *filter.Account == "" {
 		return nil, nil
 	}
@@ -110,9 +105,9 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 		return nil, err
 	}
 	// Map the orders into trades:
-	trades := make([]*Trade, 0)
+	trades := make([]*dmn.Trade, 0)
 	for _, order := range orders.Orders {
-		tr := &Trade{}
+		tr := &dmn.Trade{}
 		tr.Trade = &tradegrpc.Trade{
 			Price:  order.Price,
 			Amount: order.Quantity,
