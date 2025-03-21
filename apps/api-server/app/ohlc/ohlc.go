@@ -50,16 +50,18 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	// minTs is used to fill in the blanks in the period. The algorithm is not allowed to fill timestamps before the first known datapoint (to prevent inventing new data before a coin was initialized)
 	if len(d.OHLCs) > 0 {
 		minTs := d.OHLCs[0].Timestamp.Seconds
-		for index, v := range d.OHLCs {
+		// Standardize the values before applying any smoothing function
+		for _, v := range d.OHLCs {
 			var err error
 			v, err = app.precisionClient.NormalizeOHLC(ctx, v)
 			if err != nil {
 				logger.Errorf("Error normalizing OHLC %v: %v", *v, err)
 				continue
 			}
+		}
+		for index, v := range d.OHLCs {
 			// Smooth the outliers first: That way when we backfill the data we do not have to take the actual backfill into account.
 			v = dmn.SmoothOutliers(d.OHLCs, index)
-			// t := time.Unix(0, v.TimeStamp).Unix()
 			for minTs < v.Timestamp.Seconds {
 				if minTs >= from.Seconds-deltaT { // We want to be on the edge or 1 period in front of the requested edge
 					retvals = append(retvals, dmn.OHLCPointResponse{

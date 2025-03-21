@@ -33,6 +33,14 @@ type Application struct {
 	currencyCache  *cache
 }
 
+type OrderBookOrder struct {
+	OrderBookOrder *coreum.OrderBookOrder
+	BaseDenom      *denom.Denom
+	QuoteDenom     *denom.Denom
+	Network        metadata.Network
+	Side           orderproperties.Side
+}
+
 func NewApplication(currencyClient currencygrpc.CurrencyServiceClient) *Application {
 	app := &Application{
 		currencyClient: currencyClient,
@@ -47,27 +55,52 @@ func NewApplication(currencyClient currencygrpc.CurrencyServiceClient) *Applicat
 
 // Normalize order to have the precision of the currencies applied
 // Add SymbolAmount, RemainingSymbolAmount, HumanReadablePrice
-func (app *Application) NormalizeOrder(ctx context.Context, order *ordergrpc.Order) (*coreum.OrderBookOrder, error) {
-	baseDenomPrecision, quoteDenomPrecision, err := app.precisions(ctx, order.MetaData.Network, order.BaseDenom, order.QuoteDenom)
-	if err != nil {
-		return nil, err
+func (app *Application) NormalizeOrder(ctx context.Context, inputOrder interface{}) (*coreum.OrderBookOrder, error) {
+	switch order := inputOrder.(type) {
+	case *ordergrpc.Order:
+		baseDenomPrecision, quoteDenomPrecision, err := app.precisions(ctx, order.MetaData.Network, order.BaseDenom, order.QuoteDenom)
+		if err != nil {
+			return nil, err
+		}
+
+		price := dec.NewFromFloat(order.Price)
+		quoteAmountSubunit := dec.New(order.Quantity.Value, order.Quantity.Exp)
+		remainingQuantity := dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp)
+
+		return &coreum.OrderBookOrder{
+			Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
+			HumanReadablePrice:    toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String(),
+			Amount:                quoteAmountSubunit.String(),
+			SymbolAmount:          toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
+			Sequence:              uint64(order.Sequence),
+			Account:               order.Account,
+			OrderID:               order.OrderID,
+			RemainingAmount:       remainingQuantity.String(),
+			RemainingSymbolAmount: toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
+		}, nil
+	case *OrderBookOrder:
+		baseDenomPrecision, quoteDenomPrecision, err := app.precisions(ctx, order.Network, order.BaseDenom, order.QuoteDenom)
+		if err != nil {
+			return nil, err
+		}
+		price, err := dec.NewFromString(order.OrderBookOrder.Price)
+		if err != nil {
+			return nil, err
+		}
+		quoteAmountSubunit, err := dec.NewFromString(order.OrderBookOrder.Amount)
+		if err != nil {
+			return nil, err
+		}
+		remainingQuantity, err := dec.NewFromString(order.OrderBookOrder.RemainingAmount)
+		if err != nil {
+			return nil, err
+		}
+		order.OrderBookOrder.HumanReadablePrice = toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String()
+		order.OrderBookOrder.SymbolAmount = toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String()
+		order.OrderBookOrder.RemainingSymbolAmount = toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String()
+		return order.OrderBookOrder, nil
 	}
-
-	price := dec.NewFromFloat(order.Price)
-	quoteAmountSubunit := dec.New(order.Quantity.Value, order.Quantity.Exp)
-	remainingQuantity := dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp)
-
-	return &coreum.OrderBookOrder{
-		Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
-		HumanReadablePrice:    toSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, order.Side).String(),
-		Amount:                quoteAmountSubunit.String(),
-		SymbolAmount:          toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
-		Sequence:              uint64(order.Sequence),
-		Account:               order.Account,
-		OrderID:               order.OrderID,
-		RemainingAmount:       remainingQuantity.String(),
-		RemainingSymbolAmount: toSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
-	}, nil
+	return nil, fmt.Errorf("unknown order type")
 }
 
 func toSymbolPrice(baseDenomPrecision, quoteDenomPrecision int32, subunitPrice float64, quantity *dec.Decimal, side orderproperties.Side) dec.Decimal {

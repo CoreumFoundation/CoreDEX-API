@@ -24,7 +24,7 @@ func NewApplication() *Application {
 
 	return &Application{
 		Trade:    trade.NewApplication(precisionClient),
-		Ticker:   ticker.NewApplication(),
+		Ticker:   ticker.NewApplication(precisionClient),
 		OHLC:     ohlc.NewApplication(precisionClient),
 		Order:    order.NewApplication(precisionClient),
 		Currency: currency.NewApplication(),

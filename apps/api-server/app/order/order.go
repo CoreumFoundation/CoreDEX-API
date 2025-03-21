@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +20,6 @@ import (
 	precision "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
 	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
@@ -173,6 +173,36 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			}
 			return nil, err
 		}
+		// The orders from the on chain orderbook need to be normalized to the orderbook format
+		denom1Currency, err := a.precisionClient.GetCurrency(ctx, network, denom1)
+		if err != nil {
+			return nil, err
+		}
+		denom2Currency, err := a.precisionClient.GetCurrency(ctx, network, denom2)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, order := range orderbook.Buy {
+			o, err := a.precisionClient.NormalizeOrder(ctx, &precision.OrderBookOrder{OrderBookOrder: order,
+				BaseDenom: denom1Currency.Denom, QuoteDenom: denom2Currency.Denom, Network: network, Side: orderproperties.Side_SIDE_BUY})
+			if err != nil {
+				logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+				continue
+			}
+			order.Amount = o.Amount
+			order.Price = o.Price
+		}
+		for _, order := range orderbook.Sell {
+			o, err := a.precisionClient.NormalizeOrder(ctx, &precision.OrderBookOrder{OrderBookOrder: order,
+				BaseDenom: denom1Currency.Denom, QuoteDenom: denom2Currency.Denom, Network: network, Side: orderproperties.Side_SIDE_SELL})
+			if err != nil {
+				logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+				continue
+			}
+			order.Amount = o.Amount
+			order.Price = o.Price
+		}
 	}
 	// If the process has taken more than a second, update the orderbook with the latest orders from the database
 	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
@@ -209,9 +239,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		buySideAppend := make([]*coreum.OrderBookOrder, 0)
 		sellSideRemove := make([]uint64, 0)
 		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
+		// Process orders from the database as updates on the actual orderbook loaded from the chain
 		for _, order := range orders.Orders {
-			buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
-			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
+			buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
+			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
 		}
 		for _, removeID := range buySideRemove {
 			for i, buyOrder := range buySide {
@@ -235,6 +266,13 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		orderbook.Buy = buySide
 		orderbook.Sell = sellSide
 	}
+	// Order the buys and sales descending
+	sort.Slice(orderbook.Buy, func(i, j int) bool {
+		return orderbook.Buy[i].Price > orderbook.Buy[j].Price
+	})
+	sort.Slice(orderbook.Sell, func(i, j int) bool {
+		return orderbook.Sell[i].Price > orderbook.Sell[j].Price
+	})
 	// Set the orderbook into the cache:
 	a.orderbookCache.data[key] = &dmncache.LockableCache{
 		LastUpdated: tStartUpdate,
@@ -247,8 +285,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 // Apply the remove list first, then apply the append list on the orderbook to get to a correct orderbook
 func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []*coreum.OrderBookOrder,
 	order *ordergrpc.Order,
-	denom1Currency *currencygrpc.Currency,
-	denom2Currency *currencygrpc.Currency,
 	removeList []uint64,
 	appendList []*coreum.OrderBookOrder,
 	side orderproperties.Side,
@@ -264,7 +300,7 @@ func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []
 			break
 		}
 	}
-	// // Do not add orders which are not valid anymore
+	// Do not add orders which are not valid anymore
 	if (*order.RemainingQuantity).IsZero() ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
