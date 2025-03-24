@@ -45,7 +45,7 @@ get_ohlc() {
 
 get_trades_with_account() {
     local symbol="nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
-    local account="devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8"
+    local account="devcore1dj9yphkprdsuk6s4mgnfhnq5c39zf499nknkna"
     local to=1734462880
     local from=$((to - 86400))
     local encoded_symbol=$(echo -n "$symbol" | jq -sRr @uri)
