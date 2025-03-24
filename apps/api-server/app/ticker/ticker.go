@@ -8,7 +8,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	ohlc "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ohlc"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
+	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
@@ -25,14 +27,15 @@ type Application struct {
 	rates       *rates.Fetchers
 	rateCache   *cache
 	tickerCache *cache
+	ohlcClient  ohlc.Application
 }
 
 type cache struct {
 	mutex *sync.RWMutex
-	data  map[string]*dmn.LockableCache
+	data  map[string]*dmncache.LockableCache
 }
 
-func NewApplication() *Application {
+func NewApplication(ohlcClient *ohlc.Application) *Application {
 	ohclClient := ohlcgrpclient.Client()
 	rf := rates.NewFetcher(tradesclient.Client(), ohclClient)
 	app := &Application{
@@ -40,15 +43,16 @@ func NewApplication() *Application {
 		rates:  rf,
 		rateCache: &cache{
 			mutex: &sync.RWMutex{},
-			data:  make(map[string]*dmn.LockableCache),
+			data:  make(map[string]*dmncache.LockableCache),
 		},
 		tickerCache: &cache{
 			mutex: &sync.RWMutex{},
-			data:  make(map[string]*dmn.LockableCache),
+			data:  make(map[string]*dmncache.LockableCache),
 		},
+		ohlcClient: *ohlcClient,
 	}
-	go dmn.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
-	go dmn.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
+	go dmncache.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
+	go dmncache.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
 	return app
 }
 
@@ -153,8 +157,6 @@ func (s *Application) getTickers(ctx context.Context, opt *dmn.TickerReadOptions
 // Retrieve the OHLC data from the source
 func (s *Application) getOHLC(ctx context.Context, symbol string, opt *dmn.TickerReadOptions) (*ohlcgrpc.OHLCs, error) {
 	// Get the OHLC data from the source:
-	// Temporary until we know what load the cache can handle:
-	// 10% of the traffic goes to allowCache=true based on the first character of the symbol (so hypothetically always the same symbols and with that tickers will use the cache).
 	loadSymbol := &ohlcgrpc.OHLCFilter{
 		Symbol:     symbol,
 		Network:    opt.Network,
@@ -173,6 +175,15 @@ func (s *Application) getOHLC(ctx context.Context, symbol string, opt *dmn.Ticke
 	if len(baseOHLCS.OHLCs) == 0 {
 		return nil, fmt.Errorf("no ohlc data found for %s", symbol)
 	}
+	// Normalize the OHLC data:
+	for _, ohlc := range baseOHLCS.OHLCs {
+		var err error
+		ohlc, err = s.ohlcClient.Normalize(ctx, ohlc)
+		if err != nil {
+			logger.Errorf("Error normalizing OHLC %v: %v", *ohlc, err)
+			continue
+		}
+	}
 	return baseOHLCS, nil
 }
 
@@ -185,7 +196,7 @@ func (s *Application) ohlcsToTickers(ohlcs []*ohlcgrpc.OHLCs, domainOptions *dmn
 		tickerPoint := calculateTickerOHLC(ohlc, domainOptions)
 		tickerPoints[ohlc.OHLCs[0].Symbol] = tickerPoint
 		s.tickerCache.mutex.Lock()
-		s.tickerCache.data[ohlc.OHLCs[0].Symbol] = &dmn.LockableCache{
+		s.tickerCache.data[ohlc.OHLCs[0].Symbol] = &dmncache.LockableCache{
 			Value:       tickerPoint,
 			LastUpdated: time.Now(),
 		}
@@ -279,7 +290,7 @@ func (s *Application) getRate(ctx context.Context, symbol string, network metada
 	}
 	// Cache the rate:
 	s.rateCache.mutex.Lock()
-	s.rateCache.data[key(symbol, network)] = &dmn.LockableCache{
+	s.rateCache.data[key(symbol, network)] = &dmncache.LockableCache{
 		Value:       usd,
 		LastUpdated: time.Now(),
 	}

@@ -5,18 +5,25 @@ import (
 	"strconv"
 	"time"
 
+	dec "github.com/shopspring/decimal"
+
+	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcgrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
-	client ohlcgrpc.OHLCServiceClient
+	client         ohlcgrpc.OHLCServiceClient
+	currencyClient currency.Application
 }
 
-func NewApplication() *Application {
+func NewApplication(currencyClient *currency.Application) *Application {
 	return &Application{
-		client: ohlcgrpclient.Client(),
+		client:         ohlcgrpclient.Client(),
+		currencyClient: *currencyClient,
 	}
 }
 
@@ -46,10 +53,18 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	// minTs is used to fill in the blanks in the period. The algorithm is not allowed to fill timestamps before the first known datapoint (to prevent inventing new data before a coin was initialized)
 	if len(d.OHLCs) > 0 {
 		minTs := d.OHLCs[0].Timestamp.Seconds
+		// Standardize the values before applying any smoothing function
+		for _, v := range d.OHLCs {
+			var err error
+			v, err = app.Normalize(ctx, v)
+			if err != nil {
+				logger.Errorf("Error normalizing OHLC %v: %v", *v, err)
+				continue
+			}
+		}
 		for index, v := range d.OHLCs {
 			// Smooth the outliers first: That way when we backfill the data we do not have to take the actual backfill into account.
 			v = dmn.SmoothOutliers(d.OHLCs, index)
-			// t := time.Unix(0, v.TimeStamp).Unix()
 			for minTs < v.Timestamp.Seconds {
 				if minTs >= from.Seconds-deltaT { // We want to be on the edge or 1 period in front of the requested edge
 					retvals = append(retvals, dmn.OHLCPointResponse{
@@ -92,4 +107,34 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	}
 
 	return retvals, nil
+}
+
+/*
+OHLC data is stored in the subunit price and volume notation of the orders.
+This function converts the subunit price and volume to human readable price and volume.
+*/
+func (app *Application) Normalize(ctx context.Context, ohlc *ohlcgrpc.OHLC) (*ohlcgrpc.OHLC, error) {
+	// ohlc symbol to denoms base and quote:
+	sym, err := symbol.NewSymbol(ohlc.Symbol)
+	if err != nil {
+		return nil, err
+	}
+	baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, ohlc.MetaData.Network, sym.Denom1, sym.Denom2)
+	if err != nil {
+		return nil, err
+	}
+	// Price is in subunit notation (subunitBase/subunitQuote)
+	// We need the prices in unit notation: (base/quote) => price * 10^basePrecision/10^quotePrecision
+	mult := dec.New(1, baseDenomPrecision).Div(dec.New(1, quoteDenomPrecision)).InexactFloat64()
+	ohlc.Close = ohlc.Close * mult
+	ohlc.Open = ohlc.Open * mult
+	ohlc.High = ohlc.High * mult
+	ohlc.Low = ohlc.Low * mult
+	// Volume is in subunit notation
+	// We need the volume in unit notation: volume * 10^-baseDenomPrecision
+	ohlc.Volume = ohlc.Volume * dec.New(1, -baseDenomPrecision).InexactFloat64()
+	// Inverted volume is in subunit notation
+	// We need the quote volume in unit notation: volume * 10^-quoteDenomPrecision
+	ohlc.QuoteVolume = ohlc.QuoteVolume * dec.New(1, -quoteDenomPrecision).InexactFloat64()
+	return ohlc, nil
 }

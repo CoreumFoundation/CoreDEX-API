@@ -7,32 +7,31 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
+	dec "github.com/shopspring/decimal"
 
+	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
+	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	ordergrpcclient "github.com/CoreumFoundation/CoreDEX-API/domain/order/client"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	tradegrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
-	tradeClient tradegrpc.TradeServiceClient
-	orderClient ordergrpc.OrderServiceClient
+	tradeClient    tradegrpc.TradeServiceClient
+	orderClient    ordergrpc.OrderServiceClient
+	currencyClient currency.Application
 }
 
-type Trade struct {
-	*tradegrpc.Trade
-	HumanReadablePrice string
-	SymbolAmount       string
-	Status             ordergrpc.OrderStatus
-}
+type Trades []*dmn.Trade
 
-type Trades []*Trade
-
-func NewApplication() *Application {
+func NewApplication(currencyClient *currency.Application) *Application {
 	app := &Application{
-		tradeClient: tradegrpclient.Client(),
-		orderClient: ordergrpcclient.Client(),
+		tradeClient:    tradegrpclient.Client(),
+		orderClient:    ordergrpcclient.Client(),
+		currencyClient: *currencyClient,
 	}
 	return app
 }
@@ -69,20 +68,15 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 	if err != nil {
 		return nil, err
 	}
-	trs := Trades(make([]*Trade, 0))
+	trs := Trades(make([]*dmn.Trade, 0))
 	// cast trs into Trades type:
 	// Take into account that the data can be inverted (Denom1-Denom2 vs Denom2-Denom1)
 	for _, trade := range trades.Trades {
-		tr := &Trade{}
-		tr.Trade = trade
-		if strings.Compare(tr.Trade.Denom1.Denom, filter.Denom1.Denom) != 0 {
-			tr.Trade.Denom1, tr.Trade.Denom2 = tr.Trade.Denom2, tr.Trade.Denom1
-			r := tr.Trade.Amount.Mul(tr.Trade.Price)
-			tr.Trade.Amount = decimal.FromFloat64(r)
-			tr.Trade.Price = 1 / tr.Trade.Price
+		tr, err := app.Normalize(ctx, trade)
+		if err != nil {
+			logger.Errorf("Error normalizing trade %s: %v", *trade.TXID, err)
+			continue
 		}
-		tr.HumanReadablePrice = fmt.Sprintf("%f", trade.Price)
-		tr.SymbolAmount = fmt.Sprintf("%f", trade.Amount.Float64())
 		tr.Status = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
 		trs = append(trs, tr)
 	}
@@ -91,7 +85,7 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 
 // GetCancelledOrders returns all orders that are cancelled. It transforms the trade filter into an order filter for correct results.
 // The filter is only active if we have an Account in the filter
-func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrpc.Filter) ([]*Trade, error) {
+func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrpc.Filter) ([]*dmn.Trade, error) {
 	if filter.Account == nil || *filter.Account == "" {
 		return nil, nil
 	}
@@ -107,9 +101,9 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 		return nil, err
 	}
 	// Map the orders into trades:
-	trades := make([]*Trade, 0)
+	trades := make([]*dmn.Trade, 0)
 	for _, order := range orders.Orders {
-		tr := &Trade{}
+		tr := &dmn.Trade{}
 		tr.Trade = &tradegrpc.Trade{
 			Price:  order.Price,
 			Amount: order.Quantity,
@@ -127,4 +121,20 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 		trades = append(trades, tr)
 	}
 	return trades, nil
+}
+
+// Returns human readable price and amount
+func (app *Application) Normalize(ctx context.Context, trade *tradegrpc.Trade) (*dmn.Trade, error) {
+	baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, trade.MetaData.Network, trade.Denom1, trade.Denom2)
+	if err != nil {
+		return nil, err
+	}
+	tr := &dmn.Trade{
+		Trade: trade,
+	}
+	quoteAmountSubunit := dec.New(trade.Amount.Value, trade.Amount.Exp)
+	tr.HumanReadablePrice = dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, trade.Price,
+		&quoteAmountSubunit, trade.Side).String()
+	tr.SymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, trade.Side).String()
+	return tr, nil
 }

@@ -19,7 +19,7 @@ type httpServer struct {
 func NewHttpServer(app *app.Application) *behttp.Server {
 	s := httpServer{app: app}
 	behttp.InitHealth(behttp.Route{
-		Path: "/healthz", Method: behttp.GET, Handler: s.Health(),
+		Path: routePrepend + "/healthz", Method: behttp.GET, Handler: s.Health(),
 	})
 	behttp.InitRoutes([]behttp.Route{
 		{Path: routePrepend + "/ohlc", Method: behttp.GET, Handler: s.getOHLC()},
