@@ -5,22 +5,25 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
+	dec "github.com/shopspring/decimal"
+
+	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	ohlcgrpc "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc"
 	ohlcgrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
-	client          ohlcgrpc.OHLCServiceClient
-	precisionClient precision.Application
+	client         ohlcgrpc.OHLCServiceClient
+	currencyClient currency.Application
 }
 
-func NewApplication(precisionClient *precision.Application) *Application {
+func NewApplication(currencyClient *currency.Application) *Application {
 	return &Application{
-		client:          ohlcgrpclient.Client(),
-		precisionClient: *precisionClient,
+		client:         ohlcgrpclient.Client(),
+		currencyClient: *currencyClient,
 	}
 }
 
@@ -53,7 +56,7 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 		// Standardize the values before applying any smoothing function
 		for _, v := range d.OHLCs {
 			var err error
-			v, err = app.precisionClient.NormalizeOHLC(ctx, v)
+			v, err = app.Normalize(ctx, v)
 			if err != nil {
 				logger.Errorf("Error normalizing OHLC %v: %v", *v, err)
 				continue
@@ -104,4 +107,34 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	}
 
 	return retvals, nil
+}
+
+/*
+OHLC data is stored in the subunit price and volume notation of the orders.
+This function converts the subunit price and volume to human readable price and volume.
+*/
+func (app *Application) Normalize(ctx context.Context, ohlc *ohlcgrpc.OHLC) (*ohlcgrpc.OHLC, error) {
+	// ohlc symbol to denoms base and quote:
+	sym, err := symbol.NewSymbol(ohlc.Symbol)
+	if err != nil {
+		return nil, err
+	}
+	baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, ohlc.MetaData.Network, sym.Denom1, sym.Denom2)
+	if err != nil {
+		return nil, err
+	}
+	// Price is in subunit notation (subunitBase/subunitQuote)
+	// We need the prices in unit notation: (base/quote) => price * 10^basePrecision/10^quotePrecision
+	mult := dec.New(1, baseDenomPrecision).Div(dec.New(1, quoteDenomPrecision)).InexactFloat64()
+	ohlc.Close = ohlc.Close * mult
+	ohlc.Open = ohlc.Open * mult
+	ohlc.High = ohlc.High * mult
+	ohlc.Low = ohlc.Low * mult
+	// Volume is in subunit notation
+	// We need the volume in unit notation: volume * 10^-baseDenomPrecision
+	ohlc.Volume = ohlc.Volume * dec.New(1, -baseDenomPrecision).InexactFloat64()
+	// Inverted volume is in subunit notation
+	// We need the quote volume in unit notation: volume * 10^-quoteDenomPrecision
+	ohlc.QuoteVolume = ohlc.QuoteVolume * dec.New(1, -quoteDenomPrecision).InexactFloat64()
+	return ohlc, nil
 }

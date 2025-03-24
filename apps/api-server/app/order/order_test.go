@@ -1,34 +1,20 @@
 /*
 The tests in this package are to verify the applicaiton of the precision on the data which is represented by the denoms.
-Case are to check if:
-denom1.Precision == denom2.Precision => price, amount, humanReadable price and humanReadable SymbolAmount are correct
-denom2.Precision =denom2.Precision+1 => price, amount, humanReadable price and humanReadable SymbolAmount are correct
-denom2.Precision =denom2.Precision-1 => price, amount, humanReadable price and humanReadable SymbolAmount are correct
-denom1.Precision = 6, denom2.Precision = 0 => price, amount, humanReadable price and humanReadable SymbolAmount are correct
-denom1.Precision = 0, denom2.Precision = 6 => price, amount, humanReadable price and humanReadable SymbolAmount are correct
-
-Inputs are:
-* ordergrpc.Order
-* tradegrpc.Trade
-* ohlcgrpc.OHLC
-
-Which have slightly different structures, however the same precision rules apply to all of them.
 */
-
-package precision
+package order
 
 import (
 	"context"
 	"os"
 	"testing"
 
+	currencyapp "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
-	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -71,8 +57,8 @@ func newApplicationMock(t *testing.T) *Application {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	return NewApplication(currencyService)
+	currencyApp := currencyapp.NewApplication(currencyService)
+	return NewApplication(currencyApp)
 }
 
 type normalizedOrderInput struct {
@@ -291,7 +277,7 @@ func Test_NormalizeOrder(t *testing.T) {
 		order.Side = test.Input.Side
 		baseDenom.Precision = &test.Input.BaseDenomPrecision
 		quoteDenom.Precision = &test.Input.QuoteDenomPrecision
-		normalizedOrder, err := app.NormalizeOrder(context.Background(), order)
+		normalizedOrder, err := app.Normalize(context.Background(), order)
 		if err != nil {
 			t.Fatalf("%s Error: %v", test.name, err)
 		}
@@ -315,111 +301,6 @@ func Test_NormalizeOrder(t *testing.T) {
 		}
 		if normalizedOrder.RemainingSymbolAmount != test.Result.RemainingSymbolAmount {
 			t.Errorf("%s Error: normalizedOrder.RemainingSymbolAmount is %s, expected %s", test.name, normalizedOrder.RemainingSymbolAmount, test.Result.RemainingSymbolAmount)
-		}
-	}
-}
-
-type normalizedTradeResult struct {
-	Price              float64
-	HumanReadablePrice string
-	Amount             *decimal.Decimal
-	SymbolAmount       string
-}
-
-type normalizedTradeTest struct {
-	name   string
-	Input  normalizedOrderInput
-	Result normalizedTradeResult
-}
-
-func Test_NormalizeTrade(t *testing.T) {
-	app := newApplicationMock(t)
-	trade := &tradegrpc.Trade{
-		Denom1: baseDenom,
-		Denom2: quoteDenom,
-		Price:  1.0,
-		Amount: decimal.FromFloat64(1.0),
-		MetaData: &metadata.MetaData{
-			Network: metadata.Network_DEVNET,
-		},
-	}
-	normalizedTradeTests := []normalizedTradeTest{
-		{
-			name: "Base and quote denom precision are the same (BUY)",
-			Input: normalizedOrderInput{
-				Price:               1.0,
-				Quantity:            1.0,
-				RemainingQuantity:   1.0,
-				Side:                orderproperties.Side_SIDE_BUY,
-				BaseDenomPrecision:  0,
-				QuoteDenomPrecision: 0,
-			},
-			Result: normalizedTradeResult{
-				Price:              1.0,
-				HumanReadablePrice: "1",
-				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
-				SymbolAmount:       "1",
-			},
-		},
-		{
-			name: "Base and quote denom precision are the same (SELL)",
-			Input: normalizedOrderInput{
-				Price:               1.0,
-				Quantity:            1.0,
-				RemainingQuantity:   1.0,
-				Side:                orderproperties.Side_SIDE_SELL,
-				BaseDenomPrecision:  0,
-				QuoteDenomPrecision: 0,
-			},
-			Result: normalizedTradeResult{
-				Price:              1.0,
-				HumanReadablePrice: "1",
-				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
-				SymbolAmount:       "1",
-			},
-		},
-		{
-			name: "Base > quote denom precision (BUY)",
-			Input: normalizedOrderInput{
-				Price:               1.0,
-				Quantity:            1.0,
-				RemainingQuantity:   1.0,
-				Side:                orderproperties.Side_SIDE_SELL,
-				BaseDenomPrecision:  1,
-				QuoteDenomPrecision: 0,
-			},
-			Result: normalizedTradeResult{
-				Price:              1.0,
-				HumanReadablePrice: "10",
-				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
-				SymbolAmount:       "0.1",
-			},
-		},
-	}
-	for _, test := range normalizedTradeTests {
-		trade.Price = test.Input.Price
-		trade.Amount = decimal.FromFloat64(test.Input.Quantity)
-		trade.Side = test.Input.Side
-		baseDenom.Precision = &test.Input.BaseDenomPrecision
-		quoteDenom.Precision = &test.Input.QuoteDenomPrecision
-		normalizedTrade, err := app.NormalizeTrade(context.Background(), trade)
-		if err != nil {
-			t.Fatalf("%s Error: %v", test.name, err)
-		}
-		if normalizedTrade == nil {
-			t.Fatalf("%s Error: normalizedTrade is nil", test.name)
-		}
-		if normalizedTrade.Price != test.Result.Price {
-			t.Errorf("%s Error: normalizedTrade.Price is %2.f, expected %2.f", test.name, normalizedTrade.Price, test.Result.Price)
-		}
-		if normalizedTrade.HumanReadablePrice != test.Result.HumanReadablePrice {
-			t.Errorf("%s Error: normalizedTrade.HumanReadablePrice is %s, expected %s", test.name, normalizedTrade.HumanReadablePrice, test.Result.HumanReadablePrice)
-		}
-		if !decCompare(normalizedTrade.Amount, test.Result.Amount) {
-			t.Errorf("%s Error: normalizedTrade.Amount is %s, expected %s", test.name, normalizedTrade.Amount, test.Result.Amount)
-		}
-		if normalizedTrade.SymbolAmount != test.Result.SymbolAmount {
-			t.Errorf("%s Error: normalizedTrade.SymbolAmount is %s, expected %s", test.name, normalizedTrade.SymbolAmount, test.Result.SymbolAmount)
 		}
 	}
 }

@@ -4,10 +4,9 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ohlc"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/order"
-	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ticker"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/trade"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
+	currencyclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
 )
 
 type Application struct {
@@ -19,15 +18,16 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	currencyClient := currencygrpclient.Client()
-	precisionClient := precision.NewApplication(currencyClient)
+	currencyClient := currencyclient.Client()
+	currencyApp := currency.NewApplication(currencyClient)
+	ohlcApp := ohlc.NewApplication(currencyApp)
 
 	return &Application{
-		Trade:    trade.NewApplication(precisionClient),
-		Ticker:   ticker.NewApplication(precisionClient),
-		OHLC:     ohlc.NewApplication(precisionClient),
-		Order:    order.NewApplication(precisionClient),
-		Currency: currency.NewApplication(),
+		Trade:    trade.NewApplication(currencyApp),
+		Ticker:   ticker.NewApplication(ohlcApp),
+		OHLC:     ohlcApp,
+		Order:    order.NewApplication(currencyApp),
+		Currency: currency.NewApplication(currencyClient),
 	}
 }
 

@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
+	dec "github.com/shopspring/decimal"
 
-	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
+	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
@@ -19,18 +20,18 @@ import (
 )
 
 type Application struct {
-	tradeClient     tradegrpc.TradeServiceClient
-	orderClient     ordergrpc.OrderServiceClient
-	precisionClient precision.Application
+	tradeClient    tradegrpc.TradeServiceClient
+	orderClient    ordergrpc.OrderServiceClient
+	currencyClient currency.Application
 }
 
 type Trades []*dmn.Trade
 
-func NewApplication(precisionClient *precision.Application) *Application {
+func NewApplication(currencyClient *currency.Application) *Application {
 	app := &Application{
-		tradeClient:     tradegrpclient.Client(),
-		orderClient:     ordergrpcclient.Client(),
-		precisionClient: *precisionClient,
+		tradeClient:    tradegrpclient.Client(),
+		orderClient:    ordergrpcclient.Client(),
+		currencyClient: *currencyClient,
 	}
 	return app
 }
@@ -71,7 +72,7 @@ func (app *Application) getTrades(ctx context.Context, filter *tradegrpc.Filter)
 	// cast trs into Trades type:
 	// Take into account that the data can be inverted (Denom1-Denom2 vs Denom2-Denom1)
 	for _, trade := range trades.Trades {
-		tr, err := app.precisionClient.NormalizeTrade(ctx, trade)
+		tr, err := app.Normalize(ctx, trade)
 		if err != nil {
 			logger.Errorf("Error normalizing trade %s: %v", *trade.TXID, err)
 			continue
@@ -120,4 +121,20 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 		trades = append(trades, tr)
 	}
 	return trades, nil
+}
+
+// Returns human readable price and amount
+func (app *Application) Normalize(ctx context.Context, trade *tradegrpc.Trade) (*dmn.Trade, error) {
+	baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, trade.MetaData.Network, trade.Denom1, trade.Denom2)
+	if err != nil {
+		return nil, err
+	}
+	tr := &dmn.Trade{
+		Trade: trade,
+	}
+	quoteAmountSubunit := dec.New(trade.Amount.Value, trade.Amount.Exp)
+	tr.HumanReadablePrice = dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, trade.Price,
+		&quoteAmountSubunit, trade.Side).String()
+	tr.SymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, trade.Side).String()
+	return tr, nil
 }

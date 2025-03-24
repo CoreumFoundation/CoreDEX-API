@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/precision"
+	ohlc "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ohlc"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
@@ -23,11 +23,11 @@ import (
 const TICKER_CACHE = 1 * time.Minute
 
 type Application struct {
-	client          ohlcgrpc.OHLCServiceClient
-	rates           *rates.Fetchers
-	rateCache       *cache
-	tickerCache     *cache
-	precisionClient precision.Application
+	client      ohlcgrpc.OHLCServiceClient
+	rates       *rates.Fetchers
+	rateCache   *cache
+	tickerCache *cache
+	ohlcClient  ohlc.Application
 }
 
 type cache struct {
@@ -35,7 +35,7 @@ type cache struct {
 	data  map[string]*dmncache.LockableCache
 }
 
-func NewApplication(precisionClient *precision.Application) *Application {
+func NewApplication(ohlcClient *ohlc.Application) *Application {
 	ohclClient := ohlcgrpclient.Client()
 	rf := rates.NewFetcher(tradesclient.Client(), ohclClient)
 	app := &Application{
@@ -49,7 +49,7 @@ func NewApplication(precisionClient *precision.Application) *Application {
 			mutex: &sync.RWMutex{},
 			data:  make(map[string]*dmncache.LockableCache),
 		},
-		precisionClient: *precisionClient,
+		ohlcClient: *ohlcClient,
 	}
 	go dmncache.CleanCache(app.rateCache.data, app.rateCache.mutex, 60*time.Minute)
 	go dmncache.CleanCache(app.tickerCache.data, app.tickerCache.mutex, TICKER_CACHE)
@@ -157,8 +157,6 @@ func (s *Application) getTickers(ctx context.Context, opt *dmn.TickerReadOptions
 // Retrieve the OHLC data from the source
 func (s *Application) getOHLC(ctx context.Context, symbol string, opt *dmn.TickerReadOptions) (*ohlcgrpc.OHLCs, error) {
 	// Get the OHLC data from the source:
-	// Temporary until we know what load the cache can handle:
-	// 10% of the traffic goes to allowCache=true based on the first character of the symbol (so hypothetically always the same symbols and with that tickers will use the cache).
 	loadSymbol := &ohlcgrpc.OHLCFilter{
 		Symbol:     symbol,
 		Network:    opt.Network,
@@ -180,7 +178,7 @@ func (s *Application) getOHLC(ctx context.Context, symbol string, opt *dmn.Ticke
 	// Normalize the OHLC data:
 	for _, ohlc := range baseOHLCS.OHLCs {
 		var err error
-		ohlc, err = s.precisionClient.NormalizeOHLC(ctx, ohlc)
+		ohlc, err = s.ohlcClient.Normalize(ctx, ohlc)
 		if err != nil {
 			logger.Errorf("Error normalizing OHLC %v: %v", *ohlc, err)
 			continue
