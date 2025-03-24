@@ -18,6 +18,28 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type normalizedOrderInput struct {
+	Price               float64
+	Quantity            float64
+	RemainingQuantity   float64
+	Side                orderproperties.Side
+	BaseDenomPrecision  int32
+	QuoteDenomPrecision int32
+}
+
+type normalizedTradeResult struct {
+	Price              float64
+	HumanReadablePrice string
+	Amount             *decimal.Decimal
+	SymbolAmount       string
+}
+
+type normalizedTradeTest struct {
+	name   string
+	Input  normalizedOrderInput
+	Result normalizedTradeResult
+}
+
 // the denoms used in this test:
 var (
 	baseDenom, quoteDenom *denom.Denom
@@ -59,28 +81,6 @@ func newApplicationMock(t *testing.T) *Application {
 	}
 	currencyApp := currencyapp.NewApplication(currencyService)
 	return NewApplication(currencyApp)
-}
-
-type normalizedOrderInput struct {
-	Price               float64
-	Quantity            float64
-	RemainingQuantity   float64
-	Side                orderproperties.Side
-	BaseDenomPrecision  int32
-	QuoteDenomPrecision int32
-}
-
-type normalizedTradeResult struct {
-	Price              float64
-	HumanReadablePrice string
-	Amount             *decimal.Decimal
-	SymbolAmount       string
-}
-
-type normalizedTradeTest struct {
-	name   string
-	Input  normalizedOrderInput
-	Result normalizedTradeResult
 }
 
 func Test_NormalizeTrade(t *testing.T) {
