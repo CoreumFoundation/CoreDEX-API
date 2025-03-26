@@ -278,10 +278,14 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	}
 	// Order the buys and sales descending
 	sort.Slice(orderbook.Buy, func(i, j int) bool {
-		return orderbook.Buy[i].Price > orderbook.Buy[j].Price
+		p1, _ := dec.NewFromString(orderbook.Buy[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Buy[j].Price)
+		return p1.GreaterThan(p2)
 	})
 	sort.Slice(orderbook.Sell, func(i, j int) bool {
-		return orderbook.Sell[i].Price > orderbook.Sell[j].Price
+		p1, _ := dec.NewFromString(orderbook.Sell[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Sell[j].Price)
+		return p1.GreaterThan(p2)
 	})
 	// Set the orderbook into the cache:
 	a.orderbookCache.data[key] = &dmncache.LockableCache{
