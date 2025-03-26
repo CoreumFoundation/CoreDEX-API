@@ -113,7 +113,7 @@ func (a *Application) Get(filter *ohlcgrpc.OHLCFilter) (*ohlcgrpc.OHLCs, error) 
 	// backfill looks to see if the first datapoint in the request array is allocated,
 	// and if not it searches for the previous datapoint
 	if filter.Backfill {
-		if len(ohlcs) == 0 || (len(ohlcs) > 0 && ohlcs[0].Timestamp.AsTime().Unix() <= filter.From.AsTime().Unix()) {
+		if len(ohlcs) == 0 || (len(ohlcs) > 0 && ohlcs[0].Timestamp.AsTime().Unix() > filter.From.AsTime().Unix()) {
 			backfillOHLCs, err := a.get(filter, true)
 			if err != nil {
 				return nil, err

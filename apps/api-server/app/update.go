@@ -110,7 +110,18 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
 					if refreshCounter%OHLC_REFRESH == 0 {
 						wg.Add(1)
-						soi := currentTime.Add(-2 * OHLC_REFRESH * time.Second)
+						soi := currentTime.Add(-OHLC_REFRESH * time.Second)
+						/* From (startOfInterval, soi) needs to be corrected for the fact that the OHLC data (trade data) is delayed in the processing compared to the clock:
+						A block gets processed every 1.1 seconds, however can be fully for the previous bucket involved.
+						The from thus needs to include the previous bucket as well to be certain we have all the data.
+						Or more precise: The from needs to include the previous bucket if the current time is within the first 1.1 seconds of the current bucket,
+						add some margin for some delays: Using the refresh interval as the margin for the delay should be sufficient.
+						This can be done by setting the start of interval before the minute when we are in the first 5 seconds of the minute as indicated by soi
+						The underlying interval calculations will truncate the timestamp to the start of the actual interval involved (based on the period)
+						*/
+						if soi.Second() <= OHLC_REFRESH {
+							soi = soi.Add(-time.Minute)
+						}
 						go app.updateOHLC(ctx, subscription, soi, endOfInterval, &wg)
 					}
 				case updateproto.Method_ORDERBOOK:
@@ -348,6 +359,10 @@ func (app *Application) updateOHLC(ctx context.Context, subscription *updateprot
 		return
 	}
 	subscription.Content = string(b)
+	logger.Infof("Filter: %v, %v, %v, %v, %v, %v", subscription.Network, denom1.Denom, denom2.Denom, period, startOfInterval, endOfInterval)
+	for _, ohlc := range ohlcs {
+		logger.Infof("OHLC: %v, %v, %v, %v, %v, %v", ohlc[0], ohlc[1], ohlc[2], ohlc[3], ohlc[4], ohlc[5])
+	}
 	wg.Done()
 }
 

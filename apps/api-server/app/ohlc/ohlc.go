@@ -62,6 +62,7 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 				continue
 			}
 		}
+
 		for index, v := range d.OHLCs {
 			// Smooth the outliers first: That way when we backfill the data we do not have to take the actual backfill into account.
 			v = dmn.SmoothOutliers(d.OHLCs, index)

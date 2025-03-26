@@ -80,7 +80,7 @@ func main() {
 
 func dialSocket() (*websocket.Conn, error) {
 	d := websocket.Dialer{}
-	c, dialResp, err := d.Dial("wss://ws.test.coreum.dev/api/ws", nil)
+	c, dialResp, err := d.Dial("ws://localhost:8080/api/ws", nil)
 
 	if got, want := dialResp.StatusCode, nethttp.StatusSwitchingProtocols; got != want {
 		log.Printf("dialResp.StatusCode = %q, want %q. Error: %v", got, want, err)
