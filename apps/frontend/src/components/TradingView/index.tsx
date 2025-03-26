@@ -99,6 +99,7 @@ const TradingView = ({ height }: { height: number | string }) => {
 
     dataFeed.subscriptions.forEach((sub) => {
       if (bars.length > 0) {
+        console.log(bars[bars.length - 1]);
         handleWebsocketTick(sub, bars[bars.length - 1]);
       }
     });

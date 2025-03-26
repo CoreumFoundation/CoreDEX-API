@@ -1,4 +1,4 @@
-import { getBars } from "./utils";
+import { fetchOLHCData } from "./utils";
 import {
   BarPeriodParams,
   BarSymbolInfo,
@@ -97,7 +97,7 @@ export class CoreumDataFeed {
     onErrorCallback: any
   ) {
     if (periodParams.firstDataRequest) periodParams.to = Date.now() / 1000;
-    getBars(symbolInfo.id, resolution, periodParams.from, periodParams.to)
+    fetchOLHCData(symbolInfo.id, resolution, periodParams.from, periodParams.to)
       .then((bars) => {
         const sortedBars = bars
           .map((el) => ({
