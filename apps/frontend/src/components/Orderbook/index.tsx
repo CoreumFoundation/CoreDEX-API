@@ -32,6 +32,7 @@ export default function Orderbook({
   const [topSellVolume, setTopSellVolume] = useState<number>(0);
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const componentRef = useRef<HTMLDivElement>(null);
+  const sellsObRef = useRef<HTMLDivElement>(null);
 
   const subscription = useMemo(
     () => ({
@@ -93,19 +94,12 @@ export default function Orderbook({
 
   // scroll sells to bottom
   useEffect(() => {
-    const sellsOb = document.getElementById("sells_ob");
-    if (sellsOb === null) {
-      const timer = setInterval(function () {
-        const sellsObook = document.getElementById("sells_ob");
-
-        if (sellsObook) {
-          clearInterval(timer);
-        }
-      }, 200);
-    } else {
-      sellsOb.scrollTop = sellsOb.scrollHeight;
+    if (sellsObRef.current && orderbook?.Sell) {
+      setTimeout(() => {
+        sellsObRef.current!.scrollTop = sellsObRef.current!.scrollHeight;
+      }, 50);
     }
-  }, [market]);
+  }, [orderbook?.Sell, market]);
 
   // find the highest volume in the orderbook
   useEffect(() => {
@@ -320,7 +314,7 @@ export default function Orderbook({
             </div>
 
             <div className="orderbook-sections">
-              <div className="orderbook-wrapper" id="sells_ob">
+              <div className="orderbook-wrapper" id="sells_ob" ref={sellsObRef}>
                 {orderbook.Sell &&
                   orderbook.Sell.slice(0, 50).map((order, index) =>
                     renderOrderRow(order, index, ORDERBOOK_TYPE.SELL)
