@@ -323,7 +323,7 @@ export default function Orderbook({
               <div className="orderbook-wrapper" id="sells_ob">
                 {orderbook.Sell &&
                   orderbook.Sell.slice(0, 50).map((order, index) =>
-                    renderOrderRow(order, index, ORDERBOOK_TYPE.Sell)
+                    renderOrderRow(order, index, ORDERBOOK_TYPE.SELL)
                   )}
               </div>
 
