@@ -76,7 +76,8 @@ export default function Orderbook({
 
     const calculateSpread = () => {
       const highestBuy = orderbook.Buy[0]?.HumanReadablePrice;
-      const lowestSell = orderbook.Sell[0]?.HumanReadablePrice;
+      const lowestSell =
+        orderbook.Sell[orderbook.Sell.length - 1]?.HumanReadablePrice;
 
       if (!highestBuy && !lowestSell) return new BigNumber(0);
 
@@ -126,34 +127,46 @@ export default function Orderbook({
   }, [orderbook]);
 
   const calculateGroupData = useCallback(
-    (lines: OrderbookRecord[], index: number) => {
+    (lines: OrderbookRecord[], index: number, orderType: ORDERBOOK_TYPE) => {
       let avgPriceSum = 0;
-      let totalVolume = 0;
+      let totalVolumeCalc = 0;
       let sum = 0;
       const lineGroup = [];
 
-      const increment = -1;
-      const endCondition = -1;
-      for (let i = index; i > endCondition; i += increment) {
-        const line = lines[i];
-        if (!line) break;
-
-        lineGroup.push(line);
-        avgPriceSum += Number(line.HumanReadablePrice);
-        totalVolume += Number(line.RemainingSymbolAmount);
-        setTotalVolume(totalVolume);
-        sum +=
-          Number(line.HumanReadablePrice) * Number(line.RemainingSymbolAmount);
+      if (orderType === ORDERBOOK_TYPE.BUY) {
+        for (let i = index; i >= 0; i--) {
+          const line = lines[i];
+          if (!line) break;
+          lineGroup.push(line);
+          avgPriceSum += Number(line.HumanReadablePrice);
+          totalVolumeCalc += Number(line.RemainingSymbolAmount);
+          sum +=
+            Number(line.HumanReadablePrice) *
+            Number(line.RemainingSymbolAmount);
+        }
+      } else {
+        for (let i = index; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line) break;
+          lineGroup.push(line);
+          avgPriceSum += Number(line.HumanReadablePrice);
+          totalVolumeCalc += Number(line.RemainingSymbolAmount);
+          sum +=
+            Number(line.HumanReadablePrice) *
+            Number(line.RemainingSymbolAmount);
+        }
       }
+
+      setTotalVolume(totalVolumeCalc);
 
       return {
         avgPrice: lineGroup.length ? avgPriceSum / lineGroup.length : 0,
         sum,
         lineGroup,
-        totalVolume,
+        totalVolume: totalVolumeCalc,
       };
     },
-    []
+    [setTotalVolume]
   );
 
   const handleTooltip = useCallback(
@@ -174,7 +187,8 @@ export default function Orderbook({
 
       const { avgPrice, sum, lineGroup, totalVolume } = calculateGroupData(
         lines,
-        index
+        index,
+        orderType
       );
 
       lineGroup.forEach((g) => {
@@ -187,25 +201,26 @@ export default function Orderbook({
       });
 
       const tooltipContent = `
-      <div class="orderbook-tooltip">
-        <div class="inline-item">
-          <p class="inline-item-label">Avg. Price:</p> ~ ${toFixedDown(
-            avgPrice,
-            12
-          )}
+        <div class="orderbook-tooltip">
+          <div class="inline-item">
+            <p class="inline-item-label">Avg. Price:</p> ~ ${toFixedDown(
+              avgPrice,
+              12
+            )}
+          </div>
+          <div class="inline-item">
+            <p class="inline-item-label">Sum (${
+              market.counter.Denom.Name
+            }):</p> ${toFixedDown(totalVolume, 12)}
+          </div>
+          <div class="inline-item">
+            <p class="inline-item-label">Total Amount:</p> ${toFixedDown(
+              sum,
+              12
+            )}
+          </div>
         </div>
-        
-        <div class="inline-item">
-          <p class="inline-item-label">Sum (${
-            market.counter.Denom.Name
-          }):</p> ${toFixedDown(totalVolume, 12)}
-        </div>
-        
-        <div class="inline-item">
-          <p class="inline-item-label">Total Amount:</p> ${toFixedDown(sum, 12)}
-        </div>
-      </div>
-    `;
+      `;
 
       showTooltip(
         e.currentTarget,
@@ -307,9 +322,16 @@ export default function Orderbook({
             <div className="orderbook-sections">
               <div className="orderbook-wrapper" id="sells_ob">
                 {orderbook.Sell &&
-                  orderbook.Sell.slice(0, 50).map((sell, i) =>
-                    renderOrderRow(sell, i, ORDERBOOK_TYPE.SELL)
-                  )}
+                  orderbook.Sell.map((_, idx) => idx)
+                    .slice(0, 50)
+                    .map((originalIndex) => {
+                      const sell = orderbook.Sell[originalIndex];
+                      return renderOrderRow(
+                        sell,
+                        originalIndex,
+                        ORDERBOOK_TYPE.SELL
+                      );
+                    })}
               </div>
 
               {spread && (
