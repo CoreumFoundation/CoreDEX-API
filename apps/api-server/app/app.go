@@ -6,6 +6,7 @@ import (
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/order"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/ticker"
 	"github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/trade"
+	currencyclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
 )
 
 type Application struct {
@@ -17,12 +18,16 @@ type Application struct {
 }
 
 func NewApplication() *Application {
+	currencyClient := currencyclient.Client()
+	currencyApp := currency.NewApplication(currencyClient)
+	ohlcApp := ohlc.NewApplication(currencyApp)
+
 	return &Application{
-		Trade:    trade.NewApplication(),
-		Ticker:   ticker.NewApplication(),
-		OHLC:     ohlc.NewApplication(),
-		Order:    order.NewApplication(),
-		Currency: currency.NewApplication(),
+		Trade:    trade.NewApplication(currencyApp),
+		Ticker:   ticker.NewApplication(ohlcApp),
+		OHLC:     ohlcApp,
+		Order:    order.NewApplication(currencyApp),
+		Currency: currency.NewApplication(currencyClient),
 	}
 }
 

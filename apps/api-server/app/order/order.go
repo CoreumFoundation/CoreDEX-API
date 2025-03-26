@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -13,14 +14,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	sdecimal "github.com/shopspring/decimal"
+	dec "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
-	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
-	currencygrpclient "github.com/CoreumFoundation/CoreDEX-API/domain/currency/client"
-	decimal "github.com/CoreumFoundation/CoreDEX-API/domain/decimal"
+	dmncache "github.com/CoreumFoundation/CoreDEX-API/domain/cache"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/denom"
 	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	ordergrpc "github.com/CoreumFoundation/CoreDEX-API/domain/order"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
@@ -31,14 +32,14 @@ import (
 
 type cache struct {
 	mutex *sync.RWMutex
-	data  map[string]*dmn.LockableCache
+	data  map[string]*dmncache.LockableCache
 }
 
 type Application struct {
 	TxEncoder      map[metadata.Network]txClient
-	currencyClient currencygrpc.CurrencyServiceClient
 	orderClient    ordergrpc.OrderServiceClient
 	orderbookCache *cache
+	currencyClient currency.Application
 }
 
 type txClient struct {
@@ -53,14 +54,22 @@ type WalletAsset struct {
 	SymbolAmount string
 }
 
-func NewApplication() *Application {
-	currencyClient := currencygrpclient.Client()
-	orderbookClient := ordergrpcclient.Client()
-	return NewApplicationWithClients(currencyClient, orderbookClient)
+type OrderBookOrder struct {
+	OrderBookOrder *coreum.OrderBookOrder
+	BaseDenom      *denom.Denom
+	QuoteDenom     *denom.Denom
+	Network        metadata.Network
+	Side           orderproperties.Side
 }
 
-func NewApplicationWithClients(currencyClient currencygrpc.CurrencyServiceClient,
-	orderClient ordergrpc.OrderServiceClient) *Application {
+func NewApplication(currencyClient *currency.Application) *Application {
+	orderbookClient := ordergrpcclient.Client()
+	return NewApplicationWithClients(orderbookClient, currencyClient)
+}
+
+func NewApplicationWithClients(orderClient ordergrpc.OrderServiceClient,
+	currencyClient *currency.Application) *Application {
+
 	txEncoders := make(map[metadata.Network]txClient)
 	coreum.InitReaders()
 	nodeConnections := coreum.NewNodeConnections()
@@ -79,10 +88,10 @@ func NewApplicationWithClients(currencyClient currencygrpc.CurrencyServiceClient
 	}
 	orderbookCache := &cache{
 		mutex: &sync.RWMutex{},
-		data:  make(map[string]*dmn.LockableCache),
+		data:  make(map[string]*dmncache.LockableCache),
 	}
-	go dmn.CleanCache(orderbookCache.data, orderbookCache.mutex, 15*time.Minute)
-	return &Application{txEncoders, currencyClient, orderClient, orderbookCache}
+	go dmncache.CleanCache(orderbookCache.data, orderbookCache.mutex, 15*time.Minute)
+	return &Application{txEncoders, orderClient, orderbookCache, *currencyClient}
 }
 
 func (a *Application) EncodeTx(network metadata.Network, from sdk.AccAddress, msgs ...sdk.Msg) ([]byte, error) {
@@ -164,30 +173,9 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
 		processStart = time.Now()
 		ctx := context.Background()
-		denom1Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom1,
-		})
-		if err != nil {
-			return nil, err
-		}
-		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom2,
-		})
-		if err != nil {
-			return nil, err
-		}
-		denom1Precision := int64(0)
-		if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
-			denom1Precision = int64(*denom1Currency.Denom.Precision)
-		}
-		denom2Precision := int64(0)
-		if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
-			denom2Precision = int64(*denom2Currency.Denom.Precision)
-		}
 
-		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, denom1Precision, denom2Precision, uint64(limit), aggregate)
+		var err error
+		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit), aggregate)
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
 				a.orderbookCache.mutex.Unlock()
@@ -195,23 +183,47 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			}
 			return nil, err
 		}
+		// The orders from the on chain orderbook need to be normalized to the orderbook format
+		denom1Currency, err := a.currencyClient.GetCurrency(ctx, network, denom1)
+		if err != nil {
+			return nil, err
+		}
+		denom2Currency, err := a.currencyClient.GetCurrency(ctx, network, denom2)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, order := range orderbook.Buy {
+			o, err := a.Normalize(ctx, &OrderBookOrder{OrderBookOrder: order,
+				BaseDenom: denom1Currency.Denom, QuoteDenom: denom2Currency.Denom, Network: network, Side: orderproperties.Side_SIDE_BUY})
+			if err != nil {
+				logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+				continue
+			}
+			order.Amount = o.Amount
+			order.Price = o.Price
+		}
+		for _, order := range orderbook.Sell {
+			o, err := a.Normalize(ctx, &OrderBookOrder{OrderBookOrder: order,
+				BaseDenom: denom1Currency.Denom, QuoteDenom: denom2Currency.Denom, Network: network, Side: orderproperties.Side_SIDE_SELL})
+			if err != nil {
+				logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+				continue
+			}
+			order.Amount = o.Amount
+			order.Price = o.Price
+		}
 	}
 	// If the process has taken more than a second, update the orderbook with the latest orders from the database
 	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
 	if time.Since(processStart) > time.Second {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		denom1Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom1,
-		})
+		denom1Currency, err := a.currencyClient.GetCurrency(ctx, network, denom1)
 		if err != nil {
 			return nil, err
 		}
-		denom2Currency, err := a.currencyClient.Get(ctx, &currencygrpc.ID{
-			Network: network,
-			Denom:   denom2,
-		})
+		denom2Currency, err := a.currencyClient.GetCurrency(ctx, network, denom2)
 		if err != nil {
 			return nil, err
 		}
@@ -237,9 +249,10 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		buySideAppend := make([]*coreum.OrderBookOrder, 0)
 		sellSideRemove := make([]uint64, 0)
 		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
+		// Process orders from the database as updates on the actual orderbook loaded from the chain
 		for _, order := range orders.Orders {
-			buySideRemove, buySideAppend = a.processOrderForOrderBook(buySide, order, denom1Currency, denom2Currency, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
-			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(sellSide, order, denom1Currency, denom2Currency, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
+			buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
+			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
 		}
 		for _, removeID := range buySideRemove {
 			for i, buyOrder := range buySide {
@@ -259,11 +272,23 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			}
 		}
 		sellSide = append(sellSide, sellSideAppend...)
+
 		orderbook.Buy = buySide
 		orderbook.Sell = sellSide
 	}
+	// Order the buys and sales descending
+	sort.Slice(orderbook.Buy, func(i, j int) bool {
+		p1, _ := dec.NewFromString(orderbook.Buy[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Buy[j].Price)
+		return p1.GreaterThan(p2)
+	})
+	sort.Slice(orderbook.Sell, func(i, j int) bool {
+		p1, _ := dec.NewFromString(orderbook.Sell[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Sell[j].Price)
+		return p1.GreaterThan(p2)
+	})
 	// Set the orderbook into the cache:
-	a.orderbookCache.data[key] = &dmn.LockableCache{
+	a.orderbookCache.data[key] = &dmncache.LockableCache{
 		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}
@@ -272,10 +297,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 
 // Function generates 2 lists: A remove list and an append list
 // Apply the remove list first, then apply the append list on the orderbook to get to a correct orderbook
-func (*Application) processOrderForOrderBook(orderbook []*coreum.OrderBookOrder,
+func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []*coreum.OrderBookOrder,
 	order *ordergrpc.Order,
-	denom1Currency *currencygrpc.Currency,
-	denom2Currency *currencygrpc.Currency,
 	removeList []uint64,
 	appendList []*coreum.OrderBookOrder,
 	side orderproperties.Side,
@@ -291,43 +314,18 @@ func (*Application) processOrderForOrderBook(orderbook []*coreum.OrderBookOrder,
 			break
 		}
 	}
-	// // Do not add orders which are not valid anymore
+	// Do not add orders which are not valid anymore
 	if (*order.RemainingQuantity).IsZero() ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
 		return removeList, appendList
 	}
-	// Add the order to the orderbook which is actually valid
-	denom1Precision := *denom1Currency.Denom.Precision
-	denom2Precision := *denom2Currency.Denom.Precision
-	price := sdecimal.NewFromFloat(order.Price)
-	var precision sdecimal.Decimal
-	precisionDiff := denom1Precision - denom2Precision
-	if precisionDiff < 0 {
-		precision = sdecimal.NewFromInt(1).Div(sdecimal.New(1, int32(-precisionDiff)))
-	} else if precisionDiff > 0 {
-		precision = sdecimal.New(1, int32(-precisionDiff))
-	} else {
-		precision = sdecimal.NewFromInt(1)
+	o, err := a.Normalize(ctx, order)
+	if err != nil {
+		logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
+		return removeList, appendList
 	}
-
-	humanReadablePrice := price.Mul(precision)
-	symbolAmount := *decimal.ToSDec(order.Quantity)
-	symbolAmount = symbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-	remainingSymbolAmount := *decimal.ToSDec(order.RemainingQuantity)
-	remainingSymbolAmount = remainingSymbolAmount.Div(sdecimal.New(1, int32(denom1Precision)))
-
-	appendList = append(appendList, &coreum.OrderBookOrder{
-		Price:                 fmt.Sprintf("%f", order.Price),
-		HumanReadablePrice:    humanReadablePrice.String(),
-		Amount:                order.Quantity.String(),
-		SymbolAmount:          symbolAmount.String(),
-		Sequence:              uint64(order.Sequence),
-		Account:               order.Account,
-		OrderID:               order.OrderID,
-		RemainingAmount:       order.RemainingQuantity.String(),
-		RemainingSymbolAmount: remainingSymbolAmount.String(),
-	})
+	appendList = append(appendList, o)
 	return removeList, appendList
 }
 
@@ -377,10 +375,7 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 	// Transform the coins to WalletAsset and add the symbol amount (apply precision)
 	walletAssets := make([]WalletAsset, 0)
 	for _, coin := range coins {
-		denomCurrency, err := a.currencyClient.Get(context.Background(), &currencygrpc.ID{
-			Network: network,
-			Denom:   coin.Denom,
-		})
+		denomCurrency, err := a.currencyClient.GetCurrency(context.Background(), network, coin.Denom)
 		if err != nil {
 			return nil, err
 		}
@@ -391,8 +386,58 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 		walletAssets = append(walletAssets, WalletAsset{
 			Denom:        coin.Denom,
 			Amount:       coin.Amount.String(),
-			SymbolAmount: sdecimal.NewFromBigInt(coin.Amount.BigInt(), 0).Div(sdecimal.New(1, precision)).String(),
+			SymbolAmount: dec.NewFromBigInt(coin.Amount.BigInt(), 0).Div(dec.New(1, precision)).String(),
 		})
 	}
 	return walletAssets, nil
+}
+
+// Normalize order to have the precision of the currencies applied
+// Add SymbolAmount, RemainingSymbolAmount, HumanReadablePrice
+func (app *Application) Normalize(ctx context.Context, inputOrder interface{}) (*coreum.OrderBookOrder, error) {
+	switch order := inputOrder.(type) {
+	case *ordergrpc.Order:
+		baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, order.MetaData.Network, order.BaseDenom, order.QuoteDenom)
+		if err != nil {
+			return nil, err
+		}
+
+		price := dec.NewFromFloat(order.Price)
+		quoteAmountSubunit := dec.New(order.Quantity.Value, order.Quantity.Exp)
+		remainingQuantity := dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp)
+
+		return &coreum.OrderBookOrder{
+			Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
+			HumanReadablePrice:    dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String(),
+			Amount:                quoteAmountSubunit.String(),
+			SymbolAmount:          dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
+			Sequence:              uint64(order.Sequence),
+			Account:               order.Account,
+			OrderID:               order.OrderID,
+			RemainingAmount:       remainingQuantity.String(),
+			RemainingSymbolAmount: dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
+		}, nil
+	case *OrderBookOrder:
+		baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, order.Network, order.BaseDenom, order.QuoteDenom)
+		if err != nil {
+			return nil, err
+		}
+		price, err := dec.NewFromString(order.OrderBookOrder.Price)
+		if err != nil {
+			return nil, err
+		}
+		quoteAmountSubunit, err := dec.NewFromString(order.OrderBookOrder.Amount)
+		if err != nil {
+			return nil, err
+		}
+		remainingQuantity, err := dec.NewFromString(order.OrderBookOrder.RemainingAmount)
+		if err != nil {
+			return nil, err
+		}
+		order.OrderBookOrder.HumanReadablePrice = dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String()
+		order.OrderBookOrder.SymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String()
+		order.OrderBookOrder.RemainingSymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String()
+		return order.OrderBookOrder, nil
+	}
+	return nil, fmt.Errorf("unknown order type")
 }

@@ -98,8 +98,7 @@ func enrichDenoms(ctx context.Context, currencyClient currencygrpc.CurrencyServi
 	meta domain.Metadata,
 	order *ordergrpc.Order,
 	enriched bool,
-) (bool, int64, int64) {
-	denom1Precision, denom2Precision := int64(0), int64(0)
+) bool {
 	if !enriched {
 		denom1Currency, err1 := currencyClient.Get(ctx, &currencygrpc.ID{
 			Network: meta.Network,
@@ -112,16 +111,14 @@ func enrichDenoms(ctx context.Context, currencyClient currencygrpc.CurrencyServi
 		if err1 == nil && err2 == nil {
 			enriched = true
 			if denom1Currency.Denom != nil && denom1Currency.Denom.Precision != nil {
-				denom1Precision = int64(*denom1Currency.Denom.Precision)
 				order.BaseDenom.Precision = denom1Currency.Denom.Precision
 			}
 			if denom2Currency.Denom != nil && denom2Currency.Denom.Precision != nil {
-				denom2Precision = int64(*denom2Currency.Denom.Precision)
 				order.QuoteDenom.Precision = denom2Currency.Denom.Precision
 			}
 		}
 	}
-	return enriched, denom1Precision, denom2Precision
+	return enriched
 }
 
 func (e *MsgPlaceOrderHandler) Handle(
@@ -144,7 +141,6 @@ func (e *MsgPlaceOrderHandler) Handle(
 		switch event := tr.(type) {
 		case *dextypes.EventOrderPlaced:
 			enriched := false
-			denom1Precision, denom2Precision := int64(0), int64(0)
 			var err error
 			order := message.(*ordergrpc.Order)
 			if order.Account != event.Creator || order.OrderID != event.ID {
@@ -152,16 +148,12 @@ func (e *MsgPlaceOrderHandler) Handle(
 			}
 			order.Sequence = int64(event.Sequence)
 			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_OPEN
-			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
+			order.Enriched = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
-			if enriched {
-				exp := int32(denom1Precision - denom2Precision)
-				if order.Side == orderproperties.Side_SIDE_BUY {
-					exp = int32(denom2Precision - denom1Precision)
-				}
-				price := dec.NewFromFloat(order.Price).Mul(dec.New(1, exp))
-				quantity := dec.New(order.Quantity.Value, order.Quantity.Exp-int32(denom1Precision))
-				remainingExp := order.RemainingQuantity.Exp - int32(denom1Precision)
+			if order.Enriched {
+				price := dec.NewFromFloat(order.Price)
+				quantity := dec.New(order.Quantity.Value, order.Quantity.Exp)
+				remainingExp := order.RemainingQuantity.Exp
 				if order.RemainingQuantity.Value == 0 {
 					remainingExp = 0
 				}
@@ -179,7 +171,6 @@ func (e *MsgPlaceOrderHandler) Handle(
 			}
 		case *dextypes.EventOrderReduced:
 			enriched := false
-			denom1Precision, denom2Precision := int64(0), int64(0)
 			order, err := orderClient.Get(orderclient.AuthCtx(ctx), &ordergrpc.ID{
 				Network:  meta.Network,
 				Sequence: int64(event.Sequence),
@@ -189,7 +180,7 @@ func (e *MsgPlaceOrderHandler) Handle(
 				continue
 			}
 
-			enriched, denom1Precision, denom2Precision = enrichDenoms(ctx, currencyClient, meta, order, enriched)
+			enriched = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
 			switch order.Side {
 			case orderproperties.Side_SIDE_SELL:
@@ -220,11 +211,11 @@ func (e *MsgPlaceOrderHandler) Handle(
 			var price float64
 			switch order.Side {
 			case orderproperties.Side_SIDE_SELL:
-				amount = dec.New(event.SentCoin.Amount.Int64(), int32(-1*denom1Precision))
-				price, _ = dec.New(event.ReceivedCoin.Amount.Int64(), int32(-1*denom2Precision)).Div(amount).Float64()
+				amount = dec.NewFromInt(event.SentCoin.Amount.Int64())
+				price, _ = dec.NewFromInt(event.ReceivedCoin.Amount.Int64()).Div(amount).Float64()
 			case orderproperties.Side_SIDE_BUY:
-				amount = dec.New(event.ReceivedCoin.Amount.Int64(), int32(-1*denom2Precision))
-				price, _ = dec.New(event.SentCoin.Amount.Int64(), int32(-1*denom1Precision)).Div(amount).Float64()
+				amount = dec.NewFromInt(event.ReceivedCoin.Amount.Int64())
+				price, _ = dec.NewFromInt(event.SentCoin.Amount.Int64()).Div(amount).Float64()
 			default:
 				logger.Errorf("unexpected side %s", order.Side.String())
 				continue
