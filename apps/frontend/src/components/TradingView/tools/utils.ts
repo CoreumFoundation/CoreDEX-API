@@ -1,7 +1,7 @@
 import { getOHLC } from "@/services/api";
 import { ChartFeedBarsParams } from "@/types/market";
 
-export const getBars = async (
+export const fetchOLHCData = async (
   symbol: string,
   resolution: string,
   from: number,
