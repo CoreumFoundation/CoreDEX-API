@@ -88,13 +88,20 @@
       max-height: 346px;
 
       #sells_ob {
-        justify-content: end;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+
+        &::before {
+          content: "";
+          flex-grow: 1;
+        }
       }
     }
 
     .orderbook-wrapper {
       flex: 1;
-      overflow-y: scroll;
+      overflow-y: auto;
       overflow-x: hidden;
       width: 100%;
       display: flex;

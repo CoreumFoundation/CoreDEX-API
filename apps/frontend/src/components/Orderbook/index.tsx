@@ -105,7 +105,7 @@ export default function Orderbook({
     } else {
       sellsOb.scrollTop = sellsOb.scrollHeight;
     }
-  }, []);
+  }, [market]);
 
   // find the highest volume in the orderbook
   useEffect(() => {
