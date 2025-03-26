@@ -322,16 +322,9 @@ export default function Orderbook({
             <div className="orderbook-sections">
               <div className="orderbook-wrapper" id="sells_ob">
                 {orderbook.Sell &&
-                  orderbook.Sell.map((_, idx) => idx)
-                    .slice(0, 50)
-                    .map((originalIndex) => {
-                      const sell = orderbook.Sell[originalIndex];
-                      return renderOrderRow(
-                        sell,
-                        originalIndex,
-                        ORDERBOOK_TYPE.SELL
-                      );
-                    })}
+                  orderbook.Sell.slice(0, 50).map((order, index) =>
+                    renderOrderRow(order, index, ORDERBOOK_TYPE.Sell)
+                  )}
               </div>
 
               {spread && (
@@ -343,16 +336,9 @@ export default function Orderbook({
 
               <div className="orderbook-wrapper" id="buys_ob">
                 {orderbook.Buy &&
-                  orderbook.Buy.map((_, idx) => idx)
-                    .slice(0, 50)
-                    .map((originalIndex) => {
-                      const sell = orderbook.Buy[originalIndex];
-                      return renderOrderRow(
-                        sell,
-                        originalIndex,
-                        ORDERBOOK_TYPE.BUY
-                      );
-                    })}
+                  orderbook.Buy.slice(0, 50).map((order, index) =>
+                    renderOrderRow(order, index, ORDERBOOK_TYPE.BUY)
+                  )}
               </div>
             </div>
           </>
