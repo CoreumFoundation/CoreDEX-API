@@ -118,9 +118,13 @@ func (app *Application) StartUpdater(ctx context.Context) {
 						add some margin for some delays: Using the refresh interval as the margin for the delay should be sufficient.
 						This can be done by setting the start of interval before the minute when we are in the first 5 seconds of the minute as indicated by soi
 						The underlying interval calculations will truncate the timestamp to the start of the actual interval involved (based on the period)
+
+						A further margin is added to counter a frontend issue where the websocket can sometimes disconnect when switching tabs (browser puts the tab to sleep).
+						While the FE should reconnect and refresh, sometimes the FE might not detect this. By returning just a bit longer period (10 minutes) the most visible issues
+						in the FE can be avoided
 						*/
 						if soi.Second() <= OHLC_REFRESH {
-							soi = soi.Add(-time.Minute)
+							soi = soi.Add(-10 * time.Minute)
 						}
 						go app.updateOHLC(ctx, subscription, soi, endOfInterval, &wg)
 					}

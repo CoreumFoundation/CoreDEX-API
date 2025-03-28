@@ -7,7 +7,6 @@ import (
 	"log"
 	nethttp "net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,13 +18,12 @@ import (
 )
 
 func main() {
-	c, err := dialSocket()
-	if err != nil {
-		log.Fatalf("Error dialing socket: %v", err)
-	}
+	var c *websocket.Conn
 
 	for {
 		fmt.Println("Select an option:")
+		fmt.Println("a) Connect localhost (ws//localhost:8080/api/ws)")
+		fmt.Println("b) Connect test host (wss://ws.test.coreum.dev/api/ws)")
 		fmt.Println("0) Exit")
 		fmt.Println("1) Test Order book for symbol")
 		fmt.Println("2) Test Order book for symbol and account")
@@ -43,49 +41,53 @@ func main() {
 			fmt.Println("Error reading input:", err)
 			continue
 		}
-
-		choice, err := strconv.Atoi(input[:len(input)-1])
-		if err != nil {
-			fmt.Println("Invalid input. Please enter a number between 1 and 7.")
-			continue
-		}
-
-		switch choice {
-		case 0:
+		input = input[:len(input)-1]
+		// choice, err := strconv.Atoi(input[:len(input)-1])
+		// if err != nil {
+		// 	fmt.Println("Invalid input. Please enter a number between 1 and 7.")
+		// 	continue
+		// }
+		log.Printf("Input: ...%s...", input)
+		switch input {
+		case "0":
 			fmt.Println("Exiting...")
 			return
-		case 1:
+		case "1":
 			testOrderbookSubscription(c)
-		case 2:
+		case "2":
 			testOrderbookForSymbolAndAccountSubscription(c)
-		case 3:
+		case "3":
 			testTickerSubscription(c)
-		case 4:
+		case "4":
 			testOHLCSubscription(c)
-		case 5:
+		case "5":
 			testTradesForSymbol(c)
-		case 6:
+		case "6":
 			testTradesForAccount(c)
-		case 7:
+		case "7":
 			testTradesForAccountAndSymbol(c)
-		case 8:
+		case "8":
 			testWallet(c)
-		case 9:
+		case "9":
 			testEventsStream(c)
+		case "a":
+			c = dialSocket("ws://localhost:8080/api/ws")
+		case "b":
+			c = dialSocket("wss://ws.test.coreum.dev/api/ws")
 		default:
 			fmt.Println("Invalid choice. Please enter a number between 1 and 7.")
 		}
 	}
 }
 
-func dialSocket() (*websocket.Conn, error) {
+func dialSocket(host string) *websocket.Conn {
 	d := websocket.Dialer{}
-	c, dialResp, err := d.Dial("ws://localhost:8080/api/ws", nil)
+	c, dialResp, err := d.Dial(host, nil)
 
 	if got, want := dialResp.StatusCode, nethttp.StatusSwitchingProtocols; got != want {
-		log.Printf("dialResp.StatusCode = %q, want %q. Error: %v", got, want, err)
+		log.Fatalf("dialResp.StatusCode = %q, want %q. Error: %v", got, want, err)
 	}
-	return c, err
+	return c
 }
 
 func testTickerSubscription(c *websocket.Conn) {
