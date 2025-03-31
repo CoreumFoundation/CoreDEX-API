@@ -258,16 +258,14 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			for i, buyOrder := range buySide {
 				if buyOrder.Sequence == removeID {
 					buySide = append(buySide[:i], buySide[i+1:]...)
-					break // IDs only appear once in the orderbook
 				}
 			}
 		}
 		buySide = append(buySide, buySideAppend...)
 		for _, removeID := range sellSideRemove {
-			for i, o := range buySide {
+			for i, o := range sellSide {
 				if o.Sequence == removeID {
 					sellSide = append(sellSide[:i], sellSide[i+1:]...)
-					break // IDs only appear once in the orderbook
 				}
 			}
 		}
@@ -316,12 +314,19 @@ func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []
 			break
 		}
 	}
+	// Remove the order before adding the order again (Order might or might not be present)
+	removeList = append(removeList, uint64(order.Sequence))
+	// Check if order is already in append list:
+	for _, o := range appendList {
+		if o.Sequence == uint64(order.Sequence) {
+			return removeList, appendList
+		}
+	}
 	// Do not add orders which are not valid anymore
 	if (*order.RemainingQuantity).IsZero() ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
 		logger.Infof("Do not keep: Orderbook order: sequences %d", uint64(order.Sequence))
-		removeList = append(removeList, uint64(order.Sequence))
 		return removeList, appendList
 	}
 	o, err := a.Normalize(ctx, order)
