@@ -113,7 +113,6 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
 					if refreshCounter%OHLC_REFRESH == 0 {
 						wg.Add(1)
-						soi := startOfInterval.Add(-OHLC_REFRESH * time.Second)
 						/* From (startOfInterval, soi) needs to be corrected for the fact that the OHLC data (trade data) is delayed in the processing compared to the clock:
 						A block gets processed every 1.1 seconds, however can be fully for the previous bucket involved.
 						The from thus needs to include the previous bucket as well to be certain we have all the data.
@@ -126,9 +125,7 @@ func (app *Application) StartUpdater(ctx context.Context) {
 						While the FE should reconnect and refresh, sometimes the FE might not detect this. By returning just a bit longer period (10 minutes) the most visible issues
 						in the FE can be avoided
 						*/
-						if soi.Second() <= OHLC_REFRESH {
-							soi = soi.Add(-10 * time.Minute)
-						}
+						soi := startOfInterval.Add(-10 * time.Minute)
 						go app.updateOHLC(ctx, subscription, soi, endOfInterval, &wg)
 					}
 				case updateproto.Method_ORDERBOOK:
