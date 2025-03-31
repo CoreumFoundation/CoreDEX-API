@@ -257,6 +257,9 @@ func (a *Application) GetAll(filter *tradegrpc.Filter) (*tradegrpc.Trades, error
 		args = append(args, *filter.Side)
 	}
 	queryBuilder.WriteString(" ORDER BY BlockTimeSeconds DESC")
+	if filter.From == nil || filter.From.AsTime().Unix() == 0 {
+		queryBuilder.WriteString(" LIMIT 50")
+	}
 
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {

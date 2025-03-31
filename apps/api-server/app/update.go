@@ -93,13 +93,16 @@ func (app *Application) StartUpdater(ctx context.Context) {
 				switch subscription.Method {
 				case updateproto.Method_TRADES_FOR_ACCOUNT:
 					wg.Add(1)
-					go app.updateTradesForAccount(ctx, subscription, startOfInterval, endOfInterval, &wg)
+					soi := startOfInterval.Add(-10 * time.Minute)
+					go app.updateTradesForAccount(ctx, subscription, soi, endOfInterval, &wg)
 				case updateproto.Method_TRADES_FOR_SYMBOL:
 					wg.Add(1)
-					go app.updateTradesForSymbol(ctx, subscription, startOfInterval, endOfInterval, &wg)
+					soi := startOfInterval.Add(-10 * time.Minute)
+					go app.updateTradesForSymbol(ctx, subscription, soi, endOfInterval, &wg)
 				case updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL:
 					wg.Add(1)
-					go app.updateTradesForAccountAndSymbol(ctx, subscription, startOfInterval, endOfInterval, &wg)
+					soi := startOfInterval.Add(-10 * time.Minute)
+					go app.updateTradesForAccountAndSymbol(ctx, subscription, soi, endOfInterval, &wg)
 				case updateproto.Method_TICKER:
 					// dynamic refresh interval based on the cache duration TICKER_CACHE
 					if refreshCounter%(int(ticker.TICKER_CACHE.Seconds())) == 0 {
@@ -110,7 +113,7 @@ func (app *Application) StartUpdater(ctx context.Context) {
 					// Reduced number of updates: Updating the OHLC to aggressive can lead to overload of FE, and to overload of the DB:
 					if refreshCounter%OHLC_REFRESH == 0 {
 						wg.Add(1)
-						soi := currentTime.Add(-OHLC_REFRESH * time.Second)
+						soi := startOfInterval.Add(-OHLC_REFRESH * time.Second)
 						/* From (startOfInterval, soi) needs to be corrected for the fact that the OHLC data (trade data) is delayed in the processing compared to the clock:
 						A block gets processed every 1.1 seconds, however can be fully for the previous bucket involved.
 						The from thus needs to include the previous bucket as well to be certain we have all the data.

@@ -99,8 +99,8 @@ curl "https://coredex.test.coreum.dev/api/ohlc?symbol=dextestdenom9-devcore1p0ed
 Params:
 
 - `symbol` _required_ - symbol for which trades should be returned. NOTE: `symbol` should be urlsafe encoded.
-- `from` _required_ - unix timestamp of trades start
-- `to` _required_ - unix timestamp of trades end
+- `from` _optional_ - unix timestamp of trades start. If not set, the last 50 trades are returned.
+- `to` _optional_ - unix timestamp of trades end. Only optional if `from` is not set.
 - `account` _optional_ - account address for which trades should be returned
 - `side` _optional_ - side of the trade (1 - buy, 2 - sell (see enum domain/order-properties))
 

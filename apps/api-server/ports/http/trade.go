@@ -59,27 +59,13 @@ func (s *httpServer) getTrades() handler.Handler {
 // Returns a correct query, period and the original from timestamp.
 // This originalFrom timestamp is used to prevent confusing the FE graph which does not seem to be able to handle anything different than what is outputs.
 func validateTradeParams(query url.Values) (*tradegrpc.Filter, error) {
-	beforeIDStr := query.Get("before_time")
-	beforeID, err := strconv.ParseInt(beforeIDStr, 10, 64)
-	if err != nil && beforeIDStr != "" {
-		return nil, handler.NewAPIError(422, "before_id is not a valid integer")
-	}
 	// Translate the from to the period start from:
-	afterIDStr := query.Get("after_time")
-	afterID, err := strconv.ParseInt(afterIDStr, 10, 64)
-	if err != nil && afterIDStr != "" {
-		return nil, handler.NewAPIError(422, "external_id.invalid")
-	}
-
 	symbol := query.Get("symbol")
 	account := query.Get("account")
 	if account == "" && symbol == "" {
 		return nil, handler.NewAPIError(422, "external_id.invalid")
 	}
-	tf := &tradegrpc.Filter{
-		From: timestamppb.New(time.Unix(afterID, 0)),
-		To:   timestamppb.New(time.Unix(beforeID, 0)),
-	}
+	tf := &tradegrpc.Filter{}
 	from := query.Get("from")
 	if from != "" {
 		fr, err := strconv.ParseInt(from, 10, 64)
@@ -96,11 +82,11 @@ func validateTradeParams(query url.Values) (*tradegrpc.Filter, error) {
 		}
 		tf.To = timestamppb.New(time.Unix(t, 0))
 	}
-	if tf.From.AsTime().After(tf.To.AsTime()) {
+	if tf.From != nil && tf.From.AsTime().After(tf.To.AsTime()) {
 		return nil, handler.NewAPIError(422, "from.after.to")
 	}
 	// Limit interval to 24hrs max to prevent overflows (in all reasonable scenarios)
-	if tf.To.AsTime().Sub(tf.From.AsTime()) > 24*time.Hour {
+	if tf.From != nil && tf.To != nil && tf.To.AsTime().Sub(tf.From.AsTime()) > 24*time.Hour {
 		return nil, handler.NewAPIError(422, "interval.too.long")
 	}
 	side := query.Get("side")

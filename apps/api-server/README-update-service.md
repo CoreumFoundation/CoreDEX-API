@@ -121,6 +121,8 @@ The OHLC call is the most complex call of the set since it requires the period. 
 
 The OHLC subscription will (re)produce the data for the last interval and flows over into the next interval when that interval is reached. The interval is defined by the period.
 
+The OHLC call contains the last 10 minutes. The data needs to be merged into the existing OHLC and replace the previous records if present.
+
 #### TRADES
 
 There are few different retrievals possible for trades, depending on the required information. The filters are:
@@ -130,6 +132,7 @@ There are few different retrievals possible for trades, depending on the require
 * `TRADES_FOR_ACCOUNT_AND_SYMBOL`: `account_denom-issuer_denom2-issuer2`
 
 The trades are produced in the same way as the restful API, however now wrapped in the update service response object.
+Trades are read from the last 10 minutes, and need to be deduplicated by the receiver against their base set.
 
 #### ORDERBOOK
 
@@ -139,3 +142,5 @@ There are 2 orderbook filters:
 * `ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT`: `account_denom-issuer_denom2-issuer2`
 
 The response of both is the same.
+
+The orderbook is a complete replacement of the previous order book and represents the current state of the order book.
