@@ -47,6 +47,7 @@ func (app *Application) Get(ctx context.Context, ohlcOpt *ohlcgrpc.OHLCFilter) (
 	// Data also needs to be filled where there are blanks: The FE graph sometimes does fill lthe blanks, sometimes does not: So better that the BE fills the blanks.
 	// The fill interval can be expressed in time.Duration Minutes:
 	deltaT := int64(ohlcOpt.Period.ToMinute().Duration) * int64(time.Minute) // The interval in nanoseconds.
+	deltaT = deltaT / 1000000000                                             // Convert to seconds
 
 	from := ohlcOpt.From // Used for filling the start of the return value array if no data is present
 	to := ohlcOpt.To     // Used for filling the end of the return value array if no data is present

@@ -308,9 +308,11 @@ func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []
 	}
 	// Remove all orders which we already have in the orderbook (if it was required, we add it back later)
 	for _, o := range orderbook {
+		logger.Infof("Orderbook order: sequences %d %d", o.Sequence, uint64(order.Sequence))
 		if o.Sequence == uint64(order.Sequence) {
 			removeList = append(removeList, o.Sequence)
 			// Once the order is found, we can exit the loop
+			logger.Infof("Removelist: Orderbook order: sequences %d %d", o.Sequence, uint64(order.Sequence))
 			break
 		}
 	}
@@ -318,6 +320,8 @@ func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []
 	if (*order.RemainingQuantity).IsZero() ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
 		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
+		logger.Infof("Do not keep: Orderbook order: sequences %d", uint64(order.Sequence))
+		removeList = append(removeList, uint64(order.Sequence))
 		return removeList, appendList
 	}
 	o, err := a.Normalize(ctx, order)

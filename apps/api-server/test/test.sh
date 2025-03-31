@@ -10,15 +10,15 @@ senderMnemonic="silk loop drastic novel taste project mind dragon shock outside 
 
 # Function to set the host to localhost
 set_host_local() {
-    HOST="http://localhost:8080"
-    WS_HOST="ws://localhost:8080"
+    HOST="http://localhost:8080/api"
+    WS_HOST="ws://localhost:8080/api"
     echo "Host set to localhost"
 }
 
 # Function to set the host to https://coredex.test.coreum.dev
 set_host_coreum() {
-    HOST="https://coredex.test.coreum.dev"
-    WS_HOST="wss://coredex.test.coreum.dev"
+    HOST="https://coredex.test.coreum.dev/api"
+    WS_HOST="wss://coredex.test.coreum.dev/api"
     echo "Host set to coredex.test.coreum.dev"
 }
 

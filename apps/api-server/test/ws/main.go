@@ -22,7 +22,7 @@ func main() {
 
 	for {
 		fmt.Println("Select an option:")
-		fmt.Println("a) Connect localhost (ws//localhost:8080/api/ws)")
+		fmt.Println("a) Connect localhost (ws://localhost:8080/api/ws)")
 		fmt.Println("b) Connect test host (wss://ws.test.coreum.dev/api/ws)")
 		fmt.Println("0) Exit")
 		fmt.Println("1) Test Order book for symbol")
