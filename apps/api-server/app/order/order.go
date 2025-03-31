@@ -234,7 +234,7 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			Denom2:  denom2Currency.Denom,
 			// This causes a slight overlap in data retrieved with the previous read, which is on purpose:
 			// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
-			From: timestamppb.New(processStart.Add(-5 * time.Second)),
+			From: timestamppb.New(processStart.Add(-30 * time.Second)),
 			To:   timestamppb.Now(), // This causes a slight overlap in data retrieved with the next read, which is on purpose
 		})
 		if err != nil {
