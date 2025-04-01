@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import themes from "./tools/theme";
 import { widget as Widget } from "../../vendor/tradingview/charting_library";
 import { CoreumDataFeed } from "./tools/api";
@@ -41,11 +41,15 @@ const resolutions: { [key: string]: string } = {
   "720": "12h",
 };
 
+// three minute threshold
+const REMOUNT_THRESHOLD = 3 * 60 * 1000;
+
 const TradingView = ({ height }: { height: number | string }) => {
   const { market, chartPeriod, setChartPeriod, network } = useStore();
   const [resolution, setResolution] = useState<string>(chartPeriod);
   const [dataFeed, setDataFeed] = useState<CoreumDataFeed | null>(null);
   const [lastUpdate, setLastUpdate] = useState<any>(null);
+  const lastRemountTime = useRef(0);
 
   const ohlcSubscription = useMemo(() => {
     const base = market.base.Denom;
@@ -63,7 +67,7 @@ const TradingView = ({ height }: { height: number | string }) => {
       wsManager.subscribe(
         ohlcSubscription,
         setLastUpdate,
-        UpdateStrategy.APPEND
+        UpdateStrategy.REPLACE
       );
     });
     return () => {
@@ -85,6 +89,25 @@ const TradingView = ({ height }: { height: number | string }) => {
     };
   }, [market.pair_symbol]);
 
+  // remount chart if away from tab for a while
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const now = Date.now();
+        if (now - lastRemountTime.current > REMOUNT_THRESHOLD) {
+          mountChart();
+          lastRemountTime.current = now;
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   // data feed updates
   useEffect(() => {
     if (!lastUpdate || !dataFeed) return;
@@ -99,8 +122,9 @@ const TradingView = ({ height }: { height: number | string }) => {
 
     dataFeed.subscriptions.forEach((sub) => {
       if (bars.length > 0) {
-        console.log(bars[bars.length - 1]);
-        handleWebsocketTick(sub, bars[bars.length - 1]);
+        bars.forEach((bar: any) => {
+          handleWebsocketTick(sub, bar);
+        });
       }
     });
   }, [lastUpdate, dataFeed]);
@@ -114,26 +138,11 @@ const TradingView = ({ height }: { height: number | string }) => {
       return;
     }
 
-    if (newTick.time > lastBar.time) {
+    if (newTick.time >= lastBar.time) {
       sub.lastBar = newTick;
       sub.onRealtimeCallback(newTick);
-    } else if (newTick.time === lastBar.time) {
-      const updatedBar = {
-        ...lastBar,
-        close: newTick.close,
-        high: Math.max(lastBar.high, newTick.high),
-        low: Math.min(lastBar.low, newTick.low),
-        volume: newTick.volume,
-      };
-      sub.lastBar = updatedBar;
-      sub.onRealtimeCallback(updatedBar);
     } else {
-      console.warn(
-        `Out-of-order tick ignored. Last bar time: ${new Date(
-          lastBar.time
-        ).toISOString()}, ` +
-          `new tick time: ${new Date(newTick.time).toISOString()}`
-      );
+      return;
     }
   };
 

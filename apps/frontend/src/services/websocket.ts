@@ -71,7 +71,7 @@ class WebSocketManager {
   private pendingSubscriptions: SubscriptionConfig[] = [];
   private pendingUnsubscriptions: Subscription[] = [];
   private subscriptions: Map<string, SubscriptionConfig> = new Map();
-  private stateStore: Map<string, any> = new Map();
+  public stateStore: Map<string, any> = new Map();
 
   private constructor() {
     this.connectedPromise = new Promise((resolve) => {
@@ -210,7 +210,7 @@ class WebSocketManager {
     }
   }
 
-  private getSubscriptionKey(sub: Subscription): string {
+  public getSubscriptionKey(sub: Subscription): string {
     return `${sub.Network}-${sub.Method}-${sub.ID}`;
   }
 
