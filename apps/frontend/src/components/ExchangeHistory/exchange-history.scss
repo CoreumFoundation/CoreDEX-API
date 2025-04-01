@@ -54,6 +54,7 @@
   .exchange-history-body-rows {
     width: 100%;
     overflow-y: hidden;
+    flex: 1;
 
     .exchange-history-body-row {
       display: grid;

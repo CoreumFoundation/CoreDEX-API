@@ -5,7 +5,7 @@ import { useStore } from "@/state/store";
 import { getTrades } from "@/services/api";
 import { TradeRecord } from "@/types/market";
 import { Side } from "coredex-api-types/order-properties";
-
+import AutoSizer from "react-virtualized-auto-sizer";
 import "./exchange-history.scss";
 import {
   UpdateStrategy,
@@ -24,8 +24,6 @@ mirage.register();
 dayjs.extend(duration);
 
 const ROW_HEIGHT = 26;
-const containerHeight = 212;
-
 const ExchangeHistory = () => {
   const { market, network, exchangeHistory, setExchangeHistory } = useStore();
 
@@ -50,8 +48,7 @@ const ExchangeHistory = () => {
   );
 
   const handler = (newTrades: TradeRecord[]) => {
-    const merged = mergeUniqueTrades(exchangeHistory, newTrades);
-    setExchangeHistory(merged);
+    setExchangeHistory((prev) => mergeUniqueTrades(prev, newTrades));
   };
 
   useEffect(() => {
@@ -204,16 +201,19 @@ const ExchangeHistory = () => {
       </div>
       {exchangeHistory && exchangeHistory.length > 0 ? (
         <div className="exchange-history-body-rows">
-          <List
-            height={containerHeight}
-            itemCount={exchangeHistory.length}
-            itemSize={ROW_HEIGHT}
-            width={"100%"}
-            outerRef={historyRef}
-          >
-            {Row}
-          </List>
-          <div style={{ height: "1px" }}></div>
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                height={height}
+                itemCount={exchangeHistory.length}
+                itemSize={ROW_HEIGHT}
+                width={width}
+                outerRef={historyRef}
+              >
+                {Row}
+              </List>
+            )}
+          </AutoSizer>
         </div>
       ) : (
         <div className="no-data-container">

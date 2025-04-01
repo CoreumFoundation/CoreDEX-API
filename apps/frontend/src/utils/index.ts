@@ -140,5 +140,12 @@ export const mergeUniqueTrades = (
   const filteredNew = newTrades.filter(
     (trade) => !prevHistory.some((prev) => prev.TXID === trade.TXID)
   );
-  return [...filteredNew, ...prevHistory];
+  return [...filteredNew, ...prevHistory].sort(
+    (a: TradeRecord, b: TradeRecord) => {
+      return (
+        new Date(b.BlockTime.seconds).getTime() -
+        new Date(a.BlockTime.seconds).getTime()
+      );
+    }
+  );
 };

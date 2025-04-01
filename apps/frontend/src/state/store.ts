@@ -40,9 +40,19 @@ export type State = {
   chartPeriod: string;
   setChartPeriod: (period: string) => void;
   exchangeHistory: TradeHistoryResponse | [];
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => void;
+  setExchangeHistory: (
+    exchangeHistory:
+      | TradeHistoryResponse
+      | []
+      | ((prev: TradeHistoryResponse | []) => TradeHistoryResponse | [])
+  ) => void;
   orderHistory: TradeHistoryResponse | [];
-  setOrderHistory: (orderHistory: TradeHistoryResponse | []) => void;
+  setOrderHistory: (
+    orderHistory:
+      | TradeHistoryResponse
+      | []
+      | ((prev: TradeHistoryResponse | []) => TradeHistoryResponse | [])
+  ) => void;
 };
 
 export const useStore = create<State>((set) => ({
@@ -142,8 +152,13 @@ export const useStore = create<State>((set) => ({
     set({ openOrders: openOrders });
   },
   orderHistory: [],
-  setOrderHistory: (orderHistory: TradeHistoryResponse | []) => {
-    set({ orderHistory: orderHistory });
+  setOrderHistory: (orderHistory) => {
+    set((state) => ({
+      orderHistory:
+        typeof orderHistory === "function"
+          ? orderHistory(state.orderHistory)
+          : orderHistory,
+    }));
   },
   loginModal: false,
   setLoginModal: (loginModal: boolean) => {
@@ -154,7 +169,11 @@ export const useStore = create<State>((set) => ({
     set({ chartPeriod: period });
   },
   exchangeHistory: [],
-  setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => {
-    set({ exchangeHistory: exchangeHistory });
-  },
+  setExchangeHistory: (exchangeHistory) =>
+    set((state) => ({
+      exchangeHistory:
+        typeof exchangeHistory === "function"
+          ? exchangeHistory(state.exchangeHistory)
+          : exchangeHistory,
+    })),
 }));
