@@ -40,8 +40,8 @@ export const getOHLC = async (
 
 interface GetTradesParams {
   symbol: string;
-  from: number;
-  to: number;
+  from?: number;
+  to?: number;
   account?: string;
   side?: Side.SIDE_BUY | Side.SIDE_SELL;
 }
@@ -55,9 +55,13 @@ export const getTrades = async ({
 }: GetTradesParams): Promise<AxiosResponse<TradeHistoryResponse>> => {
   const query: Record<string, any> = {
     symbol,
-    from: from.toString(),
-    to: to.toString(),
   };
+  if (from) {
+    query.from = from.toString();
+  }
+  if (to) {
+    query.to = to.toString();
+  }
 
   // Conditionally add optional parameters
   if (account) {

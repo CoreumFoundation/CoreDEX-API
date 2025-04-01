@@ -18,11 +18,11 @@ import duration from "dayjs/plugin/duration";
 import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
 import { mirage } from "ldrs";
+import { mergeUniqueTrades } from "@/utils";
 mirage.register();
 
 dayjs.extend(duration);
 
-const MAX_HISTORY_DAYS = 14;
 const ROW_HEIGHT = 26;
 const containerHeight = 212;
 
@@ -49,47 +49,35 @@ const ExchangeHistory = () => {
     [market.pair_symbol, network]
   );
 
-  const handler = (data: any) => {
-    setExchangeHistory(data);
+  const handler = (newTrades: TradeRecord[]) => {
+    const merged = mergeUniqueTrades(exchangeHistory, newTrades);
+    setExchangeHistory(merged);
   };
-
-  useEffect(() => {
-    wsManager.connected().then(() => {
-      wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
-    });
-    return () => {
-      wsManager.unsubscribe(subscription, handler);
-    };
-  }, [subscription]);
 
   useEffect(() => {
     const initFetch = async () => {
       setIsLoading(true);
-      let unitsBack = 1;
-      let dataFound = await fetchHistoryWindow(unitsBack);
-      while (!dataFound && unitsBack < MAX_HISTORY_DAYS) {
-        unitsBack++;
-        dataFound = await fetchHistoryWindow(unitsBack);
-      }
-      if (!dataFound) {
-        setExchangeHistory([]);
-        setHasMore(false);
-      }
+      await fetchTrades();
       setIsLoading(false);
     };
     initFetch();
-  }, [market.pair_symbol, setExchangeHistory]);
+  }, []);
 
-  const fetchHistoryWindow = async (unitsBack: number): Promise<boolean> => {
-    const from = dayjs().subtract(unitsBack, "hour").unix();
-    const to = dayjs()
-      .subtract(unitsBack - 1, "hour")
-      .unix();
+  useEffect(() => {
+    if (exchangeHistory && exchangeHistory.length > 0) {
+      wsManager.connected().then(() => {
+        wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
+      });
+      return () => {
+        wsManager.unsubscribe(subscription, handler);
+      };
+    }
+  }, [subscription, exchangeHistory]);
+
+  const fetchTrades = async (): Promise<boolean> => {
     try {
       const response = await getTrades({
         symbol: market.pair_symbol,
-        from: from,
-        to: to,
         side: Side.SIDE_BUY,
       });
       if (
@@ -99,7 +87,6 @@ const ExchangeHistory = () => {
       ) {
         setExchangeHistory(response.data);
         wsManager.setInitialState(subscription, response.data);
-        setTimeRange({ from, to });
         return true;
       }
       return false;
@@ -107,16 +94,6 @@ const ExchangeHistory = () => {
       console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
       return false;
     }
-  };
-
-  const mergeUniqueTrades = (
-    prevHistory: TradeRecord[],
-    newTrades: TradeRecord[]
-  ): TradeRecord[] => {
-    const filteredNew = newTrades.filter(
-      (trade) => !prevHistory.some((prev) => prev.TXID === trade.TXID)
-    );
-    return [...prevHistory, ...filteredNew];
   };
 
   const loadOlderHistory = async (): Promise<number> => {
@@ -206,13 +183,13 @@ const ExchangeHistory = () => {
     return (
       <div style={style} className="exchange-history-body-row">
         <div className={`exchange-history-body-value`}>
-          <FormatNumber number={trade.HumanReadablePrice} />
+          <FormatNumber number={trade?.HumanReadablePrice} />
         </div>
         <div className="exchange-history-body-value volume">
-          <FormatNumber number={trade.SymbolAmount} />
+          <FormatNumber number={trade?.SymbolAmount} />
         </div>
         <div className="exchange-history-body-value time">
-          {dayjs.unix(trade.BlockTime.seconds).format("MM/DD HH:mm")}
+          {dayjs.unix(trade?.BlockTime.seconds).format("MM/DD HH:mm")}
         </div>
       </div>
     );

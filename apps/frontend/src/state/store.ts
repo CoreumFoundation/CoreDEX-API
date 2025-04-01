@@ -41,8 +41,8 @@ export type State = {
   setChartPeriod: (period: string) => void;
   exchangeHistory: TradeHistoryResponse | [];
   setExchangeHistory: (exchangeHistory: TradeHistoryResponse | []) => void;
-  orderHistory: TradeHistoryResponse | null;
-  setOrderHistory: (orderHistory: TradeHistoryResponse | null) => void;
+  orderHistory: TradeHistoryResponse | [];
+  setOrderHistory: (orderHistory: TradeHistoryResponse | []) => void;
 };
 
 export const useStore = create<State>((set) => ({
@@ -141,8 +141,8 @@ export const useStore = create<State>((set) => ({
   setOpenOrders: (openOrders: TransformedOrder[] | null) => {
     set({ openOrders: openOrders });
   },
-  orderHistory: null,
-  setOrderHistory: (orderHistory: TradeHistoryResponse | null) => {
+  orderHistory: [],
+  setOrderHistory: (orderHistory: TradeHistoryResponse | []) => {
     set({ orderHistory: orderHistory });
   },
   loginModal: false,
