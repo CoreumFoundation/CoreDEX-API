@@ -13,3 +13,5 @@ A typical start is:
 ```bash
 go run .
 ```
+
+## Application start parameters

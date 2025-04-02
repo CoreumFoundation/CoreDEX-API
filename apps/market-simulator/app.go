@@ -58,6 +58,18 @@ type currency struct {
 	currency string
 }
 
+type App struct {
+	cfg                                                    AppConfig
+	issuer                                                 types.AccAddress
+	accounts                                               []types.AccAddress
+	denoms                                                 []string
+	sides                                                  []dextypes.Side
+	clientCtx                                              client.Context
+	txFactory                                              tx.Factory
+	iteration                                              int // Track iteration count
+	newPrice, previousPrice, baseVolatility, trendStrength float64
+}
+
 /*
 array with 2 elements of currency-issuer
 */
@@ -65,18 +77,6 @@ var (
 	currencyArray = []currency{
 		{"NOR", "nor"}, {"ALB", "alb"}}
 )
-
-type App struct {
-	cfg AppConfig
-
-	issuer    types.AccAddress
-	accounts  []types.AccAddress
-	denoms    []string
-	sides     []dextypes.Side
-	clientCtx client.Context
-	txFactory tx.Factory
-	iteration int // Track iteration count
-}
 
 func NewApp(
 	ctx context.Context,
@@ -120,7 +120,6 @@ func NewApp(
 		WithGasAdjustment(1.5)
 
 	bankClient := banktypes.NewQueryClient(clientCtx)
-
 	issuer := addToKeyring(clientCtx, cfg.Issuer)
 
 	accounts := lo.Map(cfg.AccountsWallet, func(item AccountWallet, index int) types.AccAddress {
@@ -160,24 +159,25 @@ func NewApp(
 
 		return denom
 	})...)
-
 	slog.Info("Denoms array", slog.Any("denoms", denoms))
 
 	sides := []dextypes.Side{
 		dextypes.SIDE_SELL,
 		dextypes.SIDE_BUY,
 	}
-
 	slog.Info("app initialized")
 
 	return App{
-		cfg:       cfg,
-		clientCtx: clientCtx,
-		txFactory: txFactory,
-		issuer:    issuer,
-		accounts:  accounts,
-		denoms:    denoms,
-		sides:     sides,
+		cfg:            cfg,
+		clientCtx:      clientCtx,
+		txFactory:      txFactory,
+		issuer:         issuer,
+		accounts:       accounts,
+		denoms:         denoms,
+		sides:          sides,
+		baseVolatility: 0.04,   // Makes prices oscillate ±4% around the trend
+		trendStrength:  0.0035, // Upward trend to push prices higher over time
+		previousPrice:  75.0,   // Also the initial price for the first order of the simulation
 	}, nil
 }
 
@@ -207,15 +207,12 @@ func addToKeyring(clientCtx client.Context, item AccountWallet) types.AccAddress
 
 func (fa *App) CreateOrder(
 	ctx context.Context,
-	rootRnd *rand.Rand,
 	accounts []types.AccAddress,
 ) error {
 	startTime := time.Now()
-	orderSeed := rootRnd.Int63()
-	orderRnd := rand.New(rand.NewSource(orderSeed))
 
 	// One side always sells, the other side always buys
-	msgIssueSell, msgIssueBuy, msgPlaceSellOrder, msgPlaceBuyOrder, err := fa.GenOrder(orderRnd, accounts)
+	msgIssueSell, msgIssueBuy, msgPlaceSellOrder, msgPlaceBuyOrder, err := fa.genOrder(accounts)
 	if err != nil {
 		return err
 	}
@@ -293,23 +290,11 @@ func (fa *App) GetAccounts() []types.AccAddress {
 	return fa.accounts
 }
 
-func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetfttypes.MsgMint,
+func (fa *App) genOrder(accounts []types.AccAddress) (*assetfttypes.MsgMint,
 	*assetfttypes.MsgMint, *dextypes.MsgPlaceOrder, *dextypes.MsgPlaceOrder, error) {
 	baseDenom, quoteDenom := fa.denoms[0], fa.denoms[1]
 
-	// Sine wave-based pricing
-	t := float64(fa.iteration)          // Use iteration as time step
-	priceValue := 90 + 10*gomath.Sin(t) // Base price 90, oscillating ±10
-	// Round priceValue to nearest integer
-	priceValue = gomath.Round(priceValue)
-	priceNum := uint64(priceValue)
-	var priceExp int8 = 0
-
-	price, ok := buildNumExpPrice(priceNum, priceExp)
-	if !ok {
-		return nil, nil, nil, nil, fmt.Errorf("could not parse %de%d as price", priceNum, priceExp)
-	}
-
+	price := fa.getNextPrice(fa.previousPrice)
 	quantity := 10 * int64(gomath.Pow(10, 6))
 	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
 
@@ -334,10 +319,7 @@ func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetftty
 		Recipient: accounts[0].String(),
 	}
 
-	priceValue = 90 + 10*gomath.Sin(float64(fa.iteration-1))
-	priceValue = gomath.Round(priceValue)
-	priceNum = uint64(priceValue)
-	price, _ = buildNumExpPrice(priceNum, priceExp)
+	// The opposing order:
 	amount, err := mulCeil(math.NewInt(quantity), price)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -368,8 +350,8 @@ func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetftty
 	fa.iteration++
 	// Every 1000 iterations fund the accounts (way sufficient to keep running)
 	if fa.iteration%1000 == 0 {
-		addFund(accounts[0].String())
-		addFund(accounts[1].String())
+		addFunds(accounts[0].String())
+		addFunds(accounts[1].String())
 	}
 	return mintSell,
 		mintBuy,
@@ -377,39 +359,36 @@ func (fa *App) GenOrder(rnd *rand.Rand, accounts []types.AccAddress) (*assetftty
 		buyOrder, nil
 }
 
+func (fa *App) getNextPrice(price float64) dextypes.Price {
+	// Introduce random volatility
+	currentVolatility := fa.baseVolatility * (0.8 + rand.Float64()*0.4) // Random volatility between 0.8x and 1.2x base
+	direction := 1 - 2*rand.Float64()                                   // Generates either -1 or 1
+	priceChange := price * (direction * currentVolatility)
+	trend := price * fa.trendStrength
+	price += priceChange + trend
+	if price < 0 {
+		price = 0 // Ensure prices don't go negative
+	}
+	fa.newPrice = price
+	return buildNumExpPrice(price)
+}
+
 func buildNumExpPrice(
-	num uint64,
-	exp int8,
-) (dextypes.Price, bool) {
-	numPart := strconv.FormatUint(num, 10)
-	// make the price valid if it ends with 0
-	validNumPart := strings.TrimRight(numPart, "0")
-	if validNumPart == "" {
-		// zero price
-		return dextypes.Price{}, false
-	}
-	correction := len(numPart) - len(validNumPart)
-	// invalid is exceeds the max int8 value
-	if int(exp)+correction > gomath.MaxInt8 {
-		return dextypes.Price{}, false
-	}
-	numPart = validNumPart
-	exp += int8(correction)
+	num float64,
+) dextypes.Price {
+	numPart := fmt.Sprintf("%.4f", num)
 
-	if len(numPart) > dextypes.MaxNumLen {
-		return dextypes.Price{}, false
+	fl, _ := strconv.ParseFloat(numPart, 64)
+	var priceStr string
+	// Convert float to exponent based price string
+	parts := strings.Split(numPart, ".")
+	exp2 := 0
+	if len(parts) == 2 {
+		exp2 = len(parts[1])
+		priceStr = fmt.Sprintf("%d", uint64(fl*gomath.Pow(10, float64(exp2))))
+		priceStr = priceStr + fmt.Sprintf("e-%d", exp2)
 	}
-	if exp > dextypes.MaxExp || exp < dextypes.MinExp {
-		return dextypes.Price{}, false
-	}
-	// prepare valid price
-	var expPart string
-	if exp != 0 {
-		expPart = dextypes.ExponentSymbol + strconv.Itoa(int(exp))
-	}
-
-	priceStr := numPart + expPart
-	return dextypes.MustNewPriceFromString(priceStr), true
+	return dextypes.MustNewPriceFromString(priceStr)
 }
 
 func mulCeil(quantity math.Int, price dextypes.Price) (math.Int, error) {

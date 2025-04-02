@@ -20,7 +20,7 @@ type fund struct {
 	Address string `json:"address"`
 }
 
-func addFund(address string) {
+func addFunds(address string) {
 	url := "https://api.devnet-1.coreum.dev/api/faucet/v1/fund"
 	payload := fund{
 		Address: address,

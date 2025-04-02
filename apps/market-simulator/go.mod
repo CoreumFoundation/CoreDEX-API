@@ -1,4 +1,4 @@
-module github.com/CoreumFoundation/CoreDEX-API/market-simulator
+module github.com/CoreumFoundation/CoreDEX-API/apps/market-simulator
 
 go 1.23.3
 
