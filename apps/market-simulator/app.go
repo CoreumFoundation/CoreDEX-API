@@ -386,6 +386,13 @@ func buildNumExpPrice(
 	if len(parts) == 2 {
 		exp2 = len(parts[1])
 		priceStr = fmt.Sprintf("%d", uint64(fl*gomath.Pow(10, float64(exp2))))
+	}
+	// PriceStr is not allowed to end in a 0: We have to strip the 0s and add them to the exponent
+	for priceStr[len(priceStr)-1] == '0' {
+		priceStr = priceStr[:len(priceStr)-1]
+		exp2++
+	}
+	if exp2 != 0 {
 		priceStr = priceStr + fmt.Sprintf("e-%d", exp2)
 	}
 	return dextypes.MustNewPriceFromString(priceStr)
