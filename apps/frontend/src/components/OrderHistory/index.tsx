@@ -20,7 +20,7 @@ import {
   getTrades,
   submitOrder,
 } from "@/services/api";
-import { resolveCoreumExplorer } from "@/utils";
+import { mergeUniqueTrades, resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
@@ -33,6 +33,7 @@ import debounce from "lodash/debounce";
 import { FixedSizeList as List } from "react-window";
 import { OrderStatus } from "coredex-api-types/order";
 import { Method } from "coredex-api-types/update";
+import AutoSizer from "react-virtualized-auto-sizer";
 dayjs.extend(duration);
 
 const TABS = {
@@ -40,8 +41,6 @@ const TABS = {
   ORDER_HISTORY: "ORDER_HISTORY",
 };
 
-const MAX_HISTORY_DAYS = 14;
-const containerHeight = 242;
 const ROW_HEIGHT = 26;
 
 const OrderHistory = () => {
@@ -83,33 +82,18 @@ const OrderHistory = () => {
 
   // fetch order history
   useEffect(() => {
+    if (!wallet?.address) return;
     const initFetch = async () => {
-      if (!wallet?.address) return;
-      let unitsBack = 1;
-      let dataFound = await fetchHistoryWindow(unitsBack);
-      while (!dataFound && unitsBack < MAX_HISTORY_DAYS) {
-        unitsBack++;
-        dataFound = await fetchHistoryWindow(unitsBack);
-      }
-      if (!dataFound) {
-        setOrderHistory([]);
-        setHasMore(false);
-      }
+      await fetchOrderHistory();
     };
 
     initFetch();
   }, [market.pair_symbol, wallet]);
 
-  const fetchHistoryWindow = async (unitsBack: number): Promise<boolean> => {
-    const from = dayjs().subtract(unitsBack, "hour").unix();
-    const to = dayjs()
-      .subtract(unitsBack - 1, "hour")
-      .unix();
+  const fetchOrderHistory = async (): Promise<boolean> => {
     try {
       const response = await getTrades({
         symbol: market.pair_symbol,
-        from: from,
-        to: to,
         account: wallet?.address,
       });
       if (
@@ -119,7 +103,6 @@ const OrderHistory = () => {
       ) {
         setOrderHistory(response.data);
         wsManager.setInitialState(orderHistorySubscription, response.data);
-        setTimeRange({ from, to });
         return true;
       }
       return false;
@@ -190,7 +173,7 @@ const OrderHistory = () => {
     wsManager.connected().then(() => {
       wsManager.subscribe(
         orderHistorySubscription,
-        setOrderHistory,
+        orderHistoryHandler,
         UpdateStrategy.MERGE
       );
     });
@@ -199,14 +182,8 @@ const OrderHistory = () => {
     };
   }, [orderHistorySubscription, wallet]);
 
-  const mergeUniqueTrades = (
-    prevHistory: TradeRecord[],
-    newTrades: TradeRecord[]
-  ): TradeRecord[] => {
-    const filteredNew = newTrades.filter(
-      (trade) => !prevHistory.some((prev) => prev.TXID === trade.TXID)
-    );
-    return [...prevHistory, ...filteredNew];
+  const orderHistoryHandler = (newTrades: TradeRecord[]) => {
+    setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
   };
 
   const loadOlderHistory = async (): Promise<number> => {
@@ -538,15 +515,19 @@ const OrderHistory = () => {
             ) : (
               <div className="order-history">
                 {orderHistory && orderHistory.length > 0 ? (
-                  <List
-                    height={containerHeight}
-                    itemCount={orderHistory.length}
-                    itemSize={ROW_HEIGHT}
-                    width={"100%"}
-                    outerRef={listOuterRef}
-                  >
-                    {Row}
-                  </List>
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <List
+                        height={height}
+                        itemCount={orderHistory.length}
+                        itemSize={ROW_HEIGHT}
+                        width={width}
+                        outerRef={listOuterRef}
+                      >
+                        {Row}
+                      </List>
+                    )}
+                  </AutoSizer>
                 ) : (
                   <div className="no-orders">
                     <img src="/trade/images/planet-graphic.svg" alt="" />
