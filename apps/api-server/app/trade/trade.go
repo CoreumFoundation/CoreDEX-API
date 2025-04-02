@@ -107,6 +107,8 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 		tr.Trade = &tradegrpc.Trade{
 			Price:  order.Price,
 			Amount: order.Quantity,
+			Denom1: order.BaseDenom,
+			Denom2: order.QuoteDenom,
 		}
 		if strings.Compare(tr.Trade.Denom1.Denom, filter.Denom1.Denom) != 0 {
 			tr.Trade.Denom1, tr.Trade.Denom2 = tr.Trade.Denom2, tr.Trade.Denom1
