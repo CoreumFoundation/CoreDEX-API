@@ -212,10 +212,18 @@ func (e *MsgPlaceOrderHandler) Handle(
 			switch order.Side {
 			case orderproperties.Side_SIDE_SELL:
 				amount = dec.NewFromInt(event.SentCoin.Amount.Int64())
-				price, _ = dec.NewFromInt(event.ReceivedCoin.Amount.Int64()).Div(amount).Float64()
+				d, err := dec.NewFromString(event.ReceivedCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				price, _ = d.Div(amount).Float64()
 			case orderproperties.Side_SIDE_BUY:
 				amount = dec.NewFromInt(event.ReceivedCoin.Amount.Int64())
-				price, _ = dec.NewFromInt(event.SentCoin.Amount.Int64()).Div(amount).Float64()
+				d, err := dec.NewFromString(event.SentCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				price, _ = d.Div(amount).Float64()
 			default:
 				logger.Errorf("unexpected side %s", order.Side.String())
 				continue
