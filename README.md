@@ -144,6 +144,16 @@ docker build -t coreumfoundation/frontend:latest -f Dockerfile.frontend .
 
 There are also sample deployment files for Kubernetes in the `apps/kubernetes` directory.
 
+## Market simulator
+
+For purposes of demonstration, there is a market simulator in the `apps/market-simulator` directory. This simulator can be used to simulate trading on the CoreDEX API. The checked in mnemonics are there for demonstration purposes only and should not be used in a production environment.
+
+To build the market simulator, run:
+
+```bash
+docker build -t coreumfoundation/market-simulator:latest -f Dockerfile.market-simulator .
+```
+
 ## Application documentation
 
 See the `README.md` files in the associated application folders.
