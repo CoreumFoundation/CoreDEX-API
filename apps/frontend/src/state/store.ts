@@ -5,12 +5,47 @@ import {
   Market,
   OrderbookResponse,
   TickerResponse,
-  Token,
   TradeHistoryResponse,
   TransformedOrder,
 } from "@/types/market";
 import { ToasterProps } from "@/types";
 import { toast } from "react-toastify";
+
+const defaultMarket: Market = {
+  base: {
+    Denom: {
+      Currency: "nor",
+      Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      Precision: 6,
+      Denom: "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      Name: "NOR",
+      Description: "NOR",
+      IsIBC: false,
+    },
+    Description: "NOR",
+  },
+  counter: {
+    Denom: {
+      Currency: "alb",
+      Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      Precision: 6,
+      Denom: "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+      Name: "ALB",
+      Description: "ALB",
+      IsIBC: false,
+    },
+    Description: "ALB",
+  },
+  pair_symbol:
+    "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+  reversed_pair_symbol:
+    "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+};
+
+const storedMarketString = localStorage.getItem("market");
+const storedMarket: Market = storedMarketString
+  ? JSON.parse(storedMarketString)
+  : defaultMarket;
 
 export type State = {
   fetching: boolean;
@@ -23,12 +58,10 @@ export type State = {
   pushNotification: (object: ToasterProps) => void;
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
-
-  // market
   market: Market;
   setMarket: (market: Market) => void;
   currencies: any;
-  setCurrencies: (currencies: Token[] | null) => void;
+  setCurrencies: (currencies: any) => void;
   orderbook: OrderbookResponse | null;
   setOrderbook: (orderbook: OrderbookResponse | null) => void;
   openOrders: TransformedOrder[] | null;
@@ -79,12 +112,10 @@ export const useStore = create<State>((set) => ({
       wallet,
     }));
   },
-
   coreum: null,
   setCoreum: async (client: Client | null) => {
     set({ coreum: client });
   },
-
   pushNotification: ({ type, message }) => {
     if (type === "success") {
       toast.success(message);
@@ -94,62 +125,31 @@ export const useStore = create<State>((set) => ({
       toast.warning(message);
     }
   },
-
   isLoading: false,
   setIsLoading: (isLoading: boolean) => {
-    set({ isLoading: isLoading });
+    set({ isLoading });
   },
 
-  market: {
-    base: {
-      Denom: {
-        Currency: "nor",
-        Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Precision: 6,
-        Denom: "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Name: "NOR",
-        Description: "NOR",
-        IsIBC: false,
-      },
-
-      Description: "NOR",
-    },
-    counter: {
-      Denom: {
-        Currency: "alb",
-        Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Precision: 6,
-        Denom: "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-        Name: "ALB",
-        Description: "ALB",
-        IsIBC: false,
-      },
-
-      Description: "ALB",
-    },
-    pair_symbol:
-      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-    reversed_pair_symbol:
-      "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-  },
+  market: storedMarket,
   setMarket: (market: Market) => {
-    set({ market: market });
+    localStorage.setItem("market", JSON.stringify(market));
+    set({ market });
   },
   currencies: null,
-  setCurrencies: (currencies: Token[] | null) => {
-    set({ currencies: currencies });
+  setCurrencies: (currencies: any) => {
+    set({ currencies });
   },
   tickers: null,
   setTickers: (tickers: TickerResponse | null) => {
-    set({ tickers: tickers });
+    set({ tickers });
   },
   orderbook: null,
   setOrderbook: (orderbook: OrderbookResponse | null) => {
-    set({ orderbook: orderbook });
+    set({ orderbook });
   },
   openOrders: null,
   setOpenOrders: (openOrders: TransformedOrder[] | null) => {
-    set({ openOrders: openOrders });
+    set({ openOrders });
   },
   orderHistory: [],
   setOrderHistory: (orderHistory) => {
@@ -162,7 +162,7 @@ export const useStore = create<State>((set) => ({
   },
   loginModal: false,
   setLoginModal: (loginModal: boolean) => {
-    set({ loginModal: loginModal });
+    set({ loginModal });
   },
   chartPeriod: "1",
   setChartPeriod: (period: string) => {

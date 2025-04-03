@@ -189,7 +189,9 @@ const OrderHistory = () => {
   const loadOlderHistory = async (): Promise<number> => {
     try {
       const currentWindow = timeRange.to - timeRange.from;
-      const newTo = timeRange.from;
+      const oldestTrade = orderHistory[orderHistory.length - 1];
+      const oldestTimestamp = oldestTrade?.BlockTime?.seconds ?? timeRange.from;
+      const newTo = oldestTimestamp - 1;
       const newFrom = newTo - currentWindow;
       const response = await getTrades({
         symbol: market.pair_symbol,
