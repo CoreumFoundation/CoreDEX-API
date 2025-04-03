@@ -170,12 +170,65 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	*/
 	// Set the time to be used for the moment of the update of the orderbook. If updates are "slow" this takes care of filling the gap
 	tStartUpdate := time.Now()
+	var err error
+	orderbook, err = a.fetchOrderBookFromChain(orderbook, network, denom1, denom2, limit)
+	if err != nil {
+		return nil, err
+	}
+	// If the process has taken more than a second, update the orderbook with the latest orders from the database
+	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
+	if time.Since(processStart) > time.Second {
+		orderbook, err = a.fetchOrderbookFromDatabase(orderbook, network, denom1, denom2, processStart)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Order the buys and sales descending
+	sort.Slice(orderbook.Buy, func(i, j int) bool {
+		p1, _ := dec.NewFromString(orderbook.Buy[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Buy[j].Price)
+		return p1.GreaterThan(p2)
+	})
+	sort.Slice(orderbook.Sell, func(i, j int) bool {
+		p1, _ := dec.NewFromString(orderbook.Sell[i].Price)
+		p2, _ := dec.NewFromString(orderbook.Sell[j].Price)
+		return p1.GreaterThan(p2)
+	})
+	// Set the orderbook into the cache:
+	a.orderbookCache.data[key] = &dmncache.LockableCache{
+		LastUpdated: tStartUpdate,
+		Value:       orderbook,
+	}
+	if aggregate {
+		// Clone the orderbook so that the original orderbook is not modified
+		orderbookClone := &coreum.OrderBookOrders{
+			Buy:  make([]*coreum.OrderBookOrder, 0),
+			Sell: make([]*coreum.OrderBookOrder, 0),
+		}
+		// Orders are aggregated by price so that only one record exists for a given price (can reduce the number of records to be displayed)
+		// This is done by summing up the quantities of orders with the same price
+		orderbookClone.Sell = aggregateOrders(orderbookClone.Sell)
+		orderbookClone.Buy = aggregateOrders(orderbookClone.Buy)
+
+		orderbookClone.Buy = make([]*coreum.OrderBookOrder, len(orderbook.Buy))
+		copy(orderbookClone.Buy, orderbook.Buy)
+		orderbookClone.Sell = make([]*coreum.OrderBookOrder, len(orderbook.Sell))
+		copy(orderbookClone.Sell, orderbook.Sell)
+		// Orders are aggregated by price so that only one record exists for a given price (can reduce the number of records to be displayed)
+		// This is done by summing up the quantities of orders with the same price
+		orderbookClone.Sell = aggregateOrders(orderbookClone.Sell)
+		orderbookClone.Buy = aggregateOrders(orderbookClone.Buy)
+		return orderbookClone, nil
+	}
+	return orderbook, nil
+}
+
+func (a *Application) fetchOrderBookFromChain(orderbook *coreum.OrderBookOrders, network metadata.Network, denom1, denom2 string, limit int) (*coreum.OrderBookOrders, error) {
 	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
-		processStart = time.Now()
 		ctx := context.Background()
 
 		var err error
-		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit), aggregate)
+		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit))
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
 				a.orderbookCache.mutex.Unlock()
@@ -214,83 +267,102 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 			order.Price = o.Price
 		}
 	}
-	// If the process has taken more than a second, update the orderbook with the latest orders from the database
-	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
-	if time.Since(processStart) > time.Second {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		denom1Currency, err := a.currencyClient.GetCurrency(ctx, network, denom1)
-		if err != nil {
-			return nil, err
-		}
-		denom2Currency, err := a.currencyClient.GetCurrency(ctx, network, denom2)
-		if err != nil {
-			return nil, err
-		}
-
-		orders, err := a.orderClient.GetAll(ctx, &ordergrpc.Filter{
-			Network: network,
-			Denom1:  denom1Currency.Denom,
-			Denom2:  denom2Currency.Denom,
-			// This causes a slight overlap in data retrieved with the previous read, which is on purpose:
-			// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
-			From: timestamppb.New(processStart.Add(-30 * time.Second)),
-			To:   timestamppb.Now(), // This causes a slight overlap in data retrieved with the next read, which is on purpose
-		})
-		if err != nil {
-			return nil, err
-		}
-		// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
-		// If the order is not in the orderbook, it is added to the orderbook
-		// If the order is in the orderbook, it is updated with the new data
-		buySide := orderbook.Buy
-		sellSide := orderbook.Sell
-		buySideRemove := make([]uint64, 0)
-		buySideAppend := make([]*coreum.OrderBookOrder, 0)
-		sellSideRemove := make([]uint64, 0)
-		sellSideAppend := make([]*coreum.OrderBookOrder, 0)
-		// Process orders from the database as updates on the actual orderbook loaded from the chain
-		for _, order := range orders.Orders {
-			buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
-			sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
-		}
-		for _, removeID := range buySideRemove {
-			for i, buyOrder := range buySide {
-				if buyOrder.Sequence == removeID {
-					buySide = append(buySide[:i], buySide[i+1:]...)
-				}
-			}
-		}
-		buySide = append(buySide, buySideAppend...)
-		for _, removeID := range sellSideRemove {
-			for i, o := range sellSide {
-				if o.Sequence == removeID {
-					sellSide = append(sellSide[:i], sellSide[i+1:]...)
-				}
-			}
-		}
-		sellSide = append(sellSide, sellSideAppend...)
-
-		orderbook.Buy = buySide
-		orderbook.Sell = sellSide
-	}
-	// Order the buys and sales descending
-	sort.Slice(orderbook.Buy, func(i, j int) bool {
-		p1, _ := dec.NewFromString(orderbook.Buy[i].Price)
-		p2, _ := dec.NewFromString(orderbook.Buy[j].Price)
-		return p1.GreaterThan(p2)
-	})
-	sort.Slice(orderbook.Sell, func(i, j int) bool {
-		p1, _ := dec.NewFromString(orderbook.Sell[i].Price)
-		p2, _ := dec.NewFromString(orderbook.Sell[j].Price)
-		return p1.GreaterThan(p2)
-	})
-	// Set the orderbook into the cache:
-	a.orderbookCache.data[key] = &dmncache.LockableCache{
-		LastUpdated: tStartUpdate,
-		Value:       orderbook,
-	}
 	return orderbook, nil
+}
+
+func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrders, network metadata.Network, denom1, denom2 string, processStart time.Time) (*coreum.OrderBookOrders, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	denom1Currency, err := a.currencyClient.GetCurrency(ctx, network, denom1)
+	if err != nil {
+		return nil, err
+	}
+	denom2Currency, err := a.currencyClient.GetCurrency(ctx, network, denom2)
+	if err != nil {
+		return nil, err
+	}
+
+	orders, err := a.orderClient.GetAll(ctx, &ordergrpc.Filter{
+		Network: network,
+		Denom1:  denom1Currency.Denom,
+		Denom2:  denom2Currency.Denom,
+		// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
+		// Also there can be a processing delay on the websocket (basic timing of the websocket updates), which can cause a further delay)
+		// Lastly this might be called after a blockchain timeout has occurred (on retrieval of the orderbook): Compensate for that too
+		// So we need to get some more data to compensate for that: Query up to 1 minute in the past
+		From: timestamppb.New(processStart.Add(-1 * time.Minute)),
+		To:   timestamppb.Now(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
+	// If the order is not in the orderbook, it is added to the orderbook
+	// If the order is in the orderbook, it is updated with the new data
+	buySide := orderbook.Buy
+	sellSide := orderbook.Sell
+	buySideRemove := make([]uint64, 0)
+	buySideAppend := make([]*coreum.OrderBookOrder, 0)
+	sellSideRemove := make([]uint64, 0)
+	sellSideAppend := make([]*coreum.OrderBookOrder, 0)
+	// Process orders from the database as updates on the actual orderbook loaded from the chain
+	for _, order := range orders.Orders {
+		buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
+		sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
+	}
+	for _, removeID := range buySideRemove {
+		for i, buyOrder := range buySide {
+			if buyOrder.Sequence == removeID {
+				buySide = append(buySide[:i], buySide[i+1:]...)
+			}
+		}
+	}
+	buySide = append(buySide, buySideAppend...)
+	for _, removeID := range sellSideRemove {
+		for i, o := range sellSide {
+			if o.Sequence == removeID {
+				sellSide = append(sellSide[:i], sellSide[i+1:]...)
+			}
+		}
+	}
+	sellSide = append(sellSide, sellSideAppend...)
+
+	orderbook.Buy = buySide
+	orderbook.Sell = sellSide
+	return orderbook, nil
+}
+
+func aggregateOrders(orders []*coreum.OrderBookOrder) []*coreum.OrderBookOrder {
+	aggregatedOrders := make([]*coreum.OrderBookOrder, 0)
+	if len(orders) == 0 {
+		return aggregatedOrders
+	}
+	aggregatedOrders = append(aggregatedOrders, orders[0])
+	for i := 1; i < len(orders); i++ {
+		if orders[i].PriceDec.Equal(orders[i-1].PriceDec) {
+			s, err := dec.NewFromString(orders[i].Amount)
+			if err != nil {
+				continue
+			}
+			r, err := dec.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].Amount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].Amount = s.Add(r).String()
+			s, err = dec.NewFromString(orders[i].SymbolAmount)
+			if err != nil {
+				continue
+			}
+			r, err = dec.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount = s.Add(r).String()
+		} else {
+			aggregatedOrders = append(aggregatedOrders, orders[i])
+		}
+	}
+	return aggregatedOrders
 }
 
 // Function generates 2 lists: A remove list and an append list
