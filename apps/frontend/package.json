@@ -1,7 +1,7 @@
 {
   "name": "coreum-fe-dex-webapp",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "rm -rf node_modules/.vite && vite",
