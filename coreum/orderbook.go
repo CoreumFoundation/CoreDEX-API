@@ -45,7 +45,7 @@ func (r *Reader) QueryOrderBookOrders(
 }
 
 type OrderBookOrder struct {
-	priceDec              decimal.Decimal
+	PriceDec              decimal.Decimal
 	Price                 string
 	HumanReadablePrice    string
 	Amount                string
@@ -81,7 +81,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 				return nil, err
 			}
 			orders = append(orders, &OrderBookOrder{
-				priceDec:        price,
+				PriceDec:        price,
 				Price:           price.String(),
 				Amount:          order.Quantity.String(),
 				Sequence:        order.Sequence,
@@ -100,7 +100,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
 			remainingQuantity := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0).Mul(invPrice)
 			orders = append(orders, &OrderBookOrder{
-				priceDec:        invPrice,
+				PriceDec:        invPrice,
 				Price:           invPrice.String(),
 				Amount:          quantity.String(),
 				Sequence:        order.Sequence,
@@ -114,7 +114,7 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 }
 
 // QueryOrderBookRelevantOrders returns orders inside an order book around the spread.
-func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, limit uint64, aggregate bool) (orders *OrderBookOrders, err error) {
+func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom2 string, limit uint64) (orders *OrderBookOrders, err error) {
 	orderBookOrders := &OrderBookOrders{
 		Buy:  make([]*OrderBookOrder, 0),
 		Sell: make([]*OrderBookOrder, 0),
@@ -183,57 +183,17 @@ func (r *Reader) QueryOrderBookRelevantOrders(ctx context.Context, denom1, denom
 	}
 
 	sort.SliceStable(orderBookOrders.Sell, func(i, j int) bool {
-		return orderBookOrders.Sell[i].priceDec.LessThan(orderBookOrders.Sell[j].priceDec)
+		return orderBookOrders.Sell[i].PriceDec.LessThan(orderBookOrders.Sell[j].PriceDec)
 	})
 	if uint64(len(orderBookOrders.Sell)) > limit {
 		orderBookOrders.Sell = orderBookOrders.Sell[0:limit]
 	}
 
 	sort.SliceStable(orderBookOrders.Buy, func(i, j int) bool {
-		return orderBookOrders.Buy[i].priceDec.GreaterThan(orderBookOrders.Buy[j].priceDec)
+		return orderBookOrders.Buy[i].PriceDec.GreaterThan(orderBookOrders.Buy[j].PriceDec)
 	})
 	if uint64(len(orderBookOrders.Buy)) > limit {
 		orderBookOrders.Buy = orderBookOrders.Buy[0:limit]
 	}
-	if !aggregate {
-		return orderBookOrders, nil
-	}
-	// Orders are aggregated by price so that only one record exists for a given price (can reduce the number of records to be displayed)
-	// This is done by summing up the quantities of orders with the same price
-	orderBookOrders.Sell = aggregateOrders(orderBookOrders.Sell)
-	orderBookOrders.Buy = aggregateOrders(orderBookOrders.Buy)
 	return orderBookOrders, nil
-}
-
-func aggregateOrders(orders []*OrderBookOrder) []*OrderBookOrder {
-	aggregatedOrders := make([]*OrderBookOrder, 0)
-	if len(orders) == 0 {
-		return aggregatedOrders
-	}
-	aggregatedOrders = append(aggregatedOrders, orders[0])
-	for i := 1; i < len(orders); i++ {
-		if orders[i].priceDec.Equal(orders[i-1].priceDec) {
-			s, err := decimal.NewFromString(orders[i].Amount)
-			if err != nil {
-				continue
-			}
-			r, err := decimal.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].Amount)
-			if err != nil {
-				continue
-			}
-			aggregatedOrders[len(aggregatedOrders)-1].Amount = s.Add(r).String()
-			s, err = decimal.NewFromString(orders[i].SymbolAmount)
-			if err != nil {
-				continue
-			}
-			r, err = decimal.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount)
-			if err != nil {
-				continue
-			}
-			aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount = s.Add(r).String()
-		} else {
-			aggregatedOrders = append(aggregatedOrders, orders[i])
-		}
-	}
-	return aggregatedOrders
 }
