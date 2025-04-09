@@ -182,15 +182,43 @@ func (e *MsgPlaceOrderHandler) Handle(
 
 			enriched = enrichDenoms(ctx, currencyClient, meta, order, enriched)
 
+			var amount dec.Decimal
+			var price float64
 			switch order.Side {
 			case orderproperties.Side_SIDE_SELL:
+				val, err := dec.NewFromString(event.SentCoin.Amount.String())
+				if err != nil {
+					return err
+				}
 				order.RemainingQuantity = decimal.FromDec(
-					dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp).Sub(dec.New(event.SentCoin.Amount.Int64(), order.RemainingQuantity.Exp)),
+					dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp).Sub(val),
 				)
+				amount, err = dec.NewFromString(event.SentCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				d, err := dec.NewFromString(event.ReceivedCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				price, _ = d.Div(amount).Float64()
 			case orderproperties.Side_SIDE_BUY:
+				val, err := dec.NewFromString(event.ReceivedCoin.Amount.String())
+				if err != nil {
+					return err
+				}
 				order.RemainingQuantity = decimal.FromDec(
-					dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp).Sub(dec.New(event.ReceivedCoin.Amount.Int64(), order.RemainingQuantity.Exp)),
+					dec.New(order.RemainingQuantity.Value, order.RemainingQuantity.Exp).Sub(val),
 				)
+				amount, err = dec.NewFromString(event.ReceivedCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				d, err := dec.NewFromString(event.SentCoin.Amount.String())
+				if err != nil {
+					return err
+				}
+				price, _ = d.Div(amount).Float64()
 			default:
 				logger.Errorf("unexpected side %s", order.Side.String())
 				continue
@@ -205,28 +233,6 @@ func (e *MsgPlaceOrderHandler) Handle(
 			_, err = orderClient.Upsert(orderclient.AuthCtx(ctx), order)
 			if err != nil {
 				return err
-			}
-
-			var amount dec.Decimal
-			var price float64
-			switch order.Side {
-			case orderproperties.Side_SIDE_SELL:
-				amount = dec.NewFromInt(event.SentCoin.Amount.Int64())
-				d, err := dec.NewFromString(event.ReceivedCoin.Amount.String())
-				if err != nil {
-					return err
-				}
-				price, _ = d.Div(amount).Float64()
-			case orderproperties.Side_SIDE_BUY:
-				amount = dec.NewFromInt(event.ReceivedCoin.Amount.Int64())
-				d, err := dec.NewFromString(event.SentCoin.Amount.String())
-				if err != nil {
-					return err
-				}
-				price, _ = d.Div(amount).Float64()
-			default:
-				logger.Errorf("unexpected side %s", order.Side.String())
-				continue
 			}
 
 			// store trade
@@ -264,7 +270,11 @@ func (e *MsgPlaceOrderHandler) Handle(
 				return err
 			}
 			order.OrderStatus = ordergrpc.OrderStatus_ORDER_STATUS_FILLED
-			order.RemainingQuantity = decimal.FromDec(dec.NewFromInt(event.RemainingBaseQuantity.Int64()))
+			val, err := dec.NewFromString(event.RemainingBaseQuantity.String())
+			if err != nil {
+				return err
+			}
+			order.RemainingQuantity = decimal.FromDec(val)
 			if order.RemainingQuantity.Value == 0 {
 				order.RemainingQuantity.Exp = 0
 			}
