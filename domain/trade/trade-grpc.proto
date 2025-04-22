@@ -20,6 +20,7 @@ service TradeService {
     rpc GetAll(Filter) returns (Trades) {}
 
     rpc GetTradePairs(TradePairFilter) returns (TradePairs) {}
+    rpc UpsertTradePair(TradePair) returns (google.protobuf.Empty) {}
 }
 
 message ID {

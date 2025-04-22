@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "rootDir": "./domain",
-    "outDir": "./build/domain",
+    "rootDir": "./",
+    "outDir": "./build",
     "esModuleInterop": true,
     "strict": true,
     "declaration": true,
     "module": "ES2022",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "resolveJsonModule": true
   },
-  "include": ["domain/**/*"],
-  "exclude": ["node_modules", "client"]
+  "include": ["domain/trade/*.ts"],
+  "exclude": ["node_modules/**", "client/**"]
 }

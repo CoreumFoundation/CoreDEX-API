@@ -218,6 +218,7 @@ func (s *httpServer) submitOrder() handler.Handler {
 		res, err := s.app.Order.SubmitTx(network, rawTx)
 		if err != nil {
 			logger.Errorf("Error submitting tx: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 			return nil
 		}
 		submitResponse := SubmitResponse{

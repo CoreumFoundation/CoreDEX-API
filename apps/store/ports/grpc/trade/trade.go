@@ -64,3 +64,12 @@ func (s *GrpcServer) GetTradePairs(ctx context.Context, filter *tradegrpc.TradeP
 	}
 	return tradePairs, nil
 }
+
+func (s *GrpcServer) UpsertTradePair(ctx context.Context, in *tradegrpc.TradePair) (*pb.Empty, error) {
+	err := s.store.Trade.UpsertTradePair(in)
+	if err != nil {
+		logger.Errorf("UpsertTradePair failed for %+v with error %v", *in, err)
+		return nil, err
+	}
+	return &pb.Empty{}, nil
+}

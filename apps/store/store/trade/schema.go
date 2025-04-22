@@ -77,6 +77,9 @@ func (a *Application) alterTables() {
 	ADD COLUMN Enriched BOOLEAN DEFAULT TRUE`)
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Inverted BOOLEAN DEFAULT FALSE`)
+	a.client.Client.Exec(`ALTER TABLE TradePairs 
+	ADD Column PriceTick BIGINT,
+	ADD COLUMN QuantityStep INT`)
 }
 
 func (a *Application) index() {

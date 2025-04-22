@@ -26,6 +26,7 @@ func NewHttpServer(app *app.Application) *behttp.Server {
 		{Path: routePrepend + "/tickers", Method: behttp.GET, Handler: s.getTickers()},
 		{Path: routePrepend + "/trades", Method: behttp.GET, Handler: s.getTrades()},
 		{Path: routePrepend + "/currencies", Method: behttp.GET, Handler: s.getCurrencies()},
+		{Path: routePrepend + "/market", Method: behttp.GET, Handler: s.getMarket()},
 		{Path: routePrepend + "/order/create", Method: behttp.POST, Handler: s.createOrder()},
 		{Path: routePrepend + "/order/cancel", Method: behttp.POST, Handler: s.cancelOrder()},
 		{Path: routePrepend + "/order/submit", Method: behttp.POST, Handler: s.submitOrder()},
