@@ -35,7 +35,9 @@ Inverted`
 
 	tradePairTableFields = `Denom1,
 Denom2,
-MetaData `
+MetaData,
+PriceTick,
+QuantityStep `
 )
 
 type Application struct {
@@ -152,7 +154,7 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 	if _, ok := tradePairCache[tradePairKey]; !ok {
 		// Keep the trade pairs up to date (ignore the errors: Would only occur on duplicate key or non-recoverable anyway)
 		a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`)
-		VALUES (?, ?, ?)`, denom1, denom2, metaData)
+		VALUES (?, ?, ?, ?, ?)`, denom1, denom2, metaData, 0, 0)
 		tradePairCache[tradePairKey] = true
 	}
 	return nil
@@ -333,10 +335,7 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 	var args []interface{}
 
 	queryBuilder.WriteString(`
-			SELECT 
-				MetaData, 
-				Denom1, 
-				Denom2
+			SELECT ` + tradePairTableFields + `
 			FROM TradePairs 
 			WHERE Network=?
 		`)
@@ -373,14 +372,17 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 		metaData := make([]byte, 0)
 		var tradePair tradegrpc.TradePair
 		var denom1, denom2 []byte
+		var priceTick, quantityStep int64
 
-		if err := rows.Scan(&metaData, &denom1, &denom2); err != nil {
+		if err := rows.Scan(&denom1, &denom2, &metaData, &priceTick, &quantityStep); err != nil {
 			return nil, err
 		}
 
 		json.Unmarshal(denom1, &tradePair.Denom1)
 		json.Unmarshal(denom2, &tradePair.Denom2)
 		json.Unmarshal(metaData, &tradePair.MetaData)
+		tradePair.PriceTick = &priceTick
+		tradePair.QuantityStep = &quantityStep
 
 		tradePairs = append(tradePairs, &tradePair)
 	}
@@ -390,4 +392,31 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 	}
 
 	return &tradegrpc.TradePairs{TradePairs: tradePairs}, nil
+}
+
+func (a *Application) UpsertTradePair(in *tradegrpc.TradePair) error {
+	// Marshal JSON fields
+	metaData, err := json.Marshal(in.MetaData)
+	if err != nil {
+		logger.Errorf("Error marshalling metadata for trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
+		return err
+	}
+	// Use the mysql client to insert the provided data into the table TradePairs
+	_, err = a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`) 
+		VALUES (?, ?, ?, ? ,?) 
+		ON DUPLICATE KEY UPDATE 
+		MetaData=?, PriceTick=?, QuantityStep=?`,
+		in.Denom1,
+		in.Denom2,
+		metaData,
+		in.PriceTick,
+		in.QuantityStep,
+		metaData,
+		in.PriceTick,
+		in.QuantityStep)
+	if err != nil {
+		logger.Errorf("Error upserting trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
+		return err
+	}
+	return nil
 }

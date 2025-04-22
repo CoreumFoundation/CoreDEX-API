@@ -29,40 +29,32 @@ func NewNodeConnections() map[metadata.Network]*client.Context {
 
 	// Parse the ENV variable NETWORKS
 	networks := ParseConfig()
+	// ChainID is set to mainnet (hardcoded here since we do not use the chain in such a way that we need to change it
+	// plus the cosmos sdk has a limitation in being able to support more than 1 chain at the time, and we want to connect
+	// several chains here (less resources, plus there are use cases where we might want to connect to several chains)
+	chainID := constant.ChainIDMain
+	network, err := coreumconfig.NetworkConfigByChainID(chainID)
+	if err != nil {
+		logger.Fatalf("error getting network config: %v", err)
+	}
+	network.SetSDKConfig()
+
 	for _, node := range networks.Node {
-		logger.Infof("Connecting to GRPC interface: %s", node.GRPCHost)
 		transportCredentials := credentials.NewTLS(&tls.Config{})
 		if strings.HasPrefix(node.GRPCHost, "127.0.0.1") || strings.HasPrefix(node.GRPCHost, "localhost") {
 			transportCredentials = insecure.NewCredentials()
 		}
 		grpcClient, err := grpc.NewClient(node.GRPCHost, grpc.WithTransportCredentials(transportCredentials))
-		logger.Infof("Connected to GRPC interface: %s", node.GRPCHost)
 		if err != nil {
 			logger.Fatalf("error connecting to coreum GRPC interface: %v", err)
 		}
+		logger.Infof("Connected to GRPC interface: %s", node.GRPCHost)
 
-		logger.Infof("Connecting to RPC interface: %s", node.RPCHost)
 		rpcClient, err := sdkclient.NewClientFromNode(node.RPCHost)
-		logger.Infof("Connected to RPC interface: %s", node.RPCHost)
 		if err != nil {
 			logger.Fatalf("error connecting to coreum RPC interface: %v", err)
 		}
-
-		// ChainID is set to mainnet (default)
-		chainID := constant.ChainIDMain
-		// And switched to testnet or devnet if needed
-		switch node.Network {
-		case "testnet":
-			chainID = constant.ChainIDTest
-		case "devnet":
-			chainID = constant.ChainIDDev
-		}
-
-		network, err := coreumconfig.NetworkConfigByChainID(chainID)
-		if err != nil {
-			panic(err)
-		}
-		network.SetSDKConfig()
+		logger.Infof("Connected to RPC interface: %s", node.RPCHost)
 
 		modules := auth.AppModuleBasic{}
 		encodingConfig := coreumconfig.NewEncodingConfig(modules)

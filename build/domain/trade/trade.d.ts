@@ -27,6 +27,12 @@ export interface Trade {
     Enriched: boolean;
     /** USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc) */
     USD?: number | undefined;
+    /**
+     * Trades get stored in alphabetical order of the denom pair.
+     * Data is "uninverted" on retrieval and
+     * this flag only indicates that the denoms as seen in the record are not in the original order
+     */
+    Inverted: boolean;
 }
 export interface Trades {
     Trades: Trade[];
@@ -35,6 +41,8 @@ export interface TradePair {
     Denom1: Denom | undefined;
     Denom2: Denom | undefined;
     MetaData: MetaData | undefined;
+    PriceTick?: number | undefined;
+    QuantityStep?: number | undefined;
 }
 export interface TradePairs {
     TradePairs: TradePair[];
@@ -85,6 +93,7 @@ export declare const Trade: {
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
         USD?: number | undefined;
+        Inverted?: boolean | undefined;
     } & {
         Account?: string | undefined;
         OrderID?: string | undefined;
@@ -150,6 +159,7 @@ export declare const Trade: {
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
         USD?: number | undefined;
+        Inverted?: boolean | undefined;
     } & { [K_4 in Exclude<keyof I, keyof Trade>]: never; }>(base?: I | undefined): Trade;
     fromPartial<I_1 extends {
         Account?: string | undefined;
@@ -191,6 +201,7 @@ export declare const Trade: {
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
         USD?: number | undefined;
+        Inverted?: boolean | undefined;
     } & {
         Account?: string | undefined;
         OrderID?: string | undefined;
@@ -256,6 +267,7 @@ export declare const Trade: {
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
         USD?: number | undefined;
+        Inverted?: boolean | undefined;
     } & { [K_9 in Exclude<keyof I_1, keyof Trade>]: never; }>(object: I_1): Trade;
 };
 export declare const Trades: {
@@ -304,6 +316,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[] | undefined;
     } & {
         Trades?: ({
@@ -346,6 +359,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[] & ({
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -386,6 +400,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         } & {
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -451,6 +466,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         } & { [K_4 in Exclude<keyof I["Trades"][number], keyof Trade>]: never; })[] & { [K_5 in Exclude<keyof I["Trades"], keyof {
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -491,6 +507,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[]>]: never; }) | undefined;
     } & { [K_6 in Exclude<keyof I, "Trades">]: never; }>(base?: I | undefined): Trades;
     fromPartial<I_1 extends {
@@ -534,6 +551,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[] | undefined;
     } & {
         Trades?: ({
@@ -576,6 +594,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[] & ({
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -616,6 +635,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         } & {
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -681,6 +701,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         } & { [K_11 in Exclude<keyof I_1["Trades"][number], keyof Trade>]: never; })[] & { [K_12 in Exclude<keyof I_1["Trades"], keyof {
             Account?: string | undefined;
             OrderID?: string | undefined;
@@ -721,6 +742,7 @@ export declare const Trades: {
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
             USD?: number | undefined;
+            Inverted?: boolean | undefined;
         }[]>]: never; }) | undefined;
     } & { [K_13 in Exclude<keyof I_1, "Trades">]: never; }>(object: I_1): Trades;
 };
@@ -755,6 +777,8 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } | undefined;
+        PriceTick?: number | undefined;
+        QuantityStep?: number | undefined;
     } & {
         Denom1?: ({
             Currency?: string | undefined;
@@ -803,6 +827,8 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } & { [K_2 in Exclude<keyof I["MetaData"], keyof MetaData>]: never; }) | undefined;
+        PriceTick?: number | undefined;
+        QuantityStep?: number | undefined;
     } & { [K_3 in Exclude<keyof I, keyof TradePair>]: never; }>(base?: I | undefined): TradePair;
     fromPartial<I_1 extends {
         Denom1?: {
@@ -830,6 +856,8 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } | undefined;
+        PriceTick?: number | undefined;
+        QuantityStep?: number | undefined;
     } & {
         Denom1?: ({
             Currency?: string | undefined;
@@ -878,6 +906,8 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } & { [K_6 in Exclude<keyof I_1["MetaData"], keyof MetaData>]: never; }) | undefined;
+        PriceTick?: number | undefined;
+        QuantityStep?: number | undefined;
     } & { [K_7 in Exclude<keyof I_1, keyof TradePair>]: never; }>(object: I_1): TradePair;
 };
 export declare const TradePairs: {
@@ -912,6 +942,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[] | undefined;
         Offset?: number | undefined;
     } & {
@@ -941,6 +973,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[] & ({
             Denom1?: {
                 Currency?: string | undefined;
@@ -967,6 +1001,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         } & {
             Denom1?: ({
                 Currency?: string | undefined;
@@ -1015,6 +1051,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } & { [K_2 in Exclude<keyof I["TradePairs"][number]["MetaData"], keyof MetaData>]: never; }) | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         } & { [K_3 in Exclude<keyof I["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_4 in Exclude<keyof I["TradePairs"], keyof {
             Denom1?: {
                 Currency?: string | undefined;
@@ -1041,6 +1079,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[]>]: never; }) | undefined;
         Offset?: number | undefined;
     } & { [K_5 in Exclude<keyof I, keyof TradePairs>]: never; }>(base?: I | undefined): TradePairs;
@@ -1071,6 +1111,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[] | undefined;
         Offset?: number | undefined;
     } & {
@@ -1100,6 +1142,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[] & ({
             Denom1?: {
                 Currency?: string | undefined;
@@ -1126,6 +1170,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         } & {
             Denom1?: ({
                 Currency?: string | undefined;
@@ -1174,6 +1220,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } & { [K_8 in Exclude<keyof I_1["TradePairs"][number]["MetaData"], keyof MetaData>]: never; }) | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         } & { [K_9 in Exclude<keyof I_1["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_10 in Exclude<keyof I_1["TradePairs"], keyof {
             Denom1?: {
                 Currency?: string | undefined;
@@ -1200,6 +1248,8 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
+            PriceTick?: number | undefined;
+            QuantityStep?: number | undefined;
         }[]>]: never; }) | undefined;
         Offset?: number | undefined;
     } & { [K_11 in Exclude<keyof I_1, keyof TradePairs>]: never; }>(object: I_1): TradePairs;

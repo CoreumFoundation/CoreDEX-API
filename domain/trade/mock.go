@@ -20,6 +20,11 @@ func (c *MockTradeServiceClient) GetTradePairs(ctx context.Context, in *TradePai
 	panic("implement me")
 }
 
+func (c *MockTradeServiceClient) UpsertTradePair(ctx context.Context, in *TradePair, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 type orderWrapper struct {
 	seq   int
 	order *Trade

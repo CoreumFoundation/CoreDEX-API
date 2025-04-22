@@ -44,6 +44,7 @@ The API server provides the following routes:
 - GET /api/trades : Returns trade data (filterable)
 - GET /api/tickers?symbols=base64encoded : Returns the latest price for one or more trading pairs
 - GET /api/currencies : Returns the currencies
+- GET /api/market : Returns the market data (provides information for trade tick size)
 - GET /api/ws : Websocket for real-time updates
 - POST /api/order/create : Create an order
 - POST /api/order/cancel : Cancel an order
@@ -165,7 +166,7 @@ The tickers endpoint returns the latest price for all trading pairs.
 
 Params:
 
-- symbols _mandatory_ - a base64 encoded list of symbols for which the ticker should be returned.
+- `symbols` _mandatory_ - a base64 encoded list of symbols for which the ticker should be returned.
 
 Maximum 20 symbols. Watch out for overflow of the URL in certain browsers: The symbol strings are quite long, so most likely the queries should be limited to 10 symbols or even less
 
@@ -264,6 +265,35 @@ Example call:
 ```bash
 curl -H "Network: devnet" \
 -X "GET" "https://coredex.test.coreum.dev/api/currencies"
+```
+
+#### /market
+
+Returns the market data for a certain symbol.
+
+Params:
+- `symbol` _required_ - symbol for which market data should be returned. NOTE: `symbol` should be urlsafe encoded.
+
+Returns:
+
+```json5
+{
+  "Market": {
+    "Symbol": "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
+    "MinTradeSize": {
+      "Value": 1000000,
+      "Exp": -6,
+    },
+    "MinPriceTickSize": {
+      "Value": 1,
+      "Exp": -6,
+    },
+    "MinAmountTickSize": {
+      "Value": 1,
+      "Exp": -6,
+    },
+  }
+}
 ```
 
 #### /order/create
