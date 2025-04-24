@@ -24,6 +24,7 @@ require (
 
 require (
 	cosmossdk.io/math v1.5.0
+	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250422225304-9541ca123bea
 	github.com/google/uuid v1.6.0
 	github.com/samber/lo v1.47.0
 )
@@ -184,7 +185,7 @@ require (
 	golang.org/x/text v0.22.0 // indirect
 	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241202173237-19429a94021a // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241202173237-19429a94021a // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -23,6 +23,7 @@ func NewApplication(reader *coreum.Reader, tradeClient tradegrpc.TradeServiceCli
 }
 
 func (app *Application) Start(ctx context.Context) {
+	logger.Infof("starting market scanner for %s", app.reader.Network.String())
 	// Start the market scanner
 	go app.scanMarkets(ctx)
 }

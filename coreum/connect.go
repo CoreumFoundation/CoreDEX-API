@@ -28,10 +28,17 @@ type Reader struct {
 	Network       metadata.Network
 	ClientContext *client.Context
 	// Read transactions get dumped into this socket for processing thus decoupling the block reader from any business logic
-	ProcessBlockChannel chan *ScannedBlock
-	BlockHeight         int64
-	LastBlockTime       time.Time
-	BlockProductionTime time.Duration
+	ProcessBlockChannel        chan *ScannedBlock
+	BlockHeight                int64
+	LastBlockTime              time.Time
+	BlockProductionTime        time.Duration
+	previousHeight             int64
+	currentHeight              int64
+	measureTotalThroughputTime time.Time
+	measureBlockLoadTime       time.Time
+	measureTXLoadTime          time.Time
+	measureTotalTransactions   int // Measure of total transactions loaded in the last 100 blocks (for performance monitoring)
+	mutex                      *sync.Mutex
 }
 
 const MinimumBlockProductionTime = 100 * time.Millisecond
@@ -39,11 +46,15 @@ const MaximumBlockProductionTime = 10 * time.Second
 
 func NewReader(network metadata.Network, clientContext *client.Context) *Reader {
 	return &Reader{
-		Network:             network,
-		ClientContext:       clientContext,
-		ProcessBlockChannel: make(chan *ScannedBlock, 1000),
-		LastBlockTime:       time.Now(),
-		BlockProductionTime: MinimumBlockProductionTime,
+		Network:                    network,
+		ClientContext:              clientContext,
+		ProcessBlockChannel:        make(chan *ScannedBlock, 1000),
+		LastBlockTime:              time.Now(),
+		BlockProductionTime:        MinimumBlockProductionTime,
+		measureTotalThroughputTime: time.Now(),
+		measureBlockLoadTime:       time.Now(),
+		measureTXLoadTime:          time.Now(),
+		mutex:                      &sync.Mutex{},
 	}
 }
 
@@ -80,23 +91,24 @@ func (r Readers) Start() {
 		go func(reader *Reader) {
 			txClient := txtypes.NewServiceClient(nodeConnections[reader.Network])
 			rpcClient := nodeConnections[reader.Network].RPCClient()
-			currentHeight := reader.BlockHeight
-			if currentHeight < 1 {
+			reader.currentHeight = reader.BlockHeight
+			if reader.currentHeight < 1 {
 				panic("block height should be at least 1")
 			}
+			go reader.Logger()
 			var err error
 			for {
-				currentHeight, err = reader.processBlock(txClient, rpcClient, currentHeight) // Process the block and increment the height
+				reader.currentHeight, err = reader.processBlock(txClient, rpcClient, reader.currentHeight) // Process the block and increment the height
 				if err != nil {
 					if isTemporaryError(err) {
-						logger.Errorf("error processing block %d. will retry: %v", currentHeight, err)
+						logger.Errorf("error processing block %d. will retry: %v", reader.currentHeight, err)
 						time.Sleep(1 * time.Second)
 						continue
 					}
-					panic(errors.Wrapf(err, "error processing block %d", currentHeight))
+					panic(errors.Wrapf(err, "error processing block %d", reader.currentHeight))
 				}
-				currentHeight++
-				reader.BlockHeight = currentHeight
+				reader.currentHeight++
+				reader.BlockHeight = reader.currentHeight
 			}
 		}(reader)
 	}
@@ -124,14 +136,6 @@ func isTemporaryError(err error) bool {
 	return false
 }
 
-var (
-	measureTotalThroughputTime = time.Now()
-	measureBlockLoadTime       = time.Now()
-	measureTXLoadTime          = time.Now()
-	previousHeight             int64
-	measureTotalTransactions   int // Measure of total transactions loaded in the last 100 blocks (for performance monitoring)
-)
-
 func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclient.CometRPC, currentHeight int64) (int64, error) {
 	ctx := context.Background()
 	sb := &ScannedBlock{
@@ -141,8 +145,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	}
 	var goroutineError error
 	wg := sync.WaitGroup{}
-	mutex := &sync.Mutex{}
-	wg.Add(2)
+	wg.Add(2) // 2 main go routines
 	// Querying block from Coreum to get transactions
 	go func(m *sync.Mutex) {
 		tStart := time.Now()
@@ -165,11 +168,10 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 		sb.BlockTime = bhr.Block.Header.Time
 		m.Unlock()
 		// Add the time processed to the measureBlockLoadTime for aggregate timing overview
-		measureBlockLoadTime = measureBlockLoadTime.Add(time.Since(tStart))
-		wg2 := sync.WaitGroup{}
-		wg2.Add(len(bhr.Block.Data.Txs))
+		r.measureBlockLoadTime = r.measureBlockLoadTime.Add(time.Since(tStart))
 		tStart = time.Now() // Start of TX loading
 		for _, tx := range bhr.Block.Data.Txs {
+			wg.Add(1)
 			go func(tx []byte) {
 				hr := hash(tx)
 				v, err := txClient.GetTx(context.Background(), &txtypes.GetTxRequest{
@@ -180,20 +182,19 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 					m.Lock()
 					goroutineError = err
 					m.Unlock()
-					wg2.Done()
+					wg.Done()
 					return
 				}
 				m.Lock()
 				sb.Transactions = append(sb.Transactions, v)
 				m.Unlock()
-				wg2.Done()
+				wg.Done()
 			}(tx)
 		}
-		wg2.Wait()
 		wg.Done()
 		// Add the time processed to the measureBlockLoadTime
-		measureTXLoadTime = measureTXLoadTime.Add(time.Since(tStart))
-	}(mutex)
+		r.measureTXLoadTime = r.measureTXLoadTime.Add(time.Since(tStart))
+	}(r.mutex)
 	// Querying block results from Tendermint to get block events
 	go func(m *sync.Mutex) {
 		br, err := rpcClient.BlockResults(ctx, &currentHeight)
@@ -215,7 +216,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 		sb.BlockEvents = br.FinalizeBlockEvents
 		m.Unlock()
 		wg.Done()
-	}(mutex)
+	}(r.mutex)
 	wg.Wait()
 	if goroutineError != nil {
 		return currentHeight, goroutineError
@@ -230,27 +231,34 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	r.LastBlockTime = sb.BlockTime
 
 	r.ProcessBlockChannel <- sb
-	measureTotalTransactions += len(sb.Transactions)
+	r.measureTotalTransactions += len(sb.Transactions)
+	return currentHeight, nil
+}
 
-	if currentHeight%100 == 0 {
-		if previousHeight != 0 {
+// Selective logging to keep insight in the data aggregators activity
+func (r *Reader) Logger() {
+	for {
+		time.Sleep(5 * time.Second)
+		r.mutex.Lock()
+		if r.previousHeight != 0 {
 			channelCapacity := 100 - 100*float64(len(r.ProcessBlockChannel))/1000 // Percentage of channel capacity used: capacity is 1000
-			logger.Infof("Blockheight %d. TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
-				currentHeight,
-				time.Since(measureTotalThroughputTime).Seconds(),
-				currentHeight-previousHeight,
-				measureBlockLoadTime.Sub(measureTotalThroughputTime).Seconds(),
-				measureTotalTransactions,
-				measureTXLoadTime.Sub(measureTotalThroughputTime).Seconds(),
+			logger.Infof("Network %s: BlockHeight %d. TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
+				r.Network.String(),
+				r.currentHeight,
+				time.Since(r.measureTotalThroughputTime).Seconds(),
+				r.currentHeight-r.previousHeight,
+				r.measureBlockLoadTime.Sub(r.measureTotalThroughputTime).Seconds(),
+				r.measureTotalTransactions,
+				r.measureTXLoadTime.Sub(r.measureTotalThroughputTime).Seconds(),
 				channelCapacity)
 		}
-		previousHeight = currentHeight
-		measureBlockLoadTime = time.Now()
-		measureTXLoadTime = time.Now()
-		measureTotalTransactions = 0
-		measureTotalThroughputTime = time.Now()
+		r.previousHeight = r.currentHeight
+		r.measureBlockLoadTime = time.Now()
+		r.measureTXLoadTime = time.Now()
+		r.measureTotalTransactions = 0
+		r.measureTotalThroughputTime = time.Now()
+		r.mutex.Unlock()
 	}
-	return currentHeight, nil
 }
 
 func hash(txRaw []byte) string {

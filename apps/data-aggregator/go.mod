@@ -17,9 +17,9 @@ replace (
 )
 
 require (
-	github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250204222705-64b06c939bc4
-	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250204222705-64b06c939bc4
-	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
+	github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250422225304-9541ca123bea
+	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250422225304-9541ca123bea
+	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250422225304-9541ca123bea
 )
 
 replace github.com/CoreumFoundation/CoreDEX-API/coreum => ../../coreum

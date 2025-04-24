@@ -3,8 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
+
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 /*
@@ -27,13 +28,13 @@ func addFunds(address string) {
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
+		logger.Errorf("Error marshalling JSON:", err)
 		return
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		logger.Errorf("Error creating request:", err)
 		return
 	}
 
@@ -42,11 +43,9 @@ func addFunds(address string) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error making request:", err)
+		logger.Errorf("Error making request:", err)
 		return
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("Response status:", resp.Status)
-
+	logger.Infof("Response status: %s", resp.Status)
 }

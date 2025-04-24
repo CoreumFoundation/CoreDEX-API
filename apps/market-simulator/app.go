@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log/slog"
 	gomath "math"
 	"math/big"
 	"math/bits"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -82,14 +82,14 @@ func NewApp(
 	ctx context.Context,
 	cfg AppConfig,
 ) (App, error) {
-	slog.Info("initializing app")
+	logger.Infof("initializing app")
 
 	transportCredentials := credentials.NewTLS(&tls.Config{})
 	if strings.HasPrefix(cfg.GRPCHost, "127.0.0.1") || strings.HasPrefix(cfg.GRPCHost, "localhost") {
 		transportCredentials = insecure.NewCredentials()
 	}
 	grpcClient, err := grpc.NewClient(cfg.GRPCHost, grpc.WithTransportCredentials(transportCredentials))
-	slog.Info("Connected to GRPC interface", slog.String("address", cfg.GRPCHost))
+	logger.Infof("Connected to GRPC interface %s", cfg.GRPCHost)
 	if err != nil {
 		return App{}, fmt.Errorf("error connecting to coreum GRPC interface: %v", err)
 	}
@@ -125,6 +125,10 @@ func NewApp(
 	accounts := lo.Map(cfg.AccountsWallet, func(item AccountWallet, index int) types.AccAddress {
 		return addToKeyring(clientCtx, item)
 	})
+	// Make certain the all accounts have funds (could be new accounts)
+	addFunds(issuer.String())
+	addFunds(accounts[0].String())
+	addFunds(accounts[1].String())
 
 	denoms := make([]string, 0)
 	denoms = append(denoms, lo.RepeatBy(cfg.AssetFTDefaultDenomsCount, func(i int) string {
@@ -134,6 +138,7 @@ func NewApp(
 			panic(err)
 		}
 		if supply.Amount.IsZero() {
+
 			issueMsg := &assetfttypes.MsgIssue{
 				Issuer:        issuer.String(),
 				Symbol:        currencyArray[i].name,
@@ -153,19 +158,17 @@ func NewApp(
 				issueMsg,
 			)
 			if err != nil {
-				slog.Info("Error issuing %s: %s", denom, err)
+				logger.Infof("Error issuing %s: %s", denom, err)
 			}
 		}
 
 		return denom
 	})...)
-	slog.Info("Denoms array", slog.Any("denoms", denoms))
-
 	sides := []dextypes.Side{
 		dextypes.SIDE_SELL,
 		dextypes.SIDE_BUY,
 	}
-	slog.Info("app initialized")
+	logger.Infof("app initialized")
 
 	return App{
 		cfg:            cfg,
@@ -224,10 +227,7 @@ func (fa *App) CreateOrder(
 		msgIssueSell,
 	)
 	if err != nil {
-		slog.Error("broadcastTX",
-			slog.String("account", msgIssueSell.Sender),
-			slog.String("denom", msgIssueSell.Coin.Denom),
-			slog.String("Error:", err.Error()))
+		logger.Errorf("Error broadcasting TX: account=%s, denom=%s, error=%s", msgIssueSell.Sender, msgIssueSell.Coin.Denom, err.Error())
 		return err
 	}
 
@@ -238,10 +238,7 @@ func (fa *App) CreateOrder(
 		msgIssueBuy,
 	)
 	if err != nil {
-		slog.Error("broadcastTX",
-			slog.String("account", msgIssueBuy.Sender),
-			slog.String("denom", msgIssueBuy.Coin.Denom),
-			slog.String("Error:", err.Error()))
+		logger.Errorf("Error broadcasting TX: account=%s, denom=%s, error=%s", msgIssueBuy.Sender, msgIssueBuy.Coin.Denom, err.Error())
 		return err
 	}
 	res, err := client.BroadcastTx(
@@ -252,16 +249,13 @@ func (fa *App) CreateOrder(
 	)
 	if err != nil {
 		if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-			slog.Error("Unknown error (SELL)", slog.Any("Error:", err))
+			logger.Errorf("Unknown error (SELL): error=%v", err)
 			return err
 		}
-		slog.Error("it's prohibited to save more than 100 orders per denom",
-			slog.String("account", msgPlaceSellOrder.Sender),
-			slog.String("denom", msgPlaceSellOrder.BaseDenom))
+		logger.Warnf("Error: it is prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceSellOrder.Sender, msgPlaceSellOrder.BaseDenom)
 	}
 
-	slog.Info("new order SELL", slog.Any("TX hash", res.TxHash),
-		slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceSellOrder))
+	logger.Infof("Info: new order SELL: TX hash=%v, Block Height=%d, Gas Used=%d, order=%v", res.TxHash, res.Height, res.GasUsed, msgPlaceSellOrder)
 
 	res, err = client.BroadcastTx(
 		ctx,
@@ -271,18 +265,12 @@ func (fa *App) CreateOrder(
 	)
 	if err != nil {
 		if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-			slog.Error("Unknown error (BUY)", slog.Any("Error:", err))
+			logger.Errorf("Unknown error (BUY): error=%v", err)
 			return err
 		}
-		slog.Error("it's prohibited to save more than 100 orders per denom",
-			slog.String("account", msgPlaceBuyOrder.Sender),
-			slog.String("denom", msgPlaceBuyOrder.BaseDenom))
+		logger.Errorf("Error: it's prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceBuyOrder.Sender, msgPlaceBuyOrder.BaseDenom)
 	}
-	slog.Info("new order BUY", slog.Any("TX hash", res.TxHash),
-		slog.Int64("Block Height", res.Height), slog.Int64("Gas Used", res.GasUsed), slog.Any("order", msgPlaceBuyOrder))
-
-	took := time.Since(startTime)
-	slog.Info(fmt.Sprintf("broadcasting order took %s\n", took.String()))
+	logger.Infof("Info: new order BUY: TX hash=%v, Block Height=%d, Gas Used=%d, order=%v, broadcasting took: %s", res.TxHash, res.Height, res.GasUsed, msgPlaceBuyOrder, time.Since(startTime).String())
 	return nil
 }
 

@@ -90,6 +90,7 @@ func (l *Application) StartScanners(ctx context.Context) {
 }
 
 func (l *Application) startBlocksScan(ctx context.Context, reader *coreum.Reader) {
+	logger.Infof("Start: Started scanner for network %s", reader.Network)
 	for {
 		select {
 		case <-ctx.Done():

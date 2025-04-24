@@ -202,6 +202,12 @@ post_order_cancel() {
     # echo "Cancel result: ${response}"
 }
 
+get_market() {
+    echo "Calling GET /market"
+    curl -H "Network: devnet" \
+    -X "GET" "${HOST}/market?symbol=nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
+}
+
 # Display menu
 show_menu() {
     echo "Select an endpoint to call:"
@@ -221,6 +227,7 @@ show_menu() {
     echo "11. GET /ws"
     echo "12. GET /currencies"
     echo "13. GET /trades without account inverted market (currencies inverted compared to case 3)"
+    echo "14. GET /market"
 }
 
 # Main loop
@@ -244,6 +251,7 @@ while true; do
         11) get_ws ;;
         12) get_currencies ;;
         13) get_trades_without_account_inverted ;;
+        14) get_market ;;
         *) echo "Invalid choice, please try again." ;;
     esac
 done
