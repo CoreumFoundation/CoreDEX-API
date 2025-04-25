@@ -178,8 +178,8 @@ func NewApp(
 		accounts:       accounts,
 		denoms:         denoms,
 		sides:          sides,
-		baseVolatility: 0.04,   // Makes prices oscillate ±4% around the trend
-		trendStrength:  0.0035, // Upward trend to push prices higher over time
+		baseVolatility: 0.0004,   // Makes prices oscillate ±4% around the trend
+		trendStrength:  0.000035, // Upward trend to push prices higher over time
 		previousPrice:  75.0,   // Also the initial price for the first order of the simulation
 	}, nil
 }
