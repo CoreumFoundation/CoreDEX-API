@@ -106,4 +106,7 @@ func (a *Application) index() {
 		Issuer2(50),
 		Network
 	)`)
+	a.client.Client.Exec(`CREATE INDEX tradepairs_2 ON TradePairs (
+		Network
+	)`)
 }

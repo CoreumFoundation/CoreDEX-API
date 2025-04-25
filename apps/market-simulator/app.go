@@ -59,15 +59,15 @@ type currency struct {
 }
 
 type App struct {
-	cfg                                                    AppConfig
-	issuer                                                 types.AccAddress
-	accounts                                               []types.AccAddress
-	denoms                                                 []string
-	sides                                                  []dextypes.Side
-	clientCtx                                              client.Context
-	txFactory                                              tx.Factory
-	iteration                                              int // Track iteration count
-	newPrice, previousPrice, baseVolatility, trendStrength float64
+	cfg                                          AppConfig
+	issuer                                       types.AccAddress
+	accounts                                     []types.AccAddress
+	denoms                                       []string
+	sides                                        []dextypes.Side
+	clientCtx                                    client.Context
+	txFactory                                    tx.Factory
+	iteration                                    int // Track iteration count
+	previousPrice, baseVolatility, trendStrength float64
 }
 
 /*
@@ -178,8 +178,8 @@ func NewApp(
 		accounts:       accounts,
 		denoms:         denoms,
 		sides:          sides,
-		baseVolatility: 0.04,   // Makes prices oscillate ±4% around the trend
-		trendStrength:  0.0035, // Upward trend to push prices higher over time
+		baseVolatility: 0.0004,   // Makes prices oscillate ±4% around the trend
+		trendStrength:  0.000035, // Upward trend to push prices higher over time
 		previousPrice:  75.0,   // Also the initial price for the first order of the simulation
 	}, nil
 }
@@ -255,7 +255,7 @@ func (fa *App) CreateOrder(
 		logger.Warnf("Error: it is prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceSellOrder.Sender, msgPlaceSellOrder.BaseDenom)
 	}
 
-	logger.Infof("Info: new order SELL: TX hash=%v, Block Height=%d, Gas Used=%d, order=%v", res.TxHash, res.Height, res.GasUsed, msgPlaceSellOrder)
+	logger.Infof("Info: new order SELL: TX hash=%v, Block Height=%d, Gas Used=%d, price=%s", res.TxHash, res.Height, res.GasUsed, msgPlaceSellOrder.Price.String())
 
 	res, err = client.BroadcastTx(
 		ctx,
@@ -270,7 +270,7 @@ func (fa *App) CreateOrder(
 		}
 		logger.Errorf("Error: it's prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceBuyOrder.Sender, msgPlaceBuyOrder.BaseDenom)
 	}
-	logger.Infof("Info: new order BUY: TX hash=%v, Block Height=%d, Gas Used=%d, order=%v, broadcasting took: %s", res.TxHash, res.Height, res.GasUsed, msgPlaceBuyOrder, time.Since(startTime).String())
+	logger.Infof("Info: new order BUY: TX hash=%v, Block Height=%d, Gas Used=%d, price=%s, broadcasting took: %s", res.TxHash, res.Height, res.GasUsed, msgPlaceBuyOrder.Price.String(), time.Since(startTime).String())
 	return nil
 }
 
@@ -283,6 +283,7 @@ func (fa *App) genOrder(accounts []types.AccAddress) (*assetfttypes.MsgMint,
 	baseDenom, quoteDenom := fa.denoms[0], fa.denoms[1]
 
 	price := fa.getNextPrice(fa.previousPrice)
+	logger.Infof("Info: Previous price: %.6f, new price: %s", fa.previousPrice, price.String())
 	quantity := 10 * int64(gomath.Pow(10, 6))
 	coinsToMint := types.NewCoin(baseDenom, math.NewInt(quantity))
 
@@ -357,7 +358,7 @@ func (fa *App) getNextPrice(price float64) dextypes.Price {
 	if price < 0 {
 		price = 0 // Ensure prices don't go negative
 	}
-	fa.newPrice = price
+	fa.previousPrice = price
 	return buildNumExpPrice(price)
 }
 
@@ -378,11 +379,12 @@ func buildNumExpPrice(
 	// PriceStr is not allowed to end in a 0: We have to strip the 0s and add them to the exponent
 	for priceStr[len(priceStr)-1] == '0' {
 		priceStr = priceStr[:len(priceStr)-1]
-		exp2++
+		exp2--
 	}
 	if exp2 != 0 {
 		priceStr = priceStr + fmt.Sprintf("e-%d", exp2)
 	}
+	logger.Infof("buildNumExpPrice: num=%f, priceStr=%s", num, priceStr)
 	return dextypes.MustNewPriceFromString(priceStr)
 }
 

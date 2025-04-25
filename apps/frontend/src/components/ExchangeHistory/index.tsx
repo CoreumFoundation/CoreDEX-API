@@ -61,15 +61,13 @@ const ExchangeHistory = () => {
   }, []);
 
   useEffect(() => {
-    if (exchangeHistory && exchangeHistory.length > 0) {
-      wsManager.connected().then(() => {
-        wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
-      });
-      return () => {
-        wsManager.unsubscribe(subscription, handler);
-      };
-    }
-  }, [subscription, exchangeHistory]);
+    wsManager.connected().then(() => {
+      wsManager.subscribe(subscription, handler, UpdateStrategy.MERGE);
+    });
+    return () => {
+      wsManager.unsubscribe(subscription, handler);
+    };
+  }, [subscription]);
 
   const fetchTrades = async (): Promise<boolean> => {
     try {

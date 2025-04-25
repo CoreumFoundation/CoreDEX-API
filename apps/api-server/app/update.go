@@ -82,6 +82,9 @@ func (app *Application) StartUpdater(ctx context.Context) {
 			// Synchronize the refresh interval at the modulus of the REFRESH_INTERVAL
 			// Calculate the start of the current interval
 			endOfInterval := currentTime.Truncate(REFRESH_INTERVAL)
+			if endOfInterval.Before(time.Now()) {
+				endOfInterval = time.Now().Truncate(REFRESH_INTERVAL)
+			}
 			startOfInterval := endOfInterval.Add(-REFRESH_INTERVAL)
 			// note for later:
 			// It is unknown how long all the refreshes will take. There can be 100s of subscriptions, leading to congestion.

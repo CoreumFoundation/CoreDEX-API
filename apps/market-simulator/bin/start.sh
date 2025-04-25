@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export LOG_LEVEL=info
 export APP_CONFIG='{
     "GRPCHost": "full-node.devnet-1.coreum.dev:9090",
     "Issuer": {

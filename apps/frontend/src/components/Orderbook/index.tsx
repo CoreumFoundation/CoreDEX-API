@@ -44,9 +44,11 @@ export default function Orderbook({
   );
 
   useEffect(() => {
+    
     wsManager.connected().then(() => {
       wsManager.subscribe(subscription, setOrderbook, UpdateStrategy.REPLACE);
     });
+
     return () => {
       wsManager.unsubscribe(subscription, setOrderbook);
     };
