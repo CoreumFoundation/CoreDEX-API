@@ -152,12 +152,12 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 	processStart := time.Now() // Determine what time we need to retrieve data for from the	database
 	key := orderbookCacheKey(denom1, denom2)
 	orderbook := &coreum.OrderBookOrders{}
-	a.orderbookCache.mutex.Lock()
-	defer a.orderbookCache.mutex.Unlock()
+	a.orderbookCache.mutex.RLock()
 	if cache, ok := a.orderbookCache.data[key]; ok {
 		orderbook = cache.Value.(*coreum.OrderBookOrders)
 		processStart = cache.LastUpdated
 	}
+	a.orderbookCache.mutex.RUnlock()
 	/* 2 scenarios:
 	* cache is empty
 	* cache is not empty
@@ -195,10 +195,12 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		return p1.GreaterThan(p2)
 	})
 	// Set the orderbook into the cache:
+	a.orderbookCache.mutex.Lock()
 	a.orderbookCache.data[key] = &dmncache.LockableCache{
 		LastUpdated: tStartUpdate,
 		Value:       orderbook,
 	}
+	a.orderbookCache.mutex.Unlock()
 	if aggregate {
 		// Clone the orderbook so that the original orderbook is not modified
 		orderbookClone := &coreum.OrderBookOrders{
