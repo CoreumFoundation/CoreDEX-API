@@ -26,7 +26,8 @@ func NewApplication(reader *coreum.Reader, tradeClient tradegrpc.TradeServiceCli
 
 func (app *Application) Start(ctx context.Context) {
 	// Start the market scanner
-	go app.scanMarkets(ctx, app.reader.Network)
+	// TODO: Hash code back in when issue with coreum package is resolved
+	// go app.scanMarkets(ctx, app.reader.Network)
 	logger.Infof("Started market scanner for %s", app.reader.Network.String())
 }
 
