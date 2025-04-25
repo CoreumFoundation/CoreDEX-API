@@ -157,6 +157,14 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		VALUES (?, ?, ?, ?, ?)`, denom1, denom2, metaData, 0, 0)
 		tradePairCache[tradePairKey] = true
 	}
+	// And the inverted pair as well
+	tradePairKey = a.tradePairKey(denStr2, denStr1, in.MetaData.Network)
+	if _, ok := tradePairCache[tradePairKey]; !ok {
+		// Keep the trade pairs up to date (ignore the errors: Would only occur on duplicate key or non-recoverable anyway)
+		a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`)
+		VALUES (?, ?, ?, ?, ?)`, denom2, denom1, metaData, 0, 0)
+		tradePairCache[tradePairKey] = true
+	}
 	return nil
 }
 

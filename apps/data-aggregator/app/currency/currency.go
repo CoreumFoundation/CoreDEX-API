@@ -36,7 +36,7 @@ func NewApplication(ctx context.Context, reader *coreum.Reader) *Application {
 Rescan currencies every 30 minutes
 */
 func (l *Application) Start(ctx context.Context) {
-	logger.Infof("starting currency scanner for %s", l.reader.Network.String())
+	logger.Infof("Starting currency scanner for %s", l.reader.Network.String())
 	ticker := time.NewTicker(30 * time.Minute)
 	for {
 		select {
