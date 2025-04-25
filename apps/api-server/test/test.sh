@@ -205,7 +205,7 @@ post_order_cancel() {
 get_market() {
     echo "Calling GET /market"
     curl -H "Network: devnet" \
-    -X "GET" "${HOST}/market?symbol=nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
+    -X "GET" "${HOST}/market?symbol=alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
 }
 
 # Display menu

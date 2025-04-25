@@ -2,8 +2,10 @@ package market
 
 import (
 	"context"
+	"time"
 
 	"github.com/CoreumFoundation/CoreDEX-API/coreum"
+	"github.com/CoreumFoundation/CoreDEX-API/domain/metadata"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	dextypes "github.com/CoreumFoundation/coreum/v5/x/dex/types"
@@ -23,15 +25,15 @@ func NewApplication(reader *coreum.Reader, tradeClient tradegrpc.TradeServiceCli
 }
 
 func (app *Application) Start(ctx context.Context) {
-	logger.Infof("starting market scanner for %s", app.reader.Network.String())
 	// Start the market scanner
-	go app.scanMarkets(ctx)
+	go app.scanMarkets(ctx, app.reader.Network)
+	logger.Infof("Started market scanner for %s", app.reader.Network.String())
 }
 
-func (app *Application) scanMarkets(ctx context.Context) {
+func (app *Application) scanMarkets(ctx context.Context, network metadata.Network) {
 	for {
 		// Get the active markets:
-		tps, err := app.tradeClient.GetTradePairs(ctx, &tradegrpc.TradePairFilter{})
+		tps, err := app.tradeClient.GetTradePairs(ctx, &tradegrpc.TradePairFilter{Network: network})
 		if err != nil {
 			logger.Errorf("Error fetching trade pairs: %v", err)
 			continue
@@ -57,5 +59,6 @@ func (app *Application) scanMarkets(ctx context.Context) {
 				continue
 			}
 		}
+		time.Sleep(30 * time.Minute)
 	}
 }

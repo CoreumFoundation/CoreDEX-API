@@ -11,8 +11,9 @@ import (
 
 func (app *Application) GetMarket(ctx context.Context, symbol *dmnsymbol.Symbol, network metadata.Network) (*dmntrade.TradePair, error) {
 	tps, err := app.tradeClient.GetTradePairs(ctx, &dmntrade.TradePairFilter{
-		Denom1: symbol.Denom1,
-		Denom2: symbol.Denom2,
+		Denom1:  symbol.Denom1,
+		Denom2:  symbol.Denom2,
+		Network: network,
 	})
 	if err != nil {
 		return nil, err

@@ -363,10 +363,6 @@ func (app *Application) updateOHLC(ctx context.Context, subscription *updateprot
 		return
 	}
 	subscription.Content = string(b)
-	logger.Infof("Filter: %v, %v, %v, %v, %v, %v", subscription.Network, denom1.Denom, denom2.Denom, period, startOfInterval, endOfInterval)
-	for _, ohlc := range ohlcs {
-		logger.Infof("OHLC: %v, %v, %v, %v, %v, %v", ohlc[0], ohlc[1], ohlc[2], ohlc[3], ohlc[4], ohlc[5])
-	}
 	wg.Done()
 }
 
