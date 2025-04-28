@@ -60,7 +60,7 @@ export interface TradePair {
   Denom1: Denom | undefined;
   Denom2: Denom | undefined;
   MetaData: MetaData | undefined;
-  PriceTick?: number | undefined;
+  PriceTick?: Decimal | undefined;
   QuantityStep?: number | undefined;
 }
 
@@ -435,7 +435,7 @@ export const TradePair = {
       MetaData.encode(message.MetaData, writer.uint32(26).fork()).ldelim();
     }
     if (message.PriceTick !== undefined) {
-      writer.uint32(32).int64(message.PriceTick);
+      Decimal.encode(message.PriceTick, writer.uint32(34).fork()).ldelim();
     }
     if (message.QuantityStep !== undefined) {
       writer.uint32(40).int64(message.QuantityStep);
@@ -472,11 +472,11 @@ export const TradePair = {
           message.MetaData = MetaData.decode(reader, reader.uint32());
           continue;
         case 4:
-          if (tag !== 32) {
+          if (tag !== 34) {
             break;
           }
 
-          message.PriceTick = longToNumber(reader.int64() as Long);
+          message.PriceTick = Decimal.decode(reader, reader.uint32());
           continue;
         case 5:
           if (tag !== 40) {
@@ -499,7 +499,7 @@ export const TradePair = {
       Denom1: isSet(object.Denom1) ? Denom.fromJSON(object.Denom1) : undefined,
       Denom2: isSet(object.Denom2) ? Denom.fromJSON(object.Denom2) : undefined,
       MetaData: isSet(object.MetaData) ? MetaData.fromJSON(object.MetaData) : undefined,
-      PriceTick: isSet(object.PriceTick) ? globalThis.Number(object.PriceTick) : undefined,
+      PriceTick: isSet(object.PriceTick) ? Decimal.fromJSON(object.PriceTick) : undefined,
       QuantityStep: isSet(object.QuantityStep) ? globalThis.Number(object.QuantityStep) : undefined,
     };
   },
@@ -516,7 +516,7 @@ export const TradePair = {
       obj.MetaData = MetaData.toJSON(message.MetaData);
     }
     if (message.PriceTick !== undefined) {
-      obj.PriceTick = Math.round(message.PriceTick);
+      obj.PriceTick = Decimal.toJSON(message.PriceTick);
     }
     if (message.QuantityStep !== undefined) {
       obj.QuantityStep = Math.round(message.QuantityStep);
@@ -538,7 +538,9 @@ export const TradePair = {
     message.MetaData = (object.MetaData !== undefined && object.MetaData !== null)
       ? MetaData.fromPartial(object.MetaData)
       : undefined;
-    message.PriceTick = object.PriceTick ?? undefined;
+    message.PriceTick = (object.PriceTick !== undefined && object.PriceTick !== null)
+      ? Decimal.fromPartial(object.PriceTick)
+      : undefined;
     message.QuantityStep = object.QuantityStep ?? undefined;
     return message;
   },

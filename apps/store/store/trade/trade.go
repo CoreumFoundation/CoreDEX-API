@@ -379,8 +379,8 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 	for rows.Next() {
 		metaData := make([]byte, 0)
 		var tradePair tradegrpc.TradePair
-		var denom1, denom2 []byte
-		var priceTick, quantityStep int64
+		var denom1, denom2, priceTick []byte
+		var quantityStep int64
 
 		if err := rows.Scan(&denom1, &denom2, &metaData, &priceTick, &quantityStep); err != nil {
 			return nil, err
@@ -389,7 +389,7 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 		json.Unmarshal(denom1, &tradePair.Denom1)
 		json.Unmarshal(denom2, &tradePair.Denom2)
 		json.Unmarshal(metaData, &tradePair.MetaData)
-		tradePair.PriceTick = &priceTick
+		json.Unmarshal(priceTick, &tradePair.PriceTick)
 		tradePair.QuantityStep = &quantityStep
 
 		tradePairs = append(tradePairs, &tradePair)
@@ -409,18 +409,31 @@ func (a *Application) UpsertTradePair(in *tradegrpc.TradePair) error {
 		logger.Errorf("Error marshalling metadata for trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
 		return err
 	}
-	// Use the mysql client to insert the provided data into the table TradePairs
+	den1, err := json.Marshal(in.Denom1)
+	if err != nil {
+		logger.Errorf("Error marshalling denom1 for trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
+		return err
+	}
+	den2, err := json.Marshal(in.Denom2)
+	if err != nil {
+		logger.Errorf("Error marshalling denom2 for trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
+		return err
+	}
+	pt, err := json.Marshal(in.PriceTick)
+	if err != nil {
+		logger.Warnf("Error marshalling priceTick for trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)
+	}
 	_, err = a.client.Client.Exec(`INSERT INTO TradePairs (`+tradePairTableFields+`) 
 		VALUES (?, ?, ?, ? ,?) 
 		ON DUPLICATE KEY UPDATE 
 		MetaData=?, PriceTick=?, QuantityStep=?`,
-		in.Denom1,
-		in.Denom2,
+		den1,
+		den2,
 		metaData,
-		in.PriceTick,
+		pt,
 		in.QuantityStep,
 		metaData,
-		in.PriceTick,
+		pt,
 		in.QuantityStep)
 	if err != nil {
 		logger.Errorf("Error upserting trade pair %s-%s: %v", in.Denom1.Denom, in.Denom2.Denom, err)

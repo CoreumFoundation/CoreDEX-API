@@ -9,7 +9,6 @@ func (a *Application) schema() {
 }
 
 func (a *Application) createTables() {
-	logger.Infof("Creating Trade and TradePairs tables")
 	_, err := a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS Trade (
 		TXID VARCHAR(255),
 		Account VARCHAR(255),
@@ -42,7 +41,6 @@ func (a *Application) createTables() {
 	if err != nil {
 		logger.Fatalf("Error creating TradePairs table: %v", err)
 	}
-	logger.Infof("Trade and TradePairs tables created")
 }
 
 func (a *Application) alterTables() {
@@ -53,7 +51,6 @@ func (a *Application) alterTables() {
 		- BlockTime.seconds
 	*/
 	// Has to succeed or we first have to write logic to check if the columns exist....
-	logger.Infof("Adding virtual columns Symbol1, Symbol2 and BlockTimeSeconds to Trade table")
 	a.client.Client.Exec(`ALTER TABLE Trade 
 	ADD COLUMN Symbol1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom'))) STORED, 
 	ADD COLUMN Symbol2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom'))) STORED, 
@@ -72,7 +69,6 @@ func (a *Application) alterTables() {
 	a.client.Client.Exec(`ALTER TABLE TradePairs
 	ADD UNIQUE KEY (Currency1, Currency2, Issuer1, Issuer2, Network)`)
 	// Addition of enriched field to have a flexible skip of temporary failures:
-	logger.Infof("Adding enriched column to Trade table")
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Enriched BOOLEAN DEFAULT TRUE`)
 	a.client.Client.Exec(`ALTER TABLE Trade
@@ -80,6 +76,10 @@ func (a *Application) alterTables() {
 	a.client.Client.Exec(`ALTER TABLE TradePairs 
 	ADD Column PriceTick BIGINT,
 	ADD COLUMN QuantityStep INT`)
+	a.client.Client.Exec(`ALTER TABLE TradePairs 
+	DROP Column PriceTick`)
+	a.client.Client.Exec(`ALTER TABLE TradePairs 
+	ADD Column PriceTick JSON`)
 }
 
 func (a *Application) index() {

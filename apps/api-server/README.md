@@ -555,7 +555,13 @@ The networks are configured in a JSON array which depending on usage might requi
       "Network": "devnet",
       "GRPCHost": "full-node.devnet-1.coreum.dev:9090",
       "RPCHost": "https://full-node.devnet-1.coreum.dev:26657"
+    },
+    {
+      "Network": "testnet",
+      "GRPCHost": "full-node.testnet-1.coreum.dev:9090",
+      "RPCHost": "https://full-node.testnet-1.coreum.dev:26657"
     }
+
   ]
 }
 ```

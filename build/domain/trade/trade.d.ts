@@ -41,7 +41,7 @@ export interface TradePair {
     Denom1: Denom | undefined;
     Denom2: Denom | undefined;
     MetaData: MetaData | undefined;
-    PriceTick?: number | undefined;
+    PriceTick?: Decimal | undefined;
     QuantityStep?: number | undefined;
 }
 export interface TradePairs {
@@ -777,7 +777,10 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } | undefined;
-        PriceTick?: number | undefined;
+        PriceTick?: {
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } | undefined;
         QuantityStep?: number | undefined;
     } & {
         Denom1?: ({
@@ -827,9 +830,15 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } & { [K_2 in Exclude<keyof I["MetaData"], keyof MetaData>]: never; }) | undefined;
-        PriceTick?: number | undefined;
+        PriceTick?: ({
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } & {
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } & { [K_3 in Exclude<keyof I["PriceTick"], keyof Decimal>]: never; }) | undefined;
         QuantityStep?: number | undefined;
-    } & { [K_3 in Exclude<keyof I, keyof TradePair>]: never; }>(base?: I | undefined): TradePair;
+    } & { [K_4 in Exclude<keyof I, keyof TradePair>]: never; }>(base?: I | undefined): TradePair;
     fromPartial<I_1 extends {
         Denom1?: {
             Currency?: string | undefined;
@@ -856,7 +865,10 @@ export declare const TradePair: {
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
         } | undefined;
-        PriceTick?: number | undefined;
+        PriceTick?: {
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } | undefined;
         QuantityStep?: number | undefined;
     } & {
         Denom1?: ({
@@ -877,7 +889,7 @@ export declare const TradePair: {
             Name?: string | undefined;
             Description?: string | undefined;
             Icon?: string | undefined;
-        } & { [K_4 in Exclude<keyof I_1["Denom1"], keyof Denom>]: never; }) | undefined;
+        } & { [K_5 in Exclude<keyof I_1["Denom1"], keyof Denom>]: never; }) | undefined;
         Denom2?: ({
             Currency?: string | undefined;
             Issuer?: string | undefined;
@@ -896,7 +908,7 @@ export declare const TradePair: {
             Name?: string | undefined;
             Description?: string | undefined;
             Icon?: string | undefined;
-        } & { [K_5 in Exclude<keyof I_1["Denom2"], keyof Denom>]: never; }) | undefined;
+        } & { [K_6 in Exclude<keyof I_1["Denom2"], keyof Denom>]: never; }) | undefined;
         MetaData?: ({
             Network?: import("../metadata/metadata").Network | undefined;
             UpdatedAt?: Date | undefined;
@@ -905,10 +917,16 @@ export declare const TradePair: {
             Network?: import("../metadata/metadata").Network | undefined;
             UpdatedAt?: Date | undefined;
             CreatedAt?: Date | undefined;
-        } & { [K_6 in Exclude<keyof I_1["MetaData"], keyof MetaData>]: never; }) | undefined;
-        PriceTick?: number | undefined;
+        } & { [K_7 in Exclude<keyof I_1["MetaData"], keyof MetaData>]: never; }) | undefined;
+        PriceTick?: ({
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } & {
+            Value?: number | undefined;
+            Exp?: number | undefined;
+        } & { [K_8 in Exclude<keyof I_1["PriceTick"], keyof Decimal>]: never; }) | undefined;
         QuantityStep?: number | undefined;
-    } & { [K_7 in Exclude<keyof I_1, keyof TradePair>]: never; }>(object: I_1): TradePair;
+    } & { [K_9 in Exclude<keyof I_1, keyof TradePair>]: never; }>(object: I_1): TradePair;
 };
 export declare const TradePairs: {
     encode(message: TradePairs, writer?: _m0.Writer): _m0.Writer;
@@ -942,7 +960,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[] | undefined;
         Offset?: number | undefined;
@@ -973,7 +994,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[] & ({
             Denom1?: {
@@ -1001,7 +1025,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         } & {
             Denom1?: ({
@@ -1051,9 +1078,15 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } & { [K_2 in Exclude<keyof I["TradePairs"][number]["MetaData"], keyof MetaData>]: never; }) | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: ({
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } & {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } & { [K_3 in Exclude<keyof I["TradePairs"][number]["PriceTick"], keyof Decimal>]: never; }) | undefined;
             QuantityStep?: number | undefined;
-        } & { [K_3 in Exclude<keyof I["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_4 in Exclude<keyof I["TradePairs"], keyof {
+        } & { [K_4 in Exclude<keyof I["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_5 in Exclude<keyof I["TradePairs"], keyof {
             Denom1?: {
                 Currency?: string | undefined;
                 Issuer?: string | undefined;
@@ -1079,11 +1112,14 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[]>]: never; }) | undefined;
         Offset?: number | undefined;
-    } & { [K_5 in Exclude<keyof I, keyof TradePairs>]: never; }>(base?: I | undefined): TradePairs;
+    } & { [K_6 in Exclude<keyof I, keyof TradePairs>]: never; }>(base?: I | undefined): TradePairs;
     fromPartial<I_1 extends {
         TradePairs?: {
             Denom1?: {
@@ -1111,7 +1147,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[] | undefined;
         Offset?: number | undefined;
@@ -1142,7 +1181,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[] & ({
             Denom1?: {
@@ -1170,7 +1212,10 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         } & {
             Denom1?: ({
@@ -1191,7 +1236,7 @@ export declare const TradePairs: {
                 Name?: string | undefined;
                 Description?: string | undefined;
                 Icon?: string | undefined;
-            } & { [K_6 in Exclude<keyof I_1["TradePairs"][number]["Denom1"], keyof Denom>]: never; }) | undefined;
+            } & { [K_7 in Exclude<keyof I_1["TradePairs"][number]["Denom1"], keyof Denom>]: never; }) | undefined;
             Denom2?: ({
                 Currency?: string | undefined;
                 Issuer?: string | undefined;
@@ -1210,7 +1255,7 @@ export declare const TradePairs: {
                 Name?: string | undefined;
                 Description?: string | undefined;
                 Icon?: string | undefined;
-            } & { [K_7 in Exclude<keyof I_1["TradePairs"][number]["Denom2"], keyof Denom>]: never; }) | undefined;
+            } & { [K_8 in Exclude<keyof I_1["TradePairs"][number]["Denom2"], keyof Denom>]: never; }) | undefined;
             MetaData?: ({
                 Network?: import("../metadata/metadata").Network | undefined;
                 UpdatedAt?: Date | undefined;
@@ -1219,10 +1264,16 @@ export declare const TradePairs: {
                 Network?: import("../metadata/metadata").Network | undefined;
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
-            } & { [K_8 in Exclude<keyof I_1["TradePairs"][number]["MetaData"], keyof MetaData>]: never; }) | undefined;
-            PriceTick?: number | undefined;
+            } & { [K_9 in Exclude<keyof I_1["TradePairs"][number]["MetaData"], keyof MetaData>]: never; }) | undefined;
+            PriceTick?: ({
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } & {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } & { [K_10 in Exclude<keyof I_1["TradePairs"][number]["PriceTick"], keyof Decimal>]: never; }) | undefined;
             QuantityStep?: number | undefined;
-        } & { [K_9 in Exclude<keyof I_1["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_10 in Exclude<keyof I_1["TradePairs"], keyof {
+        } & { [K_11 in Exclude<keyof I_1["TradePairs"][number], keyof TradePair>]: never; })[] & { [K_12 in Exclude<keyof I_1["TradePairs"], keyof {
             Denom1?: {
                 Currency?: string | undefined;
                 Issuer?: string | undefined;
@@ -1248,11 +1299,14 @@ export declare const TradePairs: {
                 UpdatedAt?: Date | undefined;
                 CreatedAt?: Date | undefined;
             } | undefined;
-            PriceTick?: number | undefined;
+            PriceTick?: {
+                Value?: number | undefined;
+                Exp?: number | undefined;
+            } | undefined;
             QuantityStep?: number | undefined;
         }[]>]: never; }) | undefined;
         Offset?: number | undefined;
-    } & { [K_11 in Exclude<keyof I_1, keyof TradePairs>]: never; }>(object: I_1): TradePairs;
+    } & { [K_13 in Exclude<keyof I_1, keyof TradePairs>]: never; }>(object: I_1): TradePairs;
 };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {

@@ -76,17 +76,19 @@ func (l *Application) StartScanners(ctx context.Context) {
 		reader.BlockHeight = l.state.GetState(ctx, reader.Network)
 		logger.Infof("Start: Last scanned height for network %s is %d", reader.Network, reader.BlockHeight)
 	}
-	// Start the readers
-	readers.Start()
 	// Add a channel listener for the readers
 	for _, reader := range readers {
-		logger.Infof("Start: Started aggregator for network %s", reader.Network)
-		currencyApp := currencyapp.NewApplication(ctx, reader)
-		marketApp := marketapp.NewApplication(reader, l.tradeClient)
-		go currencyApp.Start(ctx)
-		go marketApp.Start(ctx)
-		go l.startBlocksScan(ctx, reader)
+		go func() {
+			logger.Infof("Start: Started aggregator for network %s", reader.Network)
+			currencyApp := currencyapp.NewApplication(ctx, reader)
+			marketApp := marketapp.NewApplication(reader, l.tradeClient)
+			go currencyApp.Start(ctx)
+			go marketApp.Start(ctx)
+			go l.startBlocksScan(ctx, reader)
+		}()
 	}
+	// Start the readers
+	readers.Start()
 }
 
 func (l *Application) startBlocksScan(ctx context.Context, reader *coreum.Reader) {

@@ -46,7 +46,7 @@ message TradePair {
     denom.Denom Denom1 = 1;
     denom.Denom Denom2 = 2;
     metadata.MetaData MetaData = 3;
-    optional int64 PriceTick = 4; 
+    optional decimal.Decimal PriceTick = 4; 
     optional int64 QuantityStep = 5; 
 }
 

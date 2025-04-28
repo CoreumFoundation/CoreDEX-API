@@ -180,7 +180,7 @@ func NewApp(
 		sides:          sides,
 		baseVolatility: 0.0004,   // Makes prices oscillate ±4% around the trend
 		trendStrength:  0.000035, // Upward trend to push prices higher over time
-		previousPrice:  75.0,   // Also the initial price for the first order of the simulation
+		previousPrice:  75.0,     // Also the initial price for the first order of the simulation
 	}, nil
 }
 
@@ -384,7 +384,6 @@ func buildNumExpPrice(
 	if exp2 != 0 {
 		priceStr = priceStr + fmt.Sprintf("e-%d", exp2)
 	}
-	logger.Infof("buildNumExpPrice: num=%f, priceStr=%s", num, priceStr)
 	return dextypes.MustNewPriceFromString(priceStr)
 }
 
