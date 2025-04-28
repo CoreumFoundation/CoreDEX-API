@@ -6,6 +6,7 @@ import (
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"google.golang.org/grpc"
@@ -44,7 +45,20 @@ func NewNodeConnections() map[metadata.Network]*client.Context {
 		if strings.HasPrefix(node.GRPCHost, "127.0.0.1") || strings.HasPrefix(node.GRPCHost, "localhost") {
 			transportCredentials = insecure.NewCredentials()
 		}
-		grpcClient, err := grpc.NewClient(node.GRPCHost, grpc.WithTransportCredentials(transportCredentials))
+
+		modules := auth.AppModuleBasic{}
+		encodingConfig := coreumconfig.NewEncodingConfig(modules)
+
+		pc, ok := encodingConfig.Codec.(codec.GRPCCodecProvider)
+		if !ok {
+			logger.Fatalf("failed to cast codec to codec.GRPCCodecProvider)")
+		}
+
+		grpcClient, err := grpc.NewClient(
+			node.GRPCHost,
+			grpc.WithDefaultCallOptions(grpc.ForceCodec(pc.GRPCCodec())),
+			grpc.WithTransportCredentials(transportCredentials),
+		)
 		if err != nil {
 			logger.Fatalf("error connecting to coreum GRPC interface: %v", err)
 		}
@@ -55,9 +69,6 @@ func NewNodeConnections() map[metadata.Network]*client.Context {
 			logger.Fatalf("error connecting to coreum RPC interface: %v", err)
 		}
 		logger.Infof("Connected to RPC interface: %s", node.RPCHost)
-
-		modules := auth.AppModuleBasic{}
-		encodingConfig := coreumconfig.NewEncodingConfig(modules)
 
 		clientCtx := client.NewContext(client.DefaultContextConfig(), modules).
 			WithChainID(string(chainID)).
