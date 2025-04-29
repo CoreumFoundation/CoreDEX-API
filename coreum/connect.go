@@ -139,7 +139,6 @@ func isTemporaryError(err error) bool {
 }
 
 func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclient.CometRPC, currentHeight int64) (int64, error) {
-	ctx := context.Background()
 	sb := &ScannedBlock{
 		BlockHeight:  currentHeight,
 		Transactions: make([]*txtypes.GetTxResponse, 0),
@@ -157,6 +156,9 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 			<-time.After(r.LastBlockTime.Add(3 * r.BlockProductionTime).Sub(time.Now()))
 		}
 	}
+	// context with timeout to counter slow chain response on mainly devnet:
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	// Querying block from Coreum to get transactions
 	go func(m *sync.Mutex) {
 		tStart := time.Now()
@@ -164,7 +166,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 		if isBlockWithTxEndErr(err) {
 			for isBlockWithTxEndErr(err) {
 				r.atEndOfChain = true
-				logger.Warnf("%s: error getting block %d: %v", r.Network.String(), currentHeight, err)
+				logger.Warnf("%s: Problem getting block %d: %v", r.Network.String(), currentHeight, err)
 				<-time.After(r.BlockProductionTime)
 				bhr, err = txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 			}
