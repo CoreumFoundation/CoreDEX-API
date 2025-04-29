@@ -39,6 +39,7 @@ type Reader struct {
 	measureTXLoadTime          time.Time
 	measureTotalTransactions   int // Measure of total transactions loaded in the last 100 blocks (for performance monitoring)
 	mutex                      *sync.Mutex
+	atEndOfChain               bool // Flag to indicate if we are at the end of the chain scanning realtime (determines waits to prevent querying the chain for not yet produced blocks)
 }
 
 const MinimumBlockProductionTime = 100 * time.Millisecond
@@ -55,6 +56,7 @@ func NewReader(network metadata.Network, clientContext *client.Context) *Reader 
 		measureBlockLoadTime:       time.Now(),
 		measureTXLoadTime:          time.Now(),
 		mutex:                      &sync.Mutex{},
+		atEndOfChain:               false,
 	}
 }
 
@@ -146,18 +148,29 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	var goroutineError error
 	wg := sync.WaitGroup{}
 	wg.Add(2) // 2 main go routines
+	if r.atEndOfChain {
+		// Wait for the block to be produced by waiting the for block production time since the last block
+		// By wiating like this we can manage the delay between the blocks (The time is since the last reported blocktime, not the clock of the server)
+		// This is not perfect: There is the 3x block production time to wait for while 1x should be the exact perfect timing (but it is not for yet unknown reasons)
+		// 2x reduces the error of not yet having the block produced from 50% of the time to 25% of the time
+		if time.Now().Before(r.LastBlockTime.Add(3 * r.BlockProductionTime)) {
+			<-time.After(r.LastBlockTime.Add(3 * r.BlockProductionTime).Sub(time.Now()))
+		}
+	}
 	// Querying block from Coreum to get transactions
 	go func(m *sync.Mutex) {
 		tStart := time.Now()
 		bhr, err := txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 		if isBlockWithTxEndErr(err) {
 			for isBlockWithTxEndErr(err) {
+				r.atEndOfChain = true
+				logger.Warnf("%s: error getting block %d: %v", r.Network.String(), currentHeight, err)
 				<-time.After(r.BlockProductionTime)
 				bhr, err = txClient.GetBlockWithTxs(ctx, &txtypes.GetBlockWithTxsRequest{Height: currentHeight})
 			}
 		}
 		if err != nil {
-			logger.Errorf("processBlock error: %v", err)
+			logger.Errorf("%s: processBlock error: %v", r.Network.String(), err)
 			m.Lock()
 			goroutineError = err
 			m.Unlock()
@@ -172,13 +185,13 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 		tStart = time.Now() // Start of TX loading
 		for _, tx := range bhr.Block.Data.Txs {
 			wg.Add(1)
-			go func(tx []byte) {
+			go func(tx []byte, m *sync.Mutex) {
 				hr := hash(tx)
 				v, err := txClient.GetTx(context.Background(), &txtypes.GetTxRequest{
 					Hash: hr,
 				})
 				if err != nil {
-					logger.Errorf("error getting tx %s: %v", hr, err)
+					logger.Errorf("%s: error getting tx %s: %v", r.Network.String(), hr, err)
 					m.Lock()
 					goroutineError = err
 					m.Unlock()
@@ -189,7 +202,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 				sb.Transactions = append(sb.Transactions, v)
 				m.Unlock()
 				wg.Done()
-			}(tx)
+			}(tx, m)
 		}
 		wg.Done()
 		// Add the time processed to the measureBlockLoadTime
@@ -205,7 +218,6 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 			}
 		}
 		if err != nil {
-			logger.Errorf("rpc error for block %d: %v", currentHeight, err)
 			m.Lock()
 			goroutineError = err
 			m.Unlock()
@@ -219,9 +231,9 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	}(r.mutex)
 	wg.Wait()
 	if goroutineError != nil {
+		logger.Errorf("%s: error processing block %d: %v", r.Network.String(), currentHeight, goroutineError)
 		return currentHeight, goroutineError
 	}
-
 	r.BlockProductionTime = sb.BlockTime.Sub(r.LastBlockTime)
 	if r.BlockProductionTime < MinimumBlockProductionTime {
 		r.BlockProductionTime = MinimumBlockProductionTime
@@ -242,7 +254,7 @@ func (r *Reader) Logger() {
 		r.mutex.Lock()
 		if r.previousHeight != 0 {
 			channelCapacity := 100 - 100*float64(len(r.ProcessBlockChannel))/1000 // Percentage of channel capacity used: capacity is 1000
-			logger.Infof("Network %s: BlockHeight %d. TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
+			logger.Infof("%s: BlockHeight %d. TotalTime: %2.f seconds. Loading %d blocks using %2.f seconds, loading %d TX using %2.f seconds, channel capacity left %2.f (percentage) (indicates blocking on processing of TX)",
 				r.Network.String(),
 				r.currentHeight,
 				time.Since(r.measureTotalThroughputTime).Seconds(),
