@@ -116,9 +116,13 @@ func (r Readers) Start() {
 	}
 }
 
+// isTemporaryError checks if the error is a temporary error that can be retried
 func isTemporaryError(err error) bool {
 	var netOpError *net.OpError
 	if errors.As(err, &netOpError) {
+		return true
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
 
