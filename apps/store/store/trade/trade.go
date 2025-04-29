@@ -341,6 +341,7 @@ func mapToTrade(b *sql.Rows) (*tradegrpc.Trade, error) {
 func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegrpc.TradePairs, error) {
 	var queryBuilder strings.Builder
 	var args []interface{}
+	var limit = 1000
 
 	queryBuilder.WriteString(`
 			SELECT ` + tradePairTableFields + `
@@ -368,6 +369,15 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 			queryBuilder.WriteString(" AND Issuer2 = ?")
 			args = append(args, filter.Denom2.Issuer)
 		}
+	}
+	queryBuilder.WriteString(" ORDER BY Currency1, Currency2, Issuer1, Issuer2")
+	queryBuilder.WriteString(" LIMIT ?")
+	args = append(args, limit+1) // +1 to check if there are more results
+	var offset int32 = 0
+	if filter.Offset != nil {
+		queryBuilder.WriteString(" OFFSET ?")
+		args = append(args, *filter.Offset)
+		offset = *filter.Offset
 	}
 	rows, err := a.client.Client.Query(queryBuilder.String(), args...)
 	if err != nil {
@@ -398,8 +408,11 @@ func (a *Application) GetTradePairs(filter *tradegrpc.TradePairFilter) (*tradegr
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
-	return &tradegrpc.TradePairs{TradePairs: tradePairs}, nil
+	if len(tradePairs) > limit {
+		tradePairs = tradePairs[:limit]
+		offset = offset + int32(limit)
+	}
+	return &tradegrpc.TradePairs{TradePairs: tradePairs, Offset: &offset}, nil
 }
 
 func (a *Application) UpsertTradePair(in *tradegrpc.TradePair) error {

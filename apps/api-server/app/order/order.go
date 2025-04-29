@@ -233,7 +233,6 @@ func (a *Application) fetchOrderBookFromChain(orderbook *coreum.OrderBookOrders,
 		orderbook, err = a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit))
 		if err != nil {
 			if strings.Contains(err.Error(), "record not found") {
-				a.orderbookCache.mutex.Unlock()
 				return nil, fmt.Errorf("there is no orderbook for %s - %s", denom1, denom2)
 			}
 			return nil, err

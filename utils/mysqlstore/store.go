@@ -42,15 +42,13 @@ func Client() *StoreBase {
 	// Open a connection to the MySQL server
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		logger.Errorf("Error opening database: %v", err)
-		return nil
+		logger.Fatalf("Error opening database: %v", err)
 	}
 
 	// Ping the database to verify the connection
 	err = db.Ping()
 	if err != nil {
-		logger.Errorf("Error pinging database: %v", err)
-		return nil
+		logger.Fatalf("Error pinging database: %v", err)
 	}
 	logger.Infof("Successfully connected to the MySQL database!")
 	return &StoreBase{Client: db}

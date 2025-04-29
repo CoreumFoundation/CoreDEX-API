@@ -48,5 +48,5 @@ message TradePairFilter {
     metadata.Network Network = 1;
     optional denom.Denom Denom1 = 2;
     optional denom.Denom Denom2 = 3;
-    optional int64 Offset = 4;
+    optional int32 Offset = 4;
 }

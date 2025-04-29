@@ -30,14 +30,18 @@ func (a *Application) createTables() {
 		logger.Fatalf("Error creating Trade table: %v", err)
 	}
 	_, err = a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS TradePairs (
-		Denom1 JSON,
-		Denom2 JSON,
-		MetaData JSON,
-		Symbol1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom'))),
-		Symbol2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom'))),
-		Network INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))),
-		UNIQUE KEY (Symbol1, Symbol2, Network)
-	)`)
+		Denom1 JSON DEFAULT NULL,
+		Denom2 JSON DEFAULT NULL,
+		MetaData JSON DEFAULT NULL,
+		Currency1  VARCHAR(100) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Currency'))) STORED, 
+		Currency2 VARCHAR(100) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Currency'))) STORED, 
+		Issuer1 VARCHAR(100) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer'))) STORED, 
+		Issuer2 VARCHAR(100) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer'))) STORED,
+		Network  INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))) STORED,
+		QuantityStep INT DEFAULT NULL,
+		PriceTick JSON DEFAULT NULL,
+		UNIQUE KEY tradepairs_1 (Currency1,Currency2,Issuer1,Issuer2,Network),
+		KEY tradepairs_2 (Network))`)
 	if err != nil {
 		logger.Fatalf("Error creating TradePairs table: %v", err)
 	}
@@ -55,31 +59,11 @@ func (a *Application) alterTables() {
 	ADD COLUMN Symbol1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Denom'))) STORED, 
 	ADD COLUMN Symbol2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Denom'))) STORED, 
 	ADD COLUMN BlockTimeSeconds BIGINT AS (JSON_UNQUOTE(JSON_EXTRACT(BlockTime, '$.seconds'))) STORED`)
-	a.client.Client.Exec(`ALTER TABLE TradePairs
-	DROP COLUMN Symbol1,
-	DROP COLUMN Symbol2,
-	DROP COLUMN Network`)
-	a.client.Client.Exec(`ALTER TABLE TradePairs 
-	ADD COLUMN Currency1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Currency'))) STORED, 
-	ADD COLUMN Currency2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Currency'))) STORED, 
-	ADD COLUMN Issuer1 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer'))) STORED, 
-	ADD COLUMN Issuer2 VARCHAR(255) AS (JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer'))) STORED, 
-	ADD COLUMN Network INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))) STORED`)
-	// Add unique key to TradePairs table:
-	a.client.Client.Exec(`ALTER TABLE TradePairs
-	ADD UNIQUE KEY (Currency1, Currency2, Issuer1, Issuer2, Network)`)
 	// Addition of enriched field to have a flexible skip of temporary failures:
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Enriched BOOLEAN DEFAULT TRUE`)
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Inverted BOOLEAN DEFAULT FALSE`)
-	a.client.Client.Exec(`ALTER TABLE TradePairs 
-	ADD Column PriceTick BIGINT,
-	ADD COLUMN QuantityStep INT`)
-	a.client.Client.Exec(`ALTER TABLE TradePairs 
-	DROP Column PriceTick`)
-	a.client.Client.Exec(`ALTER TABLE TradePairs 
-	ADD Column PriceTick JSON`)
 }
 
 func (a *Application) index() {
@@ -96,17 +80,6 @@ func (a *Application) index() {
 		Symbol1,
 		Symbol2,
 		BlockTimeSeconds,
-		Network
-	)`)
-
-	a.client.Client.Exec(`CREATE INDEX tradepairs_1 ON TradePairs (
-		Currency1(50),
-		Currency2(50),
-		Issuer1(50),
-		Issuer2(50),
-		Network
-	)`)
-	a.client.Client.Exec(`CREATE INDEX tradepairs_2 ON TradePairs (
 		Network
 	)`)
 }
