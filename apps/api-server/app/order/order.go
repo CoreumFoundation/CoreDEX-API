@@ -62,6 +62,13 @@ type OrderBookOrder struct {
 	Side           orderproperties.Side
 }
 
+// Different way of cache expiration since we are updating keys all the time in the orderbook cache (unusual usage pattern)
+// Which in the case a a skipped record can lead to "hanging" orders (never clearing until server restarts)
+var (
+	cacheExpire      = make(map[string]time.Time)
+	cacheExpireMutex = &sync.Mutex{}
+)
+
 func NewApplication(currencyClient *currency.Application) *Application {
 	orderbookClient := ordergrpcclient.Client()
 	return NewApplicationWithClients(orderbookClient, currencyClient)
@@ -140,8 +147,8 @@ func (a *Application) AccountSequence(network metadata.Network, address string) 
 	return acc.GetSequence(), nil
 }
 
-func orderbookCacheKey(denom1, denom2 string) string {
-	return fmt.Sprintf("%s-%s", denom1, denom2)
+func orderbookCacheKey(network metadata.Network, denom1, denom2 string) string {
+	return fmt.Sprintf("%s-%s-%d", denom1, denom2, network)
 }
 
 // Cache the orderbooks so that the subsequent data can be gotten from the database which holds the latest orders
@@ -150,7 +157,7 @@ func orderbookCacheKey(denom1, denom2 string) string {
 // will be read in the next read.
 func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, denom2 string, limit int, aggregate bool) (*coreum.OrderBookOrders, error) {
 	processStart := time.Now() // Determine what time we need to retrieve data for from the	database
-	key := orderbookCacheKey(denom1, denom2)
+	key := orderbookCacheKey(network, denom1, denom2)
 	orderbook := &coreum.OrderBookOrders{}
 	a.orderbookCache.mutex.RLock()
 	if cache, ok := a.orderbookCache.data[key]; ok {
@@ -226,7 +233,13 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 }
 
 func (a *Application) fetchOrderBookFromChain(orderbook *coreum.OrderBookOrders, network metadata.Network, denom1, denom2 string, limit int) (*coreum.OrderBookOrders, error) {
-	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) {
+	cacheExpireMutex.Lock()
+	v, ok := cacheExpire[orderbookCacheKey(network, denom1, denom2)]
+	if !ok {
+		cacheExpire[orderbookCacheKey(network, denom1, denom2)] = time.Now()
+	}
+	cacheExpireMutex.Unlock()
+	if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) || !v.Add(5*time.Minute).After(time.Now()) {
 		ctx := context.Background()
 
 		var err error
@@ -267,6 +280,9 @@ func (a *Application) fetchOrderBookFromChain(orderbook *coreum.OrderBookOrders,
 			order.Amount = o.Amount
 			order.Price = o.Price
 		}
+		cacheExpireMutex.Lock()
+		cacheExpire[orderbookCacheKey(network, denom1, denom2)] = time.Now()
+		cacheExpireMutex.Unlock()
 	}
 	return orderbook, nil
 }
