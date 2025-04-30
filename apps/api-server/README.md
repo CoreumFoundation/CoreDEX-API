@@ -278,21 +278,34 @@ Returns:
 
 ```json5
 {
-  "Market": {
-    "Symbol": "dextestdenom9-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs_dextestdenom1-devcore1p0edzyzpazpt68vdrjy20c42lvwsjpvfzahygs",
-    "MinTradeSize": {
-      "Value": 1000000,
-      "Exp": -6,
+    "Denom1": {
+        "Currency": "alb",
+        "Issuer": "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        "Precision": 6,
+        "Denom": "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     },
-    "MinPriceTickSize": {
-      "Value": 1,
-      "Exp": -6,
+    "Denom2": {
+        "Currency": "nor",
+        "Issuer": "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+        "Precision": 6,
+        "Denom": "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
     },
-    "MinAmountTickSize": {
-      "Value": 1,
-      "Exp": -6,
+    "MetaData": {
+        "Network": 3,
+        "UpdatedAt": {
+            "seconds": 1746050943,
+            "nanos": 326356000
+        },
+        "CreatedAt": {
+            "seconds": 1746050943,
+            "nanos": 325398000
+        }
     },
-  }
+    "PriceTick": {
+        "Value": 1,
+        "Exp": -6
+    },
+    "QuantityStep": 10000
 }
 ```
 
