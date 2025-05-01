@@ -155,18 +155,26 @@ export const mergeUniqueTrades = (
 // validation for orderActions quantity step/price tick
 export const formatToStep = (value: string, step: number): string => {
   if (!value || value === "0") return value;
-  const numValue = parseFloat(value);
-  const remainder = numValue % step;
-  
-  if (Math.abs(remainder - step) < 0.0000001) {
-    return (numValue + (step - remainder)).toFixed(getDecimalPlaces(step));
+
+  const bnValue = new BigNumber(value);
+  const bnStep = new BigNumber(step);
+
+  const remainder = bnValue.modulo(bnStep);
+
+  if (remainder.isEqualTo(0)) {
+    return value;
   }
-  
-  if (remainder !== 0) {
-    return (numValue - remainder).toFixed(getDecimalPlaces(step));
+
+  // check if remainder is "very" close to the step (near the next multiple)
+  // eg. if step is 0.01 and a user enters 0.099999999, the remainder would be 0.00999999, which is close to 0.01
+  // here we use one ten-billionth of the step size to determine if we should round up
+  if (bnStep.minus(remainder).isLessThan(bnStep.multipliedBy("1e-10"))) {
+    return bnValue
+      .plus(bnStep.minus(remainder))
+      .toFixed(getDecimalPlaces(step));
   }
-  
-  return value;
+
+  return bnValue.minus(remainder).toFixed(getDecimalPlaces(step));
 };
 
 export const getDecimalPlaces = (num: number): number => {
