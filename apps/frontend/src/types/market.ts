@@ -189,3 +189,34 @@ export type WalletBalances = WalletAsset[];
 export type CancelOrderResponse = {
   TXBytes: string;
 };
+
+export type MarketData = {
+  Denom1: {
+    Currency: string;
+    Issuer: string;
+    Precision: number;
+    Denom: string;
+  };
+  Denom2: {
+    Currency: string;
+    Issuer: string;
+    Precision: number;
+    Denom: string;
+  };
+  MetaData: {
+    Network: number;
+    UpdatedAt: {
+      seconds: number;
+      nanos: number;
+    };
+    CreatedAt: {
+      seconds: number;
+      nanos: number;
+    };
+  };
+  PriceTick: {
+    Value: number;
+    Exp: number;
+  };
+  QuantityStep: number;
+};

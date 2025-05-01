@@ -151,3 +151,30 @@ export const mergeUniqueTrades = (
     return bTime - aTime;
   });
 };
+
+// validation for orderActions quantity step/price tick
+export const formatToStep = (value: string, step: number): string => {
+  if (!value || value === "0") return value;
+  const numValue = parseFloat(value);
+  const remainder = numValue % step;
+  
+  if (Math.abs(remainder - step) < 0.0000001) {
+    return (numValue + (step - remainder)).toFixed(getDecimalPlaces(step));
+  }
+  
+  if (remainder !== 0) {
+    return (numValue - remainder).toFixed(getDecimalPlaces(step));
+  }
+  
+  return value;
+};
+
+export const getDecimalPlaces = (num: number): number => {
+  if (!num) return 0;
+  const match = num.toString().match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+  if (!match) return 0;
+  return Math.max(
+    0,
+    (match[1] ? match[1].length : 0) - (match[2] ? parseInt(match[2]) : 0)
+  );
+};

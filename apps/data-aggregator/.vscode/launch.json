@@ -1,21 +1,21 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch Package",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
-            "env": {
-                "NETWORKS":"{\"Node\": [{\"Network\": \"devnet\",\"GRPCHost\": \"full-node.devnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.devnet-1.coreum.dev:26657\"},{\"Network\": \"testnet\",\"GRPCHost\": \"full-node.testnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.testnet-1.coreum.dev:26657\"}]}",
-                "STATE_STORE":"localhost:50051",
-                "TRADE_STORE":"localhost:50051",
-                "OHLC_STORE":"localhost:50051",
-                "ORDER_STORE":"localhost:50051",
-                "CURRENCY_STORE":"localhost:50051",
-                "LOG_LEVEL":"info"
-            }
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/main.go",
+      "env": {
+        "NETWORKS": "{\"Node\": [{\"Network\": \"devnet\",\"GRPCHost\": \"full-node.devnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.devnet-1.coreum.dev:26657\"},{\"Network\": \"testnet\",\"GRPCHost\": \"full-node.testnet-1.coreum.dev:9090\",\"RPCHost\": \"https://full-node.testnet-1.coreum.dev:26657\"}]}",
+        "STATE_STORE": "localhost:50051",
+        "TRADE_STORE": "localhost:50051",
+        "OHLC_STORE": "localhost:50051",
+        "ORDER_STORE": "localhost:50051",
+        "CURRENCY_STORE": "localhost:50051",
+        "LOG_LEVEL": "info"
+      }
+    }
+  ]
 }
