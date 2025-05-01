@@ -439,7 +439,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={10}
+                  decimals={market.counter.Denom.Precision}
                   adornmentRight={market.counter.Denom.Name?.toUpperCase()}
                   sublabel={priceTick ? `Step: ${priceTick}` : undefined}
                   onBlur={() => {
