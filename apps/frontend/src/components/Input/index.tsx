@@ -51,6 +51,9 @@ interface InputProps {
   adornmentRight?: ReactNode;
   labelTooltip?: ReactNode | string;
   tooltipWidth?: string;
+  step?: number;
+  enforceStep?: boolean;
+  onBlur?: (e: any) => void;
 }
 type Input =
   | (InputProps & React.InputHTMLAttributes<HTMLInputElement>)

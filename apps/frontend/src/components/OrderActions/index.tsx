@@ -8,12 +8,17 @@ import {
   TimeInForceStringToEnum,
   WalletBalances,
 } from "@/types/market";
-import { getAvgPriceFromOBbyVolume, multiply } from "@/utils";
+import { formatToStep, getAvgPriceFromOBbyVolume, multiply } from "@/utils";
 import { FormatNumber } from "../FormatNumber";
 import { Input, InputType } from "../Input";
 import Button, { ButtonVariant } from "../Button";
 import BigNumber from "bignumber.js";
-import { submitOrder, getWalletAssets, createOrder } from "@/services/api";
+import {
+  submitOrder,
+  getWalletAssets,
+  createOrder,
+  getMarketData,
+} from "@/services/api";
 import { DEX } from "coreum-js-nightly";
 import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
 import "./order-actions.scss";
@@ -76,11 +81,37 @@ const OrderActions = ({
   );
   const [customTime, setCustomTime] = useState<string>("");
   const [blockHeight, setBlockHeight] = useState<number>(0);
+  const [quantityStep, setQuantityStep] = useState<number>(0);
+  const [priceTick, setPriceTick] = useState<number>(0);
 
   useEffect(() => {
     if (!wallet) return;
     fetchWalletAssets();
   }, [wallet, market]);
+
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const data = await getMarketData(market.pair_symbol);
+        if (data) {
+          const marketData = data.data;
+
+          const calculatedPriceTick =
+            marketData.PriceTick.Value * Math.pow(10, marketData.PriceTick.Exp);
+          setPriceTick(calculatedPriceTick);
+
+          // quantity step will always come from denom1 precision
+          const calculatedQuantityStep =
+            marketData.QuantityStep / Math.pow(10, marketData.Denom1.Precision);
+          setQuantityStep(calculatedQuantityStep);
+        }
+      } catch (e) {
+        console.log("ERROR GETTING MARKET DATA >>", e);
+      }
+    };
+
+    fetchMarketData();
+  }, [market.pair_symbol]);
 
   const walletSubscription = useMemo(
     () => ({
@@ -132,7 +163,6 @@ const OrderActions = ({
       const response = await getWalletAssets(wallet?.address);
       if (response.status === 200 && response.data.length > 0) {
         const data = response.data;
-        console.log(data);
         setWalletBalances(data);
         wsManager.setInitialState(walletSubscription, data);
       }
@@ -387,7 +417,15 @@ const OrderActions = ({
                   inputWrapperClassname="order-input"
                   decimals={market.base.Denom.Precision}
                   adornmentRight={market.base.Denom.Name?.toUpperCase()}
+                  sublabel={quantityStep ? `Step: ${quantityStep}` : undefined}
+                  onBlur={() => {
+                    if (quantityStep > 0) {
+                      const formattedValue = formatToStep(volume, quantityStep);
+                      setVolume(formattedValue);
+                    }
+                  }}
                 />
+
                 <Input
                   placeholder="Enter Limit Price"
                   type={InputType.NUMBER}
@@ -403,6 +441,16 @@ const OrderActions = ({
                   inputWrapperClassname="order-input"
                   decimals={market.counter.Denom.Precision}
                   adornmentRight={market.counter.Denom.Name?.toUpperCase()}
+                  sublabel={priceTick ? `Step: ${priceTick}` : undefined}
+                  onBlur={() => {
+                    if (priceTick > 0) {
+                      const formattedValue = formatToStep(
+                        limitPrice,
+                        priceTick
+                      );
+                      setLimitPrice(formattedValue);
+                    }
+                  }}
                 />
 
                 <div className="advanced-settings-header">

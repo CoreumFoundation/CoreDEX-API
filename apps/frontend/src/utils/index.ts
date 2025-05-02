@@ -151,3 +151,38 @@ export const mergeUniqueTrades = (
     return bTime - aTime;
   });
 };
+
+// validation for orderActions quantity step/price tick
+export const formatToStep = (value: string, step: number): string => {
+  if (!value || value === "0") return value;
+
+  const bnValue = new BigNumber(value);
+  const bnStep = new BigNumber(step);
+
+  const remainder = bnValue.modulo(bnStep);
+
+  if (remainder.isEqualTo(0)) {
+    return value;
+  }
+
+  // check if remainder is "very" close to the step (near the next multiple)
+  // eg. if step is 0.01 and a user enters 0.099999999, the remainder would be 0.00999999, which is close to 0.01
+  // here we use one ten-billionth of the step size to determine if we should round up
+  if (bnStep.minus(remainder).isLessThan(bnStep.multipliedBy("1e-10"))) {
+    return bnValue
+      .plus(bnStep.minus(remainder))
+      .toFixed(getDecimalPlaces(step));
+  }
+
+  return bnValue.minus(remainder).toFixed(getDecimalPlaces(step));
+};
+
+export const getDecimalPlaces = (num: number): number => {
+  if (!num) return 0;
+  const match = num.toString().match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+  if (!match) return 0;
+  return Math.max(
+    0,
+    (match[1] ? match[1].length : 0) - (match[2] ? parseInt(match[2]) : 0)
+  );
+};

@@ -5,6 +5,7 @@ import {
   OhlcResponse,
   TradeHistoryResponse,
   WalletAsset,
+  MarketData,
 } from "@/types/market";
 import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
@@ -63,7 +64,6 @@ export const getTrades = async ({
     query.to = to.toString();
   }
 
-  // Conditionally add optional parameters
   if (account) {
     query.account = account;
   }
@@ -203,6 +203,26 @@ export const cancelOrder = async (cancelParams: {
 
   if (!response.data) {
     throw new Error("No data received from CancelOrder API");
+  }
+
+  return response;
+};
+
+export const getMarketData = async (
+  symbol: string
+): Promise<AxiosResponse<MarketData>> => {
+  const params = new URLSearchParams({
+    symbol,
+  });
+
+  const response = await request(
+    {},
+    `${BASE_API_URL}/market?${params}`,
+    APIMethod.GET
+  );
+
+  if (!response.data) {
+    throw new Error("No data received from MarketData API");
   }
 
   return response;
