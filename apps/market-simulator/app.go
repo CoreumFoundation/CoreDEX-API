@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 	coreumconfig "github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
@@ -91,7 +92,20 @@ func NewApp(
 	if strings.HasPrefix(cfg.GRPCHost, "127.0.0.1") || strings.HasPrefix(cfg.GRPCHost, "localhost") {
 		transportCredentials = insecure.NewCredentials()
 	}
-	grpcClient, err := grpc.NewClient(cfg.GRPCHost, grpc.WithTransportCredentials(transportCredentials))
+
+	modules := auth.AppModuleBasic{}
+	encodingConfig := coreumconfig.NewEncodingConfig(modules)
+
+	pc, ok := encodingConfig.Codec.(codec.GRPCCodecProvider)
+	if !ok {
+		logger.Fatalf("failed to cast codec to codec.GRPCCodecProvider")
+	}
+
+	grpcClient, err := grpc.NewClient(
+		cfg.GRPCHost,
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(pc.GRPCCodec())),
+		grpc.WithTransportCredentials(transportCredentials),
+	)
 	logger.Infof("Connected to GRPC interface %s", cfg.GRPCHost)
 	if err != nil {
 		return App{}, fmt.Errorf("error connecting to coreum GRPC interface: %v", err)
@@ -109,9 +123,6 @@ func NewApp(
 		return App{}, err
 	}
 	network.SetSDKConfig()
-
-	modules := auth.AppModuleBasic{}
-	encodingConfig := coreumconfig.NewEncodingConfig(modules)
 
 	clientCtx := client.NewContext(client.DefaultContextConfig(), modules).
 		WithChainID(string(chainID)).

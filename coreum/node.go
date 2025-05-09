@@ -51,7 +51,7 @@ func NewNodeConnections() map[metadata.Network]*client.Context {
 
 		pc, ok := encodingConfig.Codec.(codec.GRPCCodecProvider)
 		if !ok {
-			logger.Fatalf("failed to cast codec to codec.GRPCCodecProvider)")
+			logger.Fatalf("failed to cast codec to codec.GRPCCodecProvider")
 		}
 
 		grpcClient, err := grpc.NewClient(
