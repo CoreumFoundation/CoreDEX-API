@@ -138,12 +138,15 @@ const Header = () => {
             if (item === CoreumNetwork.MAINNET.toUpperCase()) {
               console.log("Switching to Mainnet");
               setNetwork(CoreumNetwork.MAINNET);
+              window.location.reload();
             } else if (item === CoreumNetwork.TESTNET.toUpperCase()) {
               console.log("Switching to Testnet");
               setNetwork(CoreumNetwork.TESTNET);
+              window.location.reload();
             } else {
               console.log("Switching to Devnet");
               setNetwork(CoreumNetwork.DEVNET);
+              window.location.reload();
             }
           }}
           renderItem={(item) => (
