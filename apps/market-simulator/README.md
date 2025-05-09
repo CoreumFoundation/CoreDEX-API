@@ -24,6 +24,8 @@ The app config is defined such that parties can run their own simulators. Since 
 
 ```json5
 {
+    "Network": "devnet",
+    "Fund": "https://api.devnet-1.coreum.dev/api/faucet/v1/fund",
     "GRPCHost": "full-node.devnet-1.coreum.dev:9090",
     "Issuer": {
         "Address": "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",

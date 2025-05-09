@@ -2,6 +2,8 @@
 
 export LOG_LEVEL=info
 export APP_CONFIG='{
+    "Network": "devnet-",
+    "Fund": "https://api.devnet-1.coreum.dev/api/faucet/v1/fund",
     "GRPCHost": "full-node.devnet-1.coreum.dev:9090",
     "Issuer": {
         "Address": "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",

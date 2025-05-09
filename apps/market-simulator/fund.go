@@ -21,8 +21,8 @@ type fund struct {
 	Address string `json:"address"`
 }
 
-func addFunds(address string) {
-	url := "https://api.devnet-1.coreum.dev/api/faucet/v1/fund"
+func (fa *App) addFunds(address string) {
+	url := fa.cfg.Fund
 	payload := fund{
 		Address: address,
 	}
@@ -43,7 +43,7 @@ func addFunds(address string) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Errorf("Error making request:", err)
+		logger.Errorf("Error making request: %v", err)
 		return
 	}
 	defer resp.Body.Close()

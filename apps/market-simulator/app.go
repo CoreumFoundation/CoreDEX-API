@@ -42,6 +42,8 @@ type AccountWallet struct {
 }
 
 type AppConfig struct {
+	Network                   string
+	Fund                      string
 	GRPCHost                  string
 	Issuer                    AccountWallet
 	AccountsWallet            []AccountWallet
@@ -84,6 +86,7 @@ func NewApp(
 ) (App, error) {
 	logger.Infof("initializing app")
 
+	app := App{cfg: cfg}
 	transportCredentials := credentials.NewTLS(&tls.Config{})
 	if strings.HasPrefix(cfg.GRPCHost, "127.0.0.1") || strings.HasPrefix(cfg.GRPCHost, "localhost") {
 		transportCredentials = insecure.NewCredentials()
@@ -95,6 +98,11 @@ func NewApp(
 	}
 	// ChainID is set to devnet (default)
 	chainID := constant.ChainIDDev
+	if cfg.Network != "" {
+		if cfg.Network == "testnet" {
+			chainID = constant.ChainIDTest
+		}
+	}
 
 	network, err := coreumconfig.NetworkConfigByChainID(chainID)
 	if err != nil {
@@ -126,13 +134,13 @@ func NewApp(
 		return addToKeyring(clientCtx, item)
 	})
 	// Make certain the all accounts have funds (could be new accounts)
-	addFunds(issuer.String())
-	addFunds(accounts[0].String())
-	addFunds(accounts[1].String())
+	app.addFunds(issuer.String())
+	app.addFunds(accounts[0].String())
+	app.addFunds(accounts[1].String())
 
 	denoms := make([]string, 0)
 	denoms = append(denoms, lo.RepeatBy(cfg.AssetFTDefaultDenomsCount, func(i int) string {
-		denom := denom(i)
+		denom := denom(i, issuer.String())
 		supply, err := bankClient.SupplyOf(ctx, &banktypes.QuerySupplyOfRequest{Denom: denom})
 		if err != nil {
 			panic(err)
@@ -170,18 +178,16 @@ func NewApp(
 	}
 	logger.Infof("app initialized")
 
-	return App{
-		cfg:            cfg,
-		clientCtx:      clientCtx,
-		txFactory:      txFactory,
-		issuer:         issuer,
-		accounts:       accounts,
-		denoms:         denoms,
-		sides:          sides,
-		baseVolatility: 0.0004,   // Makes prices oscillate ±4% around the trend
-		trendStrength:  0.000035, // Upward trend to push prices higher over time
-		previousPrice:  75.0,     // Also the initial price for the first order of the simulation
-	}, nil
+	app.clientCtx = clientCtx
+	app.txFactory = txFactory
+	app.issuer = issuer
+	app.accounts = accounts
+	app.denoms = denoms
+	app.sides = sides
+	app.baseVolatility = 0.0004  // Makes prices oscillate ±4% around the trend
+	app.trendStrength = 0.000035 // Upward trend to push prices higher over time
+	app.previousPrice = 75.0     // Also the initial price for the first order of the simulation
+	return app, nil
 }
 
 func addToKeyring(clientCtx client.Context, item AccountWallet) types.AccAddress {
@@ -339,8 +345,8 @@ func (fa *App) genOrder(accounts []types.AccAddress) (*assetfttypes.MsgMint,
 	fa.iteration++
 	// Every 1000 iterations fund the accounts (way sufficient to keep running)
 	if fa.iteration%1000 == 0 {
-		addFunds(accounts[0].String())
-		addFunds(accounts[1].String())
+		fa.addFunds(accounts[0].String())
+		fa.addFunds(accounts[1].String())
 	}
 	return mintSell,
 		mintBuy,
@@ -408,6 +414,6 @@ func isBigIntOverflowsSDKInt(i *big.Int) bool {
 	return false
 }
 
-func denom(denom int) string {
-	return fmt.Sprintf("%s-%s", currencyArray[denom].currency, "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43")
+func denom(denom int, issuer string) string {
+	return fmt.Sprintf("%s-%s", currencyArray[denom].currency, issuer)
 }
