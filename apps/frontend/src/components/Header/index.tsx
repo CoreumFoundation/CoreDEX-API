@@ -127,27 +127,23 @@ const Header = () => {
       <div className="right">
         <Dropdown
           variant={DropdownVariant.NETWORK}
-          items={[
-            CoreumNetwork.MAINNET.toUpperCase(),
-            CoreumNetwork.TESTNET.toUpperCase(),
-            CoreumNetwork.DEVNET.toUpperCase(),
-          ]}
+          items={Object.values(CoreumNetwork).map((network) =>
+        network.toUpperCase()
+          )}
           value={network.toUpperCase()}
           image="/trade/images/connect.svg"
           onClick={(item) => {
-            if (item === CoreumNetwork.MAINNET.toUpperCase()) {
-              console.log("Switching to Mainnet");
-              setNetwork(CoreumNetwork.MAINNET);
-            } else if (item === CoreumNetwork.TESTNET.toUpperCase()) {
-              console.log("Switching to Testnet");
-              setNetwork(CoreumNetwork.TESTNET);
-            } else {
-              console.log("Switching to Devnet");
-              setNetwork(CoreumNetwork.DEVNET);
-            }
+        const selectedNetwork = Object.values(CoreumNetwork).find(
+          (net) => net.toUpperCase() === item
+        );
+        if (selectedNetwork) {
+          console.log(`Switching to ${selectedNetwork}`);
+          setNetwork(selectedNetwork);
+          window.location.reload();
+        }
           }}
           renderItem={(item) => (
-            <div className="network-item">{item.toUpperCase()}</div>
+        <div className="network-item">{item.toUpperCase()}</div>
           )}
         />
 
@@ -155,10 +151,10 @@ const Header = () => {
           <Wallet />
         ) : (
           <Button
-            onClick={() => setLoginModal(true)}
-            label="Connect Wallet"
-            image="/trade/images/wallet.svg"
-            variant="primary"
+        onClick={() => setLoginModal(true)}
+        label="Connect Wallet"
+        image="/trade/images/wallet.svg"
+        variant="primary"
           />
         )}
       </div>
