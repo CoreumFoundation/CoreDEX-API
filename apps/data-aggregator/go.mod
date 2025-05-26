@@ -1,6 +1,6 @@
 module github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator
 
-go 1.23.3
+go 1.24.3
 
 // Permanent replacements due to coreum requirements
 replace (
@@ -30,7 +30,7 @@ replace github.com/CoreumFoundation/CoreDEX-API/utils => ../../utils
 
 require (
 	cosmossdk.io/math v1.5.0
-	github.com/CoreumFoundation/coreum/v5 v5.0.0
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250414180032-219788281a9a
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/gogoproto v1.7.0

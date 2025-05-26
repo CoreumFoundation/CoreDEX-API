@@ -1,6 +1,6 @@
 module github.com/CoreumFoundation/CoreDEX-API/apps/api-server
 
-go 1.23.3
+go 1.24.3
 
 require (
 	cosmossdk.io/log v1.5.0
@@ -8,7 +8,7 @@ require (
 	github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250131141802-988390a8fb35
 	github.com/CoreumFoundation/CoreDEX-API/domain v0.0.0-20250204222705-64b06c939bc4
 	github.com/CoreumFoundation/CoreDEX-API/utils v0.0.0-20250204222705-64b06c939bc4
-	github.com/CoreumFoundation/coreum/v5 v5.0.0
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250414180032-219788281a9a
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-sdk v0.50.13
