@@ -115,7 +115,7 @@ func (r Readers) Start() {
 					v, err := getValidBlockHeight(err)
 					if err == nil {
 						reader.currentHeight = v
-						logger.Warnf("setting block height to %d due to error: %v", reader.currentHeight, err)
+						logger.Warnf("setting block height to %d", reader.currentHeight, err)
 						continue
 					}
 					panic(errors.Wrapf(err, "error processing block %d", reader.currentHeight))
@@ -134,7 +134,7 @@ func getValidBlockHeight(err error) (int64, error) {
 	matches := heightRegex.FindStringSubmatch(err.Error())
 	if len(matches) > 0 {
 		// Extract the captured groups
-		h, err := strconv.ParseInt(matches[1], 10, 64) // This is the height that is not available
+		h, err := strconv.ParseInt(matches[2], 10, 64) // This is the height that is not available
 		if err != nil {
 			return -1, errors.Wrapf(err, "error parsing block height from error: %s", err.Error())
 		}
