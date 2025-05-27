@@ -25,7 +25,7 @@ replace github.com/CoreumFoundation/CoreDEX-API/utils => ../utils
 replace github.com/CoreumFoundation/CoreDEX-API/domain => ../domain
 
 require (
-	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250414180032-219788281a9a
+	github.com/CoreumFoundation/coreum/v5 v5.0.1
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/pkg/errors v0.9.1
