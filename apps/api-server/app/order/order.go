@@ -322,10 +322,8 @@ func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrde
 	if err != nil {
 		return nil, err
 	}
-	wg := &sync.WaitGroup{}
-	buyMap := a.verifyOrderBookSide(ctx, orderbook.Buy, network, wg)
-	sellMap := a.verifyOrderBookSide(ctx, orderbook.Sell, network, wg)
-	wg.Wait()
+	buyMap := a.verifyOrderBookSide(ctx, orderbook.Buy, network)
+	sellMap := a.verifyOrderBookSide(ctx, orderbook.Sell, network)
 	// Merge the sets with the orders from the database
 	for _, order := range orders.Orders {
 		// Normalize the order to the orderbook format
@@ -360,13 +358,22 @@ func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrde
 }
 
 // Get the orders in the orderbook from the database for verification if they are still valid
-func (a *Application) verifyOrderBookSide(ctx context.Context, orderbookSide []*coreum.OrderBookOrder, network metadata.Network, wg *sync.WaitGroup) map[uint64]*coreum.OrderBookOrder {
+func (a *Application) verifyOrderBookSide(ctx context.Context, orderbookSide []*coreum.OrderBookOrder, network metadata.Network) map[uint64]*coreum.OrderBookOrder {
+	wg:=&sync.WaitGroup{}
 	retVal := make([]*coreum.OrderBookOrder, 0)
 	for _, o := range orderbookSide {
 		wg.Add(1)
 		go func(o *coreum.OrderBookOrder) {
 			order, err := a.orderClient.Get(ctx, &ordergrpc.ID{Sequence: int64(o.Sequence), Network: network})
 			if err != nil {
+				if strings.Contains(err.Error(), "no order found") {
+					// Order did not yet make it into the database, so keep it for now (once DB updates, verify will work)
+					orderBookMutex.Lock()
+					retVal = append(retVal, o)
+					orderBookMutex.Unlock()
+					wg.Done()
+					return
+				}
 				logger.Errorf("Error getting order %d (%s) from the database: %v", o.Sequence, network.String(), err)
 				wg.Done()
 				return
@@ -384,6 +391,7 @@ func (a *Application) verifyOrderBookSide(ctx context.Context, orderbookSide []*
 			wg.Done()
 		}(o)
 	}
+	wg.Wait()
 	retMap := make(map[uint64]*coreum.OrderBookOrder)
 	for _, o := range retVal {
 		retMap[o.Sequence] = o
