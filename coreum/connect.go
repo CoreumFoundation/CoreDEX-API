@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -67,7 +69,10 @@ type ScannedBlock struct {
 	BlockTime    time.Time
 }
 
-var nodeConnections map[metadata.Network]*client.Context
+var (
+	nodeConnections map[metadata.Network]*client.Context
+	heightRegex     = regexp.MustCompile(`height (\d+) is not available, lowest height is (\d+)`)
+)
 
 // Provide Readers without a blockheight to start from
 func InitReaders() Readers {
@@ -107,6 +112,12 @@ func (r Readers) Start() {
 						time.Sleep(1 * time.Second)
 						continue
 					}
+					v, err := getValidBlockHeight(err)
+					if err == nil {
+						reader.currentHeight = v
+						logger.Warnf("setting block height to %d due to error: %v", reader.currentHeight, err)
+						continue
+					}
 					panic(errors.Wrapf(err, "error processing block %d", reader.currentHeight))
 				}
 				reader.currentHeight++
@@ -114,6 +125,22 @@ func (r Readers) Start() {
 			}
 		}(reader)
 	}
+}
+
+// There is the possibility of an init error for the blockheight
+// => height 6599262 is not available, lowest height is 6603501
+// This function parses the lowest height from this string if the error is in the correct format
+func getValidBlockHeight(err error) (int64, error) {
+	matches := heightRegex.FindStringSubmatch(err.Error())
+	if len(matches) > 0 {
+		// Extract the captured groups
+		h, err := strconv.ParseInt(matches[1], 10, 64) // This is the height that is not available
+		if err != nil {
+			return -1, errors.Wrapf(err, "error parsing block height from error: %s", err.Error())
+		}
+		return h, nil
+	}
+	return -1, err
 }
 
 // isTemporaryError checks if the error is a temporary error that can be retried

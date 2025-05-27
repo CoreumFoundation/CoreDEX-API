@@ -159,8 +159,8 @@ post_order_submit() {
 get_order_orderbook() {
     echo "Calling GET /order/orderbook"
     # Add your curl or wget command here
-    curl -H "Network: devnet" \
-    -X "GET" "${HOST}/order/orderbook?symbol=nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43"
+    curl -H "Network: testnet" \
+    -X "GET" "${HOST}/order/orderbook?symbol=nor-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57_alb-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57"
 }
 
 # Function for GET /order/orderbook

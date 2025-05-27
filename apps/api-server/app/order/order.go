@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/samber/lo"
 	dec "github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -67,6 +68,7 @@ type OrderBookOrder struct {
 var (
 	cacheExpire      = make(map[string]time.Time)
 	cacheExpireMutex = &sync.Mutex{}
+	orderBookMutex   = &sync.Mutex{}
 )
 
 func NewApplication(currencyClient *currency.Application) *Application {
@@ -287,6 +289,11 @@ func (a *Application) fetchOrderBookFromChain(orderbook *coreum.OrderBookOrders,
 	return orderbook, nil
 }
 
+// Process orders from the database as updates on the actual orderbook loaded from the chain
+// (Orders are loaded from the chain to be able to start displaying orders while the database
+// is not yet complete (e.g. the app has just started so no data in the database yet))
+// Fetch additional orders from the database
+// Query the database for the order status of the orders in the orderbook
 func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrders, network metadata.Network, denom1, denom2 string, processStart time.Time) (*coreum.OrderBookOrders, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -299,6 +306,7 @@ func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrde
 		return nil, err
 	}
 
+	// Get (new) open orders from the database for the given network and denoms
 	orders, err := a.orderClient.GetAll(ctx, &ordergrpc.Filter{
 		Network: network,
 		Denom1:  denom1Currency.Denom,
@@ -306,47 +314,89 @@ func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrde
 		// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
 		// Also there can be a processing delay on the websocket (basic timing of the websocket updates), which can cause a further delay)
 		// Lastly this might be called after a blockchain timeout has occurred (on retrieval of the orderbook): Compensate for that too
-		// So we need to get some more data to compensate for that: Query up to 1 minute in the past
-		From: timestamppb.New(processStart.Add(-1 * time.Minute)),
-		To:   timestamppb.Now(),
+		// So we need to get some more data to compensate for that: Query up to 10 minute in the past (was 1 minute but somehow that was too short)
+		From:        timestamppb.New(processStart.Add(-10 * time.Minute)),
+		To:          timestamppb.Now(),
+		OrderStatus: lo.ToPtr(ordergrpc.OrderStatus_ORDER_STATUS_OPEN),
 	})
 	if err != nil {
 		return nil, err
 	}
-	// Orders have a status, and a remaining quantity. If the remaining quantity is 0, the order is removed from the orderbook
-	// If the order is not in the orderbook, it is added to the orderbook
-	// If the order is in the orderbook, it is updated with the new data
-	buySide := orderbook.Buy
-	sellSide := orderbook.Sell
-	buySideRemove := make([]uint64, 0)
-	buySideAppend := make([]*coreum.OrderBookOrder, 0)
-	sellSideRemove := make([]uint64, 0)
-	sellSideAppend := make([]*coreum.OrderBookOrder, 0)
-	// Process orders from the database as updates on the actual orderbook loaded from the chain
+	buyMap := a.verifyOrderBookSide(ctx, orderbook.Buy, network)
+	sellMap := a.verifyOrderBookSide(ctx, orderbook.Sell, network)
+	// Merge the sets with the orders from the database
 	for _, order := range orders.Orders {
-		buySideRemove, buySideAppend = a.processOrderForOrderBook(ctx, buySide, order, buySideRemove, buySideAppend, orderproperties.Side_SIDE_BUY)
-		sellSideRemove, sellSideAppend = a.processOrderForOrderBook(ctx, sellSide, order, sellSideRemove, sellSideAppend, orderproperties.Side_SIDE_SELL)
-	}
-	for _, removeID := range buySideRemove {
-		for i, buyOrder := range buySide {
-			if buyOrder.Sequence == removeID {
-				buySide = append(buySide[:i], buySide[i+1:]...)
+		// Normalize the order to the orderbook format
+		o, err := a.Normalize(ctx, order)
+		if err != nil {
+			logger.Errorf("Error normalizing order %d (%s): %v", order.Sequence, network.String(), err)
+			continue
+		}
+		switch order.Side {
+		case orderproperties.Side_SIDE_BUY:
+			if _, exists := buyMap[o.Sequence]; !exists {
+				buyMap[o.Sequence] = o
+			}
+		case orderproperties.Side_SIDE_SELL:
+			if _, exists := sellMap[o.Sequence]; !exists {
+				sellMap[o.Sequence] = o
 			}
 		}
 	}
-	buySide = append(buySide, buySideAppend...)
-	for _, removeID := range sellSideRemove {
-		for i, o := range sellSide {
-			if o.Sequence == removeID {
-				sellSide = append(sellSide[:i], sellSide[i+1:]...)
-			}
-		}
+	// Convert the maps back to slices
+	buySide := make([]*coreum.OrderBookOrder, 0, len(buyMap))
+	sellSide := make([]*coreum.OrderBookOrder, 0, len(sellMap))
+	for _, o := range buyMap {
+		buySide = append(buySide, o)
 	}
-	sellSide = append(sellSide, sellSideAppend...)
-
+	for _, o := range sellMap {
+		sellSide = append(sellSide, o)
+	}
 	orderbook.Buy = buySide
 	orderbook.Sell = sellSide
 	return orderbook, nil
+}
+
+// Get the orders in the orderbook from the database for verification if they are still valid
+func (a *Application) verifyOrderBookSide(ctx context.Context, orderbookSide []*coreum.OrderBookOrder, network metadata.Network) map[uint64]*coreum.OrderBookOrder {
+	wg:=&sync.WaitGroup{}
+	retVal := make([]*coreum.OrderBookOrder, 0)
+	for _, o := range orderbookSide {
+		wg.Add(1)
+		go func(o *coreum.OrderBookOrder) {
+			order, err := a.orderClient.Get(ctx, &ordergrpc.ID{Sequence: int64(o.Sequence), Network: network})
+			if err != nil {
+				if strings.Contains(err.Error(), "no order found") {
+					// Order did not yet make it into the database, so keep it for now (once DB updates, verify will work)
+					orderBookMutex.Lock()
+					retVal = append(retVal, o)
+					orderBookMutex.Unlock()
+					wg.Done()
+					return
+				}
+				logger.Errorf("Error getting order %d (%s) from the database: %v", o.Sequence, network.String(), err)
+				wg.Done()
+				return
+			}
+			if order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
+				order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED ||
+				order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_EXPIRED ||
+				(*order.RemainingQuantity).IsZero() {
+				wg.Done()
+				return
+			}
+			orderBookMutex.Lock()
+			retVal = append(retVal, o)
+			orderBookMutex.Unlock()
+			wg.Done()
+		}(o)
+	}
+	wg.Wait()
+	retMap := make(map[uint64]*coreum.OrderBookOrder)
+	for _, o := range retVal {
+		retMap[o.Sequence] = o
+	}
+	return retMap
 }
 
 func aggregateOrders(orders []*coreum.OrderBookOrder) []*coreum.OrderBookOrder {
@@ -380,48 +430,6 @@ func aggregateOrders(orders []*coreum.OrderBookOrder) []*coreum.OrderBookOrder {
 		}
 	}
 	return aggregatedOrders
-}
-
-// Function generates 2 lists: A remove list and an append list
-// Apply the remove list first, then apply the append list on the orderbook to get to a correct orderbook
-func (a *Application) processOrderForOrderBook(ctx context.Context, orderbook []*coreum.OrderBookOrder,
-	order *ordergrpc.Order,
-	removeList []uint64,
-	appendList []*coreum.OrderBookOrder,
-	side orderproperties.Side,
-) ([]uint64, []*coreum.OrderBookOrder) {
-	if order.Side != side {
-		return removeList, appendList
-	}
-	// Remove all orders which we already have in the orderbook (if it was required, we add it back later)
-	for _, o := range orderbook {
-		if o.Sequence == uint64(order.Sequence) {
-			removeList = append(removeList, o.Sequence)
-			// Once the order is found, we can exit the loop
-			break
-		}
-	}
-	// Remove the order before adding the order again (Order might or might not be present)
-	removeList = append(removeList, uint64(order.Sequence))
-	// Check if order is already in append list:
-	for _, o := range appendList {
-		if o.Sequence == uint64(order.Sequence) {
-			return removeList, appendList
-		}
-	}
-	// Do not add orders which are not valid anymore
-	if (*order.RemainingQuantity).IsZero() ||
-		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
-		order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED {
-		return removeList, appendList
-	}
-	o, err := a.Normalize(ctx, order)
-	if err != nil {
-		logger.Errorf("Error normalizing order %d: %v", order.Sequence, err)
-		return removeList, appendList
-	}
-	appendList = append(appendList, o)
-	return removeList, appendList
 }
 
 func (a *Application) OrderBookRelevantOrdersForAccount(network metadata.Network, denom1, denom2, account string) (*coreum.OrderBookOrders, error) {

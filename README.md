@@ -158,3 +158,25 @@ docker build -t coreumfoundation/market-simulator:latest -f Dockerfile.market-si
 
 See the `README.md` files in the associated application folders.
 Do note the UI `README.md` where there is information on some javascript packages/files that take care of UI data management.
+
+## Common issues/FAQ
+
+### Blockheight not updating
+
+There is an error in the data-aggregator log stating:
+
+```
+2025-05-20 11:35:10 {"level":"error","severity":"ERROR","time":"2025-05-20T15:35:10Z","message":"rpc error for block 1: error in json rpc client, with http response metadata: (Status: 200 OK, Protocol HTTP/1.1). RPC error -32603 - Internal error: height 1 is not available, lowest height is 36782260"}
+```
+
+This is due to the State on being set before the data-aggregator is started. Set the height manually for the given network by logging in into the database, verify the existence of the `State` table, and run the following SQL command:
+
+```sql
+INSERT INTO State (StateType, Content, MetaData) VALUES (1, '{"Height":36782260}', '{"Network": 3, "UpdatedAt": {"seconds": 1738799304, "nanos": 164479000}}');
+```
+
+Or if the record is present, update the height:
+
+```sql
+UPDATE State SET Content = '{"Height":36782260}' WHERE StateType=1;
+```
