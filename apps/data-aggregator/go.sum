@@ -53,12 +53,10 @@ github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250422225304-9541ca123bea h1:+X1E7auNmAWiED8dKpt/4wQlTAtbgOSGx1CPD21T19I=
-github.com/CoreumFoundation/CoreDEX-API/coreum v0.0.0-20250422225304-9541ca123bea/go.mod h1:p4LxKTKw3bKyGBkVf3bGKz+wVSXyxjRw/KZNPee14l4=
 github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a h1:1vgtS45y86pyFZ/n2RBHjKQhHRDK1VQek7NHbkPfkGU=
 github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a/go.mod h1:VD93vCHkxYaT/RhOesXTFgd/GQDW54tr0BqGi5JU1c0=
-github.com/CoreumFoundation/coreum/v5 v5.0.0 h1:smsZsmNpu8jw+kY/mLU7SicGWDMrCZl3aoanfe3H9UM=
-github.com/CoreumFoundation/coreum/v5 v5.0.0/go.mod h1:yYMKci1gJ3M/IA2qeg6ek0tske0xe7eMlOasFt6Zxvk=
+github.com/CoreumFoundation/coreum/v5 v5.0.1 h1:hokAIJTT7ISnzEK2QTgs3mjbgAdnyaWbSsbf6bxra54=
+github.com/CoreumFoundation/coreum/v5 v5.0.1/go.mod h1:LQbK4qqr0E1icUCcQT464isJfMeW2mybvX6XXkTpeGI=
 github.com/CosmWasm/wasmd v0.54.0 h1:/txsBehV1xnAi46H1xwuuY6D4NySujBy+wa5+ryItS8=
 github.com/CosmWasm/wasmd v0.54.0/go.mod h1:8Zu/rj6RHbJ8Gx0WdqsGeHvgnEQb0rqchpqhgMxASRU=
 github.com/CosmWasm/wasmvm/v2 v2.2.2 h1:MaQMtaZN8L08N0uAlBlOICP+GWolibJsajHGo3fQ03w=
