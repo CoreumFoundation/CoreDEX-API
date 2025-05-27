@@ -30,7 +30,7 @@ replace github.com/CoreumFoundation/CoreDEX-API/utils => ../../utils
 
 require (
 	cosmossdk.io/math v1.5.0
-	github.com/CoreumFoundation/coreum/v5 v5.0.0
+	github.com/CoreumFoundation/coreum/v5 v5.0.1
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/gogoproto v1.7.0
