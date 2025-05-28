@@ -100,7 +100,7 @@ You should see the following processes:
 ### Optional requirements
 
 The configuration provided uses the devnet public node of the Coreum blockchain. While there is a public node for Coreum available, that node does not have a guaranteed performance and the installation of a local node is recommended.
-See the [Coreum](https://docs.coreum.dev/docs/become-validator/run-full-node) for more information on how to install a local node.
+See the [Coreum](https://docs.coreum.dev/docs/next/nodes-and-validators/run-full-node) for more information on how to install a local node.
 
 ### Running the Friendly DEX with Docker-compose
 
