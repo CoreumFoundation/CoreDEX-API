@@ -1,4 +1,4 @@
-# update service
+# Update service
 
 The update service provides a websocket which refreshes the data based on actual changes. The use of the websocket reduces the numbers of reads required to produce the same data to the connected clients, thus lowering database load and related costs.
 
