@@ -10,42 +10,11 @@ import {
 } from "@/types/market";
 import { ToasterProps } from "@/types";
 import { toast } from "react-toastify";
+import { getDefaultMarket } from "@/config/markets";
 
-const defaultMarket: Market = {
-  base: {
-    Denom: {
-      Currency: "nor",
-      Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-      Precision: 6,
-      Denom: "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-      Name: "NOR",
-      Description: "NOR",
-      IsIBC: false,
-    },
-    Description: "NOR",
-  },
-  counter: {
-    Denom: {
-      Currency: "alb",
-      Issuer: "devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-      Precision: 6,
-      Denom: "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-      Name: "ALB",
-      Description: "ALB",
-      IsIBC: false,
-    },
-    Description: "ALB",
-  },
-  pair_symbol:
-    "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-  reversed_pair_symbol:
-    "alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-};
-
-const storedMarketString = localStorage.getItem("market");
-const storedMarket: Market = storedMarketString
-  ? JSON.parse(storedMarketString)
-  : defaultMarket;
+const initialNetworkForDefaultMarket =
+  (sessionStorage.network as CoreumNetwork) || CoreumNetwork.DEVNET;
+const initialMarket = getDefaultMarket(initialNetworkForDefaultMarket);
 
 export type State = {
   fetching: boolean;
@@ -100,7 +69,9 @@ export const useStore = create<State>((set) => ({
       localStorage.removeItem("token");
     }
     sessionStorage.network = network;
-    set(() => ({ network }));
+    const newMarket = getDefaultMarket(network);
+    localStorage.setItem("market", JSON.stringify(newMarket));
+    set(() => ({ network, market: newMarket }));
   },
   wallet: null,
   setWallet: async (wallet: ICoreumWallet) => {
@@ -130,7 +101,7 @@ export const useStore = create<State>((set) => ({
     set({ isLoading });
   },
 
-  market: storedMarket,
+  market: initialMarket,
   setMarket: (market: Market) => {
     localStorage.setItem("market", JSON.stringify(market));
     set({ market });

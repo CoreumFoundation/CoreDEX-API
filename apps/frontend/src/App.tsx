@@ -11,10 +11,15 @@ import { ICoreumWallet } from "./types/market";
 function App() {
   const { wallet, network, setWallet, setCoreum, pushNotification } =
     useStore();
-  
 
   const lastActiveTime = useRef(Date.now());
   const INACTIVE_THRESHOLD = 10 * 60 * 1000; // 10mins
+
+  useEffect(() => {
+    if (network) {
+      sessionStorage.setItem("network", network);
+    }
+  }, [network]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
