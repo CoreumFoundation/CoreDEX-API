@@ -17,6 +17,7 @@ There are two utility files in this project that are intended for you to use for
 VITE_ENV_BASE_API: API server URL used in services/api.ts
 VITE_ENV_WS: Websocket URL used in services/websocket.ts
 VITE_ENV_MODE: Development flag for how the app imports envs when in development vs when in production
+VITE_ENV_DEFAULT_MARKET_CONFIGS: object that stores the pair id for market depending on selected network {"devnet":"123..", "testnet": "abc..."}
 ```
 
 In this project, envs are imported in `/config/envs.ts`.
