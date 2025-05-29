@@ -118,6 +118,13 @@ func (r Readers) Start() {
 						logger.Warnf("setting block height to %d", reader.currentHeight, err)
 						continue
 					}
+					// We allow processing to continue (blockchain is responding, this code just has an issue with the data: This leads to dataloss)
+					if isIgnorableError(err) {
+						reader.currentHeight++
+						reader.BlockHeight = reader.currentHeight
+						continue
+					}
+					// panic: error processing block 6840526: rpc error: code = DeadlineExceeded desc = received context error while waiting for new LB policy update: context deadline exceeded
 					panic(errors.Wrapf(err, "error processing block %d", reader.currentHeight))
 				}
 				reader.currentHeight++
@@ -127,12 +134,29 @@ func (r Readers) Start() {
 	}
 }
 
+/*
+isIgnorableError checks if the error is ignorable but can lead to missing data (so it is advisable to resolve it)
+Types of errors managed:
+* tx parse error: unable to resolve type URL /coreum.nft.v1beta1.MsgSend
+*/
+func isIgnorableError(err error) bool {
+	if err == nil {
+		return true
+	}
+	if strings.Contains(err.Error(), "unable to resolve type URL") {
+		// This is a parse error thcd at can be ignored, but it is advisable to resolve it
+		logger.Warnf("DATA LOSS MIGHT OCCUR: ignoring parse error: %s", err.Error())
+		return true
+	}
+	return false
+}
+
 // There is the possibility of an init error for the blockheight
 // => height 6599262 is not available, lowest height is 6603501
 // This function parses the lowest height from this string if the error is in the correct format
 func getValidBlockHeight(err error) (int64, error) {
 	matches := heightRegex.FindStringSubmatch(err.Error())
-	if len(matches) > 0 {
+	if len(matches) > 1 {
 		// Extract the captured groups
 		h, err := strconv.ParseInt(matches[2], 10, 64) // This is the height that is not available
 		if err != nil {
