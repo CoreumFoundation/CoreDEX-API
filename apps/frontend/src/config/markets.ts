@@ -72,16 +72,15 @@ export const PREDEFINED_MARKETS: Record<string, Market> = {
 export const GLOBAL_FALLBACK_MARKET = DEVNET_DEFAULT;
 
 // function to get the default market based on the current network
-// reads from the environment variable VITE_DEFAULT_MARKET_CONFIGS
+// reads from the environment variable VITE_ENV_DEFAULT_MARKET_CONFIGS
 // fallsback to devnet market if not found
 export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
-  const defaultConfigString = import.meta.env.VITE_DEFAULT_MARKET_CONFIGS as
-    | string
-    | undefined;
+  const defaultConfigString = import.meta.env
+    .VITE_ENV_DEFAULT_MARKET_CONFIGS as string | undefined;
 
   if (!defaultConfigString) {
     console.warn(
-      "VITE_DEFAULT_MARKET_CONFIGS is not set. Using global fallback market."
+      "VITE_ENV_DEFAULT_MARKET_CONFIGS is not set. Using global fallback market."
     );
     return GLOBAL_FALLBACK_MARKET;
   }
@@ -95,7 +94,7 @@ export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
 
     if (!marketSymbol) {
       console.warn(
-        `No default market symbol found for network "${currentNetwork}" in VITE_DEFAULT_MARKET_CONFIGS. Using global fallback.`
+        `No default market symbol found for network "${currentNetwork}" in VITE_ENV_DEFAULT_MARKET_CONFIGS. Using global fallback.`
       );
       return GLOBAL_FALLBACK_MARKET;
     }
@@ -111,7 +110,7 @@ export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
     return marketConfig;
   } catch (error) {
     console.error(
-      "Error parsing VITE_DEFAULT_MARKET_CONFIGS or looking up market. Using global fallback.",
+      "Error parsing VITE_ENV_DEFAULT_MARKET_CONFIGS or looking up market. Using global fallback.",
       error
     );
     return GLOBAL_FALLBACK_MARKET;
