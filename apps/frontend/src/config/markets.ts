@@ -87,10 +87,21 @@ export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
   }
 
   try {
-    const networkToMarketSymbolMap = JSON.parse(defaultConfigString) as Record<
-      string,
-      string
-    >;
+    let networkToMarketSymbolMap: Record<string, string>;
+    if (typeof defaultConfigString === "string") {
+      networkToMarketSymbolMap = JSON.parse(defaultConfigString);
+    } else if (
+      typeof defaultConfigString === "object" &&
+      defaultConfigString !== null
+    ) {
+      networkToMarketSymbolMap = defaultConfigString as Record<string, string>;
+    } else {
+      console.warn(
+        "DEFAULT_MARKET_CONFIGS is neither a string nor an object. Using global fallback."
+      );
+      return GLOBAL_FALLBACK_MARKET;
+    }
+
     const marketSymbol = networkToMarketSymbolMap[currentNetwork];
 
     if (!marketSymbol) {
