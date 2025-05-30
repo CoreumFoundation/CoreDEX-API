@@ -87,7 +87,7 @@ const TradingView = ({ height }: { height: number | string }) => {
         dataFeed.subscriptions = [];
       }
     };
-  }, [market.pair_symbol]);
+  }, [market.pair_symbol, network]);
 
   // remount chart if away from tab for a while
   useEffect(() => {

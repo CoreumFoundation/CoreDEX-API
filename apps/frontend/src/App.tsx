@@ -90,7 +90,7 @@ function App() {
     try {
       const client = new Client({ network: network });
       await client.connectWithExtension(wallet.method, { withWS: false });
-      setWallet({ address: wallet.address, method: wallet.method });
+      setWallet({ address: client.address, method: wallet.method });
       setCoreum(client);
       pushNotification({
         message: "Connected",
