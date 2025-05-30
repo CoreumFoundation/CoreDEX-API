@@ -25,17 +25,20 @@
     />
     <!-- prettier-ignore -->
     <script>
-      var mc='{{VITE_ENV_DEFAULT_MARKET_CONFIGS}}'
-      console.log("before mc:",mc)
+      let mc='{{VITE_ENV_DEFAULT_MARKET_CONFIGS}}'
+      console.log("MC before parse:",mc)
 
-      if (mc.length == 35 ){
+      // checks if env JSON is properly parsed
+      // only safe if length matches and JSON is guaranteed to be longer than this check
+      if (mc.length == "VITE_ENV_DEFAULT_MARKET_CONFIGS".length + 4 ){
         mc=""
       } else {
         mc = JSON.parse(
             mc
           )
       }
-      console.log("after mc:",mc)
+      
+      console.log("MC after parse:",mc)
 
       window.COREUM = {
         env: {
