@@ -1,6 +1,10 @@
 package trade
 
-import "github.com/CoreumFoundation/CoreDEX-API/utils/logger"
+import (
+	"database/sql"
+
+	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
+)
 
 // Initialize tables and indexes
 func (a *Application) schema() {
@@ -45,6 +49,59 @@ func (a *Application) createTables() {
 	if err != nil {
 		logger.Fatalf("Error creating TradePairs table: %v", err)
 	}
+
+	// Check if we need to perform the conversion by looking for NULL values
+	var nullCount int
+	err = a.client.Client.QueryRow(`SELECT COUNT(*) FROM (SELECT COUNT(*) FROM TradePairs 
+	WHERE PriceTick IS NOT NULL 
+	GROUP BY Denom1, Denom2, QuantityStep, PriceTick
+	HAVING COUNT(*) > 1) AS t`).Scan(&nullCount)
+	if err != nil && err != sql.ErrNoRows {
+		logger.Fatalf("Error checking for NULL values: %v", err)
+	}
+	if nullCount > 0 {
+		// Fix for the NULL values being parsed into the Currency1, Currency2, Issuer1, Issuer2 columns:
+		_, err = a.client.Client.Exec(`CREATE TABLE TradePairs_duplicate_fix LIKE TradePairs;
+			INSERT INTO TradePairs_duplicate_fix (Denom1, Denom2, MetaData, QuantityStep, PriceTick)
+			SELECT DISTINCT Denom1, Denom2, MetaData, QuantityStep, PriceTick 
+			FROM TradePairs;
+
+			ALTER TABLE TradePairs_duplicate_fix
+				MODIFY COLUMN Currency1 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Currency')), '')) STORED,
+				MODIFY COLUMN Currency2 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Currency')), '')) STORED,
+				MODIFY COLUMN Issuer1 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer')), '')) STORED,
+				MODIFY COLUMN Issuer2 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer')), '')) STORED,
+				ADD UNIQUE KEY tradepairs_1 (Currency1,Currency2,Issuer1,Issuer2,Network),
+				ADD KEY tradepairs_2 (Network);
+
+			DROP TABLE TradePairs;
+			
+			RENAME TABLE TradePairs_duplicate_fix TO TradePairs`)
+		if err != nil {
+			logger.Errorf("Error fixing TradePairs table: %v", err)
+			// Reinit the table but now with the correct columns:
+			_, err = a.client.Client.Exec(`DROP TABLE TradePairs`)
+			if err != nil {
+				logger.Errorf("Error dropping TradePairs table: %v", err)
+			}
+			_, err = a.client.Client.Exec(`CREATE TABLE IF NOT EXISTS TradePairs (
+				Denom1 JSON DEFAULT NULL,
+				Denom2 JSON DEFAULT NULL,
+				MetaData JSON DEFAULT NULL,
+				Currency1  VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Currency')), '')) STORED,
+				Currency2 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Currency')), '')) STORED,
+				Issuer1 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom1, '$.Issuer')), '')) STORED,
+				Issuer2 VARCHAR(100) AS (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(Denom2, '$.Issuer')), '')) STORED,
+				Network  INT AS (JSON_UNQUOTE(JSON_EXTRACT(MetaData, '$.Network'))) STORED,
+				QuantityStep INT DEFAULT NULL,
+				PriceTick JSON DEFAULT NULL,
+				UNIQUE KEY tradepairs_1 (Currency1,Currency2,Issuer1,Issuer2,Network),
+				KEY tradepairs_2 (Network))`)
+			if err != nil {
+				logger.Fatalf("Error creating TradePairs table: %v", err)
+			}
+		}
+	}
 }
 
 func (a *Application) alterTables() {
@@ -81,5 +138,12 @@ func (a *Application) index() {
 		Symbol2,
 		BlockTimeSeconds,
 		Network
+	)`)
+	a.client.Client.Exec(`CREATE INDEX tradepairs_3 ON TradePairs (
+		Network,
+		Currency1,
+		Currency2,
+		Issuer1,
+		Issuer2
 	)`)
 }
