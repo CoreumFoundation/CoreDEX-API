@@ -14,7 +14,6 @@ export const fetchOLHCData = async (
     period: resolveResolution(resolution),
   };
   const response = await getOHLC(symbol, params.period, params.from, params.to);
-
   if (response.status === 200 && response.data.length > 0) {
     const feedData = response.data;
     return feedData.map((el) => ({
