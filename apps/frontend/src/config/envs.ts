@@ -16,6 +16,4 @@ const env: CoreumEnv =
 
 export const BASE_API_URL = env.VITE_ENV_BASE_API;
 export const WS_URL = env.VITE_ENV_WS;
-export const DEFAULT_MARKET_CONFIGS = JSON.parse(
-  env.VITE_ENV_DEFAULT_MARKET_CONFIGS
-) as Record<string, any>;
+export const DEFAULT_MARKET_CONFIGS = env.VITE_ENV_DEFAULT_MARKET_CONFIGS;
