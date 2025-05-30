@@ -23,7 +23,12 @@ type MySQLConfig struct {
 	Database string
 }
 
+var storebase *StoreBase
+
 func Client() *StoreBase {
+	if storebase != nil {
+		return storebase
+	}
 	// Parse the env variable MYSQL_CONFIG json (based on the MySQLConfig struct)
 	e := os.Getenv("MYSQL_CONFIG")
 	if e == "" {
@@ -51,5 +56,6 @@ func Client() *StoreBase {
 		logger.Fatalf("Error pinging database: %v", err)
 	}
 	logger.Infof("Successfully connected to the MySQL database!")
-	return &StoreBase{Client: db}
+	storebase = &StoreBase{Client: db}
+	return storebase
 }
