@@ -274,19 +274,19 @@ func (fa *App) CreateOrder(
 
 	logger.Infof("Info: new order SELL: TX hash=%v, Block Height=%d, Gas Used=%d, price=%s", res.TxHash, res.Height, res.GasUsed, msgPlaceSellOrder.Price.String())
 
-	res, err = client.BroadcastTx(
-		ctx,
-		fa.clientCtx.WithFromAddress(accounts[1]),
-		fa.txFactory,
-		msgPlaceBuyOrder,
-	)
-	if err != nil {
-		if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
-			logger.Errorf("Unknown error (BUY): error=%v", err)
-			return err
-		}
-		logger.Errorf("Error: it's prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceBuyOrder.Sender, msgPlaceBuyOrder.BaseDenom)
-	}
+	// res, err = client.BroadcastTx(
+	// 	ctx,
+	// 	fa.clientCtx.WithFromAddress(accounts[1]),
+	// 	fa.txFactory,
+	// 	msgPlaceBuyOrder,
+	// )
+	// if err != nil {
+	// 	if !strings.Contains(err.Error(), "it's prohibited to save more than 100 orders per denom") {
+	// 		logger.Errorf("Unknown error (BUY): error=%v", err)
+	// 		return err
+	// 	}
+	// 	logger.Errorf("Error: it's prohibited to save more than 100 orders per denom: account=%s, denom=%s", msgPlaceBuyOrder.Sender, msgPlaceBuyOrder.BaseDenom)
+	// }
 	logger.Infof("Info: new order BUY: TX hash=%v, Block Height=%d, Gas Used=%d, price=%s, broadcasting took: %s", res.TxHash, res.Height, res.GasUsed, msgPlaceBuyOrder.Price.String(), time.Since(startTime).String())
 	return nil
 }
