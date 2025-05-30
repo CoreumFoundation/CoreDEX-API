@@ -77,6 +77,7 @@ export const GLOBAL_FALLBACK_MARKET = DEVNET_DEFAULT;
 // fallsback to devnet market if not found
 export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
   const defaultConfigString = DEFAULT_MARKET_CONFIGS;
+  console.log("DEFAULT", defaultConfigString);
 
   if (!defaultConfigString) {
     console.warn(
