@@ -58,7 +58,7 @@ const ExchangeHistory = () => {
       setIsLoading(false);
     };
     initFetch();
-  }, []);
+  }, [market.pair_symbol]);
 
   useEffect(() => {
     wsManager.connected().then(() => {
@@ -80,13 +80,19 @@ const ExchangeHistory = () => {
         response.data &&
         response.data.length > 0
       ) {
-        setExchangeHistory(response.data);
-        wsManager.setInitialState(subscription, response.data);
-        return true;
+        const trades = response.data || [];
+        setExchangeHistory(trades);
+        wsManager.setInitialState(subscription, trades);
+        return trades.length > 0;
       }
+
+      setExchangeHistory([]);
+      wsManager.setInitialState(subscription, []);
       return false;
     } catch (e) {
       console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      setExchangeHistory([]);
+      wsManager.setInitialState(subscription, []);
       return false;
     }
   };
