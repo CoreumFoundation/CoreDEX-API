@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -56,6 +57,9 @@ func Client() *StoreBase {
 		logger.Fatalf("Error pinging database: %v", err)
 	}
 	logger.Infof("Successfully connected to the MySQL database!")
+	db.SetMaxOpenConns(100)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
 	storebase = &StoreBase{Client: db}
 	return storebase
 }
