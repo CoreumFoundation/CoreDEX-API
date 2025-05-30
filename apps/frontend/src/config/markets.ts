@@ -1,5 +1,6 @@
 import { Market } from "@/types/market";
 import { CoreumNetwork } from "coreum-js-nightly";
+import { DEFAULT_MARKET_CONFIGS } from "@/config/envs";
 
 // default markets
 export const DEVNET_DEFAULT: Market = {
@@ -75,8 +76,7 @@ export const GLOBAL_FALLBACK_MARKET = DEVNET_DEFAULT;
 // reads from the environment variable VITE_ENV_DEFAULT_MARKET_CONFIGS
 // fallsback to devnet market if not found
 export const getDefaultMarket = (currentNetwork: CoreumNetwork): Market => {
-  const defaultConfigString = import.meta.env
-    .VITE_ENV_DEFAULT_MARKET_CONFIGS as string | undefined;
+  const defaultConfigString = DEFAULT_MARKET_CONFIGS;
 
   if (!defaultConfigString) {
     console.warn(
