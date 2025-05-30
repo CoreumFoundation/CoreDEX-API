@@ -25,13 +25,23 @@
     />
     <!-- prettier-ignore -->
     <script>
+      var mc='{{VITE_ENV_DEFAULT_MARKET_CONFIGS}}'
+      console.log("before mc:",mc)
+
+      if (mc.length == 35 ){
+        mc=""
+      } else {
+        mc = JSON.parse(
+            mc
+          )
+      }
+      console.log("after mc:",mc)
+
       window.COREUM = {
         env: {
           VITE_ENV_BASE_API: "{{VITE_ENV_BASE_API}}",
           VITE_ENV_WS: "{{VITE_ENV_WS}}",
-          VITE_ENV_DEFAULT_MARKET_CONFIGS: JSON.parse(
-            '{{VITE_ENV_DEFAULT_MARKET_CONFIGS}}'
-          ),
+          VITE_ENV_DEFAULT_MARKET_CONFIGS: mc,
         },
       };
     </script>
