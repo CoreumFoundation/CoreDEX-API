@@ -24,6 +24,10 @@ import (
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
+var ignoreMsgs = map[string]bool{
+	"coreum.nft.v1beta1.MsgSend": true,
+}
+
 type Readers map[metadata.Network]*Reader
 
 type Reader struct {
@@ -248,6 +252,15 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 					Hash: hr,
 				})
 				if err != nil {
+					errMsg := fmt.Sprintf("%+v", err)
+					if strings.Contains(errMsg, "unable to resolve type URL /") {
+						msg := strings.Split(errMsg, "/")[1]
+						if _, ignore := ignoreMsgs[msg]; ignore {
+							logger.Infof("ignoring %s", msg)
+							wg.Done()
+							return
+						}
+					}
 					logger.Errorf("%s: error getting tx %s: %v", r.Network.String(), hr, err)
 					m.Lock()
 					goroutineError = err
