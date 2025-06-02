@@ -24,6 +24,8 @@ import (
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
+// Used to ignore certain TX types, only use for legacy messages.
+// If a new message type gives issues, do not use this to ignore it, it can lead to data loss
 var ignoreMsgs = map[string]bool{
 	"coreum.nft.v1beta1.MsgSend": true,
 }
