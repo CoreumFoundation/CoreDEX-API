@@ -22,9 +22,9 @@ import {
 } from "@/services/api";
 import { mergeUniqueTrades, resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
-import { DEX } from "coreum-js-nightly";
-import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
-import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { DEX } from "coreum-js";
+import { TxRaw } from "coreum-js/dist/main/cosmos";
+import { Side } from "coreum-js/dist/main/coreum/dex/v1/order";
 import { fromByteArray } from "base64-js";
 import { UpdateStrategy, wsManager, NetworkToEnum } from "@/services/websocket";
 import dayjs from "dayjs";

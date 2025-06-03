@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Client, CoreumNetwork } from "coreum-js-nightly";
+import { Client, CoreumNetwork } from "coreum-js";
 import {
   ICoreumWallet,
   Market,

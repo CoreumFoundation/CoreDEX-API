@@ -19,15 +19,15 @@ import {
   createOrder,
   getMarketData,
 } from "@/services/api";
-import { DEX } from "coreum-js-nightly";
-import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
+import { DEX } from "coreum-js";
+import { TxRaw } from "coreum-js/dist/main/cosmos";
 import "./order-actions.scss";
 import {
   Side,
   OrderType as OT,
   TimeInForce,
-} from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
-import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
+} from "coreum-js/dist/main/coreum/dex/v1/order";
+import { MsgPlaceOrder } from "coreum-js/dist/main/coreum/dex/v1/tx";
 import { fromByteArray } from "base64-js";
 import Dropdown, { DropdownVariant } from "../Dropdown";
 import { DatetimePicker } from "../DatetimePicker";
@@ -258,7 +258,7 @@ const OrderActions = ({
         timeInForce === TimeInForceString.goodTilTime
           ? {
               goodTilBlockTime: expirationTime,
-              goodTilBlockHeight: blockHeight,
+              goodTilBlockHeight: undefined,
             }
           : undefined;
 
@@ -580,11 +580,12 @@ const OrderActions = ({
                                   new Date(dayjs.utc().add(1, "day").format())
                                 }
                               />
-                              <Input
+                              {/* <Input
                                 placeholder="Block Height"
                                 type={InputType.NUMBER}
                                 onValueChange={(val: any) => {
-                                  setBlockHeight(val);
+                                  const numValue = val ? parseInt(val, 10) : 0;
+                                  setBlockHeight(numValue);
                                 }}
                                 value={blockHeight}
                                 inputName="limit-price"
@@ -594,7 +595,7 @@ const OrderActions = ({
                                 }}
                                 inputWrapperClassname="order-input"
                                 decimals={0}
-                              />
+                              /> */}
                             </div>
                           )}
                         </>

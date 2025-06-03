@@ -8,7 +8,7 @@ import { OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
 import { wsManager, UpdateStrategy, NetworkToEnum } from "@/services/websocket";
 import "./orderbook.scss";
-import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Side } from "coreum-js/dist/main/coreum/dex/v1/order";
 import { Method } from "coredex-api-types/update";
 import { mirage } from "ldrs";
 mirage.register();
