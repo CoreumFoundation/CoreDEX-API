@@ -137,19 +137,13 @@ export const mergeUniqueTrades = (
   prevHistory: TradeRecord[],
   newTrades: TradeRecord[]
 ): TradeRecord[] => {
-  // Build a Set of existing TXIDs for quick look-up.
   const existingTradeIds = new Set(prevHistory.map((trade) => trade.TXID));
 
-  // Only include new trades that are not in the current list.
   const filteredNew = newTrades.filter(
     (trade) => !existingTradeIds.has(trade.TXID)
   );
 
-  return [...prevHistory, ...filteredNew].sort((a, b) => {
-    const aTime = a.BlockTime?.seconds ? a.BlockTime.seconds * 1000 : 0;
-    const bTime = b.BlockTime?.seconds ? b.BlockTime.seconds * 1000 : 0;
-    return bTime - aTime;
-  });
+  return [...prevHistory, ...filteredNew];
 };
 
 // validation for orderActions quantity step/price tick
