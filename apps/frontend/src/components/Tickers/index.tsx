@@ -24,7 +24,7 @@ const Tickers = () => {
         const symbols = btoa(JSON.stringify([`${base}_${counter}`]));
         const response = await getTickers(symbols);
 
-        if (response.status === 200 && response.data.Tickers) {
+        if (response.status === 200) {
           const data = response.data;
           setTickers(data);
         }
@@ -38,8 +38,14 @@ const Tickers = () => {
   }, [market.pair_symbol]);
 
   useEffect(() => {
-    if (!tickers || !tickers.Tickers || !tickers.Tickers[market.pair_symbol])
+    if (!tickers || !tickers.Tickers || !tickers.Tickers[market.pair_symbol]) {
+      setLastPrice(0);
+      setVolume(0);
+      setInvertedVolume(0);
+      setHighPrice(0);
+      setLowPrice(0);
       return;
+    }
 
     setLastPrice(tickers.Tickers[market.pair_symbol].LastPrice);
     setVolume(tickers.Tickers[market.pair_symbol].Volume);

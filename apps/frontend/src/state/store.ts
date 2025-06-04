@@ -14,7 +14,10 @@ import { getDefaultMarket } from "@/config/markets";
 
 const initialNetworkForDefaultMarket =
   (sessionStorage.network as CoreumNetwork) || CoreumNetwork.DEVNET;
-const initialMarket = getDefaultMarket(initialNetworkForDefaultMarket);
+const storedMarket = localStorage.getItem("market");
+const initialMarket = storedMarket
+  ? JSON.parse(storedMarket)
+  : getDefaultMarket(initialNetworkForDefaultMarket);
 
 export type State = {
   fetching: boolean;
