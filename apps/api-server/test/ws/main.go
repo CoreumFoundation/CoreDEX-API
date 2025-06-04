@@ -17,13 +17,15 @@ import (
 	updateproto "github.com/CoreumFoundation/CoreDEX-API/domain/update"
 )
 
+const SYMBOL = "nor-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57_alb-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57"
+
 func main() {
 	var c *websocket.Conn
 
 	for {
 		fmt.Println("Select an option:")
 		fmt.Println("a) Connect localhost (ws://localhost:8080/api/ws)")
-		fmt.Println("b) Connect test host (wss://ws.test.coreum.dev/api/ws)")
+		fmt.Println("b) Connect host (wss://ws.test.coreum.dev/api/ws)")
 		fmt.Println("0) Exit")
 		fmt.Println("1) Test Order book for symbol")
 		fmt.Println("2) Test Order book for symbol and account")
@@ -96,7 +98,7 @@ func testTickerSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TICKER,
-			ID:      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+			ID:      SYMBOL,
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -153,7 +155,7 @@ func testOrderbookSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_ORDERBOOK,
-			ID:      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+			ID:      SYMBOL,
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -203,7 +205,7 @@ func testOHLCSubscription(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_OHLC,
-			ID:      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_1m",
+			ID:      SYMBOL + "_1m",
 			Network: metadata.Network_DEVNET,
 		},
 	}
@@ -216,7 +218,7 @@ func testTradesForSymbol(c *websocket.Conn) {
 		Action: updateproto.Action_SUBSCRIBE,
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_SYMBOL,
-			ID:      "nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
+			ID:      SYMBOL,
 			Network: metadata.Network_DEVNET,
 		},
 	}

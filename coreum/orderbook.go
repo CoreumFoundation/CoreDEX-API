@@ -97,8 +97,8 @@ func (r *Reader) QueryOrderBookBySide(ctx context.Context,
 				return nil, err
 			}
 			invPrice := decimal.NewFromInt(1).Div(orderPrice)
-			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(invPrice)
-			remainingQuantity := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0).Mul(invPrice)
+			quantity := decimal.NewFromBigInt(order.Quantity.BigInt(), 0).Mul(orderPrice)
+			remainingQuantity := decimal.NewFromBigInt(order.RemainingBaseQuantity.BigInt(), 0).Mul(orderPrice)
 			orders = append(orders, &OrderBookOrder{
 				PriceDec:        invPrice,
 				Price:           invPrice.String(),

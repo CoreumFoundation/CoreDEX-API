@@ -49,7 +49,7 @@ func (s *httpServer) getTrades() handler.Handler {
 		opt.Network = network
 		retvals, err := s.app.Trade.GetTrades(r.Context(), opt)
 		if err != nil {
-			return err
+			return json.NewEncoder(w).Encode(&tradegrpc.Trades{})
 		}
 		return json.NewEncoder(w).Encode(retvals)
 	}

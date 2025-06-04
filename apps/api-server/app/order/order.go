@@ -14,9 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/samber/lo"
 	dec "github.com/shopspring/decimal"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	currency "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/app/currency"
 	dmn "github.com/CoreumFoundation/CoreDEX-API/apps/api-server/domain"
@@ -39,7 +37,6 @@ type cache struct {
 type Application struct {
 	TxEncoder      map[metadata.Network]txClient
 	orderClient    ordergrpc.OrderServiceClient
-	orderbookCache *cache
 	currencyClient currency.Application
 }
 
@@ -100,7 +97,7 @@ func NewApplicationWithClients(orderClient ordergrpc.OrderServiceClient,
 		data:  make(map[string]*dmncache.LockableCache),
 	}
 	go dmncache.CleanCache(orderbookCache.data, orderbookCache.mutex, 15*time.Minute)
-	return &Application{txEncoders, orderClient, orderbookCache, *currencyClient}
+	return &Application{txEncoders, orderClient, *currencyClient}
 }
 
 func (a *Application) EncodeTx(network metadata.Network, from sdk.AccAddress, msgs ...sdk.Msg) ([]byte, error) {
@@ -149,49 +146,12 @@ func (a *Application) AccountSequence(network metadata.Network, address string) 
 	return acc.GetSequence(), nil
 }
 
-func orderbookCacheKey(network metadata.Network, denom1, denom2 string) string {
-	return fmt.Sprintf("%s-%s-%d", denom1, denom2, network)
-}
-
-// Cache the orderbooks so that the subsequent data can be gotten from the database which holds the latest orders
-// The database is a lost faster than the blockchain when it comes to reading data.
-// The read from the database reads with an overlap in time such that eventually skipped orders in a previous read,
-// will be read in the next read.
 func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, denom2 string, limit int, aggregate bool) (*coreum.OrderBookOrders, error) {
-	// processStart := time.Now() // Determine what time we need to retrieve data for from the	database
-	// key := orderbookCacheKey(network, denom1, denom2)
-	// orderbook := &coreum.OrderBookOrders{}
-	// a.orderbookCache.mutex.RLock()
-	// if cache, ok := a.orderbookCache.data[key]; ok {
-	// 	orderbook = cache.Value.(*coreum.OrderBookOrders)
-	// 	processStart = cache.LastUpdated
-	// }
-	// a.orderbookCache.mutex.RUnlock()
-	/* 2 scenarios:
-	* cache is empty
-	* cache is not empty
-
-	In case of empty, get from the source, and then update with the database latest state since we started the read
-	In case of not empty, apply the database state from the last refresh moment.
-	Applying the database state can lead to both adding and removing orders from the cache.
-	It is assumed that the database does not contain all the orders (due to the inception time of the database possibly
-	being after the inception of the given orderbook), so only orders with remaining quantity of 0 are removed from the orderbook.
-	*/
-	// Set the time to be used for the moment of the update of the orderbook. If updates are "slow" this takes care of filling the gap
-	// tStartUpdate := time.Now()
 	var err error
 	orderbook, err := a.fetchOrderBookFromChain(network, denom1, denom2, limit)
 	if err != nil {
 		return nil, err
 	}
-	// If the process has taken more than a second, update the orderbook with the latest orders from the database
-	// Or if the data was retrieved from the cache (and more than 1 second has passed since the last update), update the orderbook
-	// if time.Since(processStart) > time.Second {
-	// 	orderbook, err = a.fetchOrderbookFromDatabase(orderbook, network, denom1, denom2, processStart)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
 	// Order the buys and sales descending
 	sort.Slice(orderbook.Buy, func(i, j int) bool {
 		p1, _ := dec.NewFromString(orderbook.Buy[i].Price)
@@ -203,13 +163,6 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 		p2, _ := dec.NewFromString(orderbook.Sell[j].Price)
 		return p1.GreaterThan(p2)
 	})
-	// Set the orderbook into the cache:
-	// a.orderbookCache.mutex.Lock()
-	// a.orderbookCache.data[key] = &dmncache.LockableCache{
-	// 	LastUpdated: tStartUpdate,
-	// 	Value:       orderbook,
-	// }
-	// a.orderbookCache.mutex.Unlock()
 	if aggregate {
 		// Clone the orderbook so that the original orderbook is not modified
 		orderbookClone := &coreum.OrderBookOrders{
@@ -235,14 +188,8 @@ func (a *Application) OrderBookRelevantOrders(network metadata.Network, denom1, 
 }
 
 func (a *Application) fetchOrderBookFromChain(network metadata.Network, denom1, denom2 string, limit int) (*coreum.OrderBookOrders, error) {
-	// cacheExpireMutex.Lock()
-	// v, ok := cacheExpire[orderbookCacheKey(network, denom1, denom2)]
-	// if !ok {
-	// 	cacheExpire[orderbookCacheKey(network, denom1, denom2)] = time.Now()
-	// }
-	// cacheExpireMutex.Unlock()
-	// if orderbook == nil || (len(orderbook.Buy) == 0 && len(orderbook.Sell) == 0) || !v.Add(5*time.Minute).After(time.Now()) {
-	ctx := context.Background()
+	ctx, timeout := context.WithTimeout(context.Background(), 60*time.Second)
+	defer timeout()
 
 	var err error
 	orderbook, err := a.TxEncoder[network].reader.QueryOrderBookRelevantOrders(ctx, denom1, denom2, uint64(limit))
@@ -282,120 +229,7 @@ func (a *Application) fetchOrderBookFromChain(network metadata.Network, denom1, 
 		order.Amount = o.Amount
 		order.Price = o.Price
 	}
-	// 	cacheExpireMutex.Lock()
-	// 	cacheExpire[orderbookCacheKey(network, denom1, denom2)] = time.Now()
-	// 	cacheExpireMutex.Unlock()
-	// }
 	return orderbook, nil
-}
-
-// Process orders from the database as updates on the actual orderbook loaded from the chain
-// (Orders are loaded from the chain to be able to start displaying orders while the database
-// is not yet complete (e.g. the app has just started so no data in the database yet))
-// Fetch additional orders from the database
-// Query the database for the order status of the orders in the orderbook
-func (a *Application) fetchOrderbookFromDatabase(orderbook *coreum.OrderBookOrders, network metadata.Network, denom1, denom2 string, processStart time.Time) (*coreum.OrderBookOrders, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	denom1Currency, err := a.currencyClient.GetCurrency(ctx, network, denom1)
-	if err != nil {
-		return nil, err
-	}
-	denom2Currency, err := a.currencyClient.GetCurrency(ctx, network, denom2)
-	if err != nil {
-		return nil, err
-	}
-	// Get (new) open orders from the database for the given network and denoms
-	orders, err := a.orderClient.GetAll(ctx, &ordergrpc.Filter{
-		Network: network,
-		Denom1:  denom1Currency.Denom,
-		Denom2:  denom2Currency.Denom,
-		// The process writing the data is writing for a "previous" block, and we use block time to determine the time to read from
-		// Also there can be a processing delay on the websocket (basic timing of the websocket updates), which can cause a further delay)
-		// Lastly this might be called after a blockchain timeout has occurred (on retrieval of the orderbook): Compensate for that too
-		// So we need to get some more data to compensate for that: Query up to 10 minute in the past (was 1 minute but somehow that was too short)
-		From:        timestamppb.New(processStart.Add(-100 * time.Minute)),
-		To:          timestamppb.Now(),
-		OrderStatus: lo.ToPtr(ordergrpc.OrderStatus_ORDER_STATUS_OPEN),
-	})
-	if err != nil {
-		return nil, err
-	}
-	buyMap := a.verifyOrderBookSide(ctx, orderbook.Buy, network)
-	sellMap := a.verifyOrderBookSide(ctx, orderbook.Sell, network)
-	// Merge the sets with the orders from the database
-	for _, order := range orders.Orders {
-		// Normalize the order to the orderbook format
-		o, err := a.Normalize(ctx, order)
-		if err != nil {
-			logger.Errorf("Error normalizing order %d (%s): %v", order.Sequence, network.String(), err)
-			continue
-		}
-		switch order.Side {
-		case orderproperties.Side_SIDE_BUY:
-			if _, exists := buyMap[o.Sequence]; !exists {
-				buyMap[o.Sequence] = o
-			}
-		case orderproperties.Side_SIDE_SELL:
-			if _, exists := sellMap[o.Sequence]; !exists {
-				sellMap[o.Sequence] = o
-			}
-		}
-	}
-	// Convert the maps back to slices
-	buySide := make([]*coreum.OrderBookOrder, 0, len(buyMap))
-	sellSide := make([]*coreum.OrderBookOrder, 0, len(sellMap))
-	for _, o := range buyMap {
-		buySide = append(buySide, o)
-	}
-	for _, o := range sellMap {
-		sellSide = append(sellSide, o)
-	}
-	orderbook.Buy = buySide
-	orderbook.Sell = sellSide
-	return orderbook, nil
-}
-
-// Get the orders in the orderbook from the database for verification if they are still valid
-func (a *Application) verifyOrderBookSide(ctx context.Context, orderbookSide []*coreum.OrderBookOrder, network metadata.Network) map[uint64]*coreum.OrderBookOrder {
-	wg := &sync.WaitGroup{}
-	retVal := make([]*coreum.OrderBookOrder, 0)
-	for _, o := range orderbookSide {
-		wg.Add(1)
-		go func(o *coreum.OrderBookOrder) {
-			order, err := a.orderClient.Get(ctx, &ordergrpc.ID{Sequence: int64(o.Sequence), Network: network})
-			if err != nil {
-				if strings.Contains(err.Error(), "no order found") {
-					// Order did not yet make it into the database, so keep it for now (once DB updates, verify will work)
-					orderBookMutex.Lock()
-					retVal = append(retVal, o)
-					orderBookMutex.Unlock()
-					wg.Done()
-					return
-				}
-				logger.Errorf("Error getting order %d (%s) from the database: %v", o.Sequence, network.String(), err)
-				wg.Done()
-				return
-			}
-			if order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_CANCELED ||
-				order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_FILLED ||
-				order.OrderStatus == ordergrpc.OrderStatus_ORDER_STATUS_EXPIRED ||
-				(*order.RemainingQuantity).IsZero() {
-				wg.Done()
-				return
-			}
-			orderBookMutex.Lock()
-			retVal = append(retVal, o)
-			orderBookMutex.Unlock()
-			wg.Done()
-		}(o)
-	}
-	wg.Wait()
-	retMap := make(map[uint64]*coreum.OrderBookOrder)
-	for _, o := range retVal {
-		retMap[o.Sequence] = o
-	}
-	return retMap
 }
 
 func aggregateOrders(orders []*coreum.OrderBookOrder) []*coreum.OrderBookOrder {
@@ -479,7 +313,7 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 	for _, coin := range coins {
 		denomCurrency, err := a.currencyClient.GetCurrency(context.Background(), network, coin.Denom)
 		if err != nil {
-			return nil, err
+			return walletAssets, err
 		}
 		precision := int32(0)
 		if denomCurrency.Denom != nil && denomCurrency.Denom.Precision != nil {

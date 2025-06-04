@@ -149,7 +149,9 @@ func (s *httpServer) createOrder() handler.Handler {
 			BaseDenom:     orderReq.BaseDenom,
 			QuoteDenom:    orderReq.QuoteDenom,
 			TimeInForce:   orderReq.TimeInForce,
-			GoodTil:       orderReq.GoodTil,
+		}
+		if orderReq.GoodTil != nil {
+			o.GoodTil = orderReq.GoodTil
 		}
 		return json.NewEncoder(w).Encode(OrderResponse{
 			Sequence:  sequence,
@@ -234,7 +236,6 @@ func (s *httpServer) getOrders() handler.Handler {
 		q := r.URL.Query()
 		symbol := q.Get("symbol")
 		if len(symbol) == 0 || !strings.Contains(symbol, "_") {
-			w.WriteHeader(http.StatusBadRequest)
 			return fmt.Errorf("symbol %q is not provided in the correct format", symbol)
 		}
 		denoms, err := dmnsymbol.NewSymbol(symbol)
@@ -243,7 +244,6 @@ func (s *httpServer) getOrders() handler.Handler {
 		}
 		network, err := networklib.Network(r)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
 			return nil
 		}
 		account := q.Get("account")
@@ -251,14 +251,12 @@ func (s *httpServer) getOrders() handler.Handler {
 		if account == "" {
 			res, err = s.app.Order.OrderBookRelevantOrders(network, denoms.Denom1.Denom, denoms.Denom2.Denom, 100, true)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return nil
+				return json.NewEncoder(w).Encode(&coreum.OrderBookOrders{})
 			}
 		} else {
 			res, err = s.app.Order.OrderBookRelevantOrdersForAccount(network, denoms.Denom1.Denom, denoms.Denom2.Denom, account)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return nil
+				return json.NewEncoder(w).Encode(&coreum.OrderBookOrders{})
 			}
 		}
 		return json.NewEncoder(w).Encode(res)

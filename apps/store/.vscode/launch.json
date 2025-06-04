@@ -8,7 +8,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "MYSQL_CONFIG":"{\"Username\": \"norbert\",\"Password\": \"KpsmO5YY6GHDiue\",\"Host\": \"localhost\",\"Port\": 3306,\"Database\": \"friendly_dex\"}",
+                "MYSQL_CONFIG":"{\"Username\": \"testuser\",\"Password\": \"password\",\"Host\": \"localhost\",\"Port\": 3306,\"Database\": \"friendly_dex\"}",
                 "LOG_LEVEL":"info",
                 "GRPC_PORT":":50051",
             },
