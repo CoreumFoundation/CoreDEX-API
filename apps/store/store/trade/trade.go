@@ -31,7 +31,8 @@ MetaData,
 USD, 
 Network,
 Enriched,
-Inverted`
+Inverted,
+Processed`
 
 	tradePairTableFields = `Denom1,
 Denom2,
@@ -116,13 +117,14 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
         VALUES (?, ?, ?, ?, ?,
 			    ?, ?, ?, ?, ?,
 			    ?, ?, ? ,?, ?,
-				? ) 
+				?, ? ) 
         ON DUPLICATE KEY UPDATE 
 		Amount=?, 
 		Price=?, 
 		MetaData=?, 
 		USD=?,
-		Enriched=?`,
+		Enriched=?,
+		Processed=?`,
 		in.TXID,
 		in.Account,
 		in.OrderID,
@@ -139,12 +141,14 @@ func (a *Application) Upsert(in *tradegrpc.Trade) error {
 		in.MetaData.Network,
 		in.Enriched,
 		inverted,
-
+		in.Processed,
+		
 		amount,
 		in.Price,
 		metaData,
 		in.USD,
-		in.Enriched)
+		in.Enriched,
+		in.Processed)
 	if err != nil {
 		logger.Errorf("Error upserting trade %s-%d-%d-%s: %v", in.TXID, in.BlockHeight, in.Sequence, in.MetaData.Network.String(), err)
 		return err
@@ -320,6 +324,7 @@ func mapToTrade(b *sql.Rows) (*tradegrpc.Trade, error) {
 		&network,
 		&trade.Enriched,
 		&trade.Inverted,
+		&trade.Processed,
 	)
 	if err != nil {
 		return nil, err

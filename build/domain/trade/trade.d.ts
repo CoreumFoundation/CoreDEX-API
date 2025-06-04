@@ -25,6 +25,8 @@ export interface Trade {
     BlockHeight: number;
     /** If the trade has been enriched with precision data */
     Enriched: boolean;
+    /** Check if trade is processed into the OHLC */
+    Processed: boolean;
     /** USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc) */
     USD?: number | undefined;
     /**
@@ -92,6 +94,7 @@ export declare const Trade: {
         TXID?: string | undefined;
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
+        Processed?: boolean | undefined;
         USD?: number | undefined;
         Inverted?: boolean | undefined;
     } & {
@@ -158,6 +161,7 @@ export declare const Trade: {
         TXID?: string | undefined;
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
+        Processed?: boolean | undefined;
         USD?: number | undefined;
         Inverted?: boolean | undefined;
     } & { [K_4 in Exclude<keyof I, keyof Trade>]: never; }>(base?: I | undefined): Trade;
@@ -200,6 +204,7 @@ export declare const Trade: {
         TXID?: string | undefined;
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
+        Processed?: boolean | undefined;
         USD?: number | undefined;
         Inverted?: boolean | undefined;
     } & {
@@ -266,6 +271,7 @@ export declare const Trade: {
         TXID?: string | undefined;
         BlockHeight?: number | undefined;
         Enriched?: boolean | undefined;
+        Processed?: boolean | undefined;
         USD?: number | undefined;
         Inverted?: boolean | undefined;
     } & { [K_9 in Exclude<keyof I_1, keyof Trade>]: never; }>(object: I_1): Trade;
@@ -315,6 +321,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[] | undefined;
@@ -358,6 +365,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[] & ({
@@ -399,6 +407,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         } & {
@@ -465,6 +474,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         } & { [K_4 in Exclude<keyof I["Trades"][number], keyof Trade>]: never; })[] & { [K_5 in Exclude<keyof I["Trades"], keyof {
@@ -506,6 +516,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[]>]: never; }) | undefined;
@@ -550,6 +561,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[] | undefined;
@@ -593,6 +605,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[] & ({
@@ -634,6 +647,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         } & {
@@ -700,6 +714,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         } & { [K_11 in Exclude<keyof I_1["Trades"][number], keyof Trade>]: never; })[] & { [K_12 in Exclude<keyof I_1["Trades"], keyof {
@@ -741,6 +756,7 @@ export declare const Trades: {
             TXID?: string | undefined;
             BlockHeight?: number | undefined;
             Enriched?: boolean | undefined;
+            Processed?: boolean | undefined;
             USD?: number | undefined;
             Inverted?: boolean | undefined;
         }[]>]: never; }) | undefined;

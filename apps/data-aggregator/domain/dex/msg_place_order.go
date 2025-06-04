@@ -255,6 +255,7 @@ func (e *MsgPlaceOrderHandler) Handle(
 				BlockHeight: meta.BlockHeight,
 				USD:         nil, // TODO
 				Enriched:    enriched,
+				Processed:   false,
 			}
 			_, err = tradeClient.Upsert(tradeclient.AuthCtx(ctx), trade)
 			if err != nil {

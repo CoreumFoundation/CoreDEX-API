@@ -40,6 +40,8 @@ export interface Trade {
   BlockHeight: number;
   /** If the trade has been enriched with precision data */
   Enriched: boolean;
+  /** Check if trade is processed into the OHLC */
+  Processed: boolean;
   /** USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc) */
   USD?:
     | number
@@ -84,6 +86,7 @@ function createBaseTrade(): Trade {
     TXID: undefined,
     BlockHeight: 0,
     Enriched: false,
+    Processed: false,
     USD: undefined,
     Inverted: false,
   };
@@ -129,6 +132,9 @@ export const Trade = {
     }
     if (message.Enriched !== false) {
       writer.uint32(264).bool(message.Enriched);
+    }
+    if (message.Processed !== false) {
+      writer.uint32(272).bool(message.Processed);
     }
     if (message.USD !== undefined) {
       writer.uint32(325).float(message.USD);
@@ -237,6 +243,13 @@ export const Trade = {
 
           message.Enriched = reader.bool();
           continue;
+        case 34:
+          if (tag !== 272) {
+            break;
+          }
+
+          message.Processed = reader.bool();
+          continue;
         case 40:
           if (tag !== 325) {
             break;
@@ -275,6 +288,7 @@ export const Trade = {
       TXID: isSet(object.TXID) ? globalThis.String(object.TXID) : undefined,
       BlockHeight: isSet(object.BlockHeight) ? globalThis.Number(object.BlockHeight) : 0,
       Enriched: isSet(object.Enriched) ? globalThis.Boolean(object.Enriched) : false,
+      Processed: isSet(object.Processed) ? globalThis.Boolean(object.Processed) : false,
       USD: isSet(object.USD) ? globalThis.Number(object.USD) : undefined,
       Inverted: isSet(object.Inverted) ? globalThis.Boolean(object.Inverted) : false,
     };
@@ -321,6 +335,9 @@ export const Trade = {
     if (message.Enriched !== false) {
       obj.Enriched = message.Enriched;
     }
+    if (message.Processed !== false) {
+      obj.Processed = message.Processed;
+    }
     if (message.USD !== undefined) {
       obj.USD = message.USD;
     }
@@ -356,6 +373,7 @@ export const Trade = {
     message.TXID = object.TXID ?? undefined;
     message.BlockHeight = object.BlockHeight ?? 0;
     message.Enriched = object.Enriched ?? false;
+    message.Processed = object.Processed ?? false;
     message.USD = object.USD ?? undefined;
     message.Inverted = object.Inverted ?? false;
     return message;

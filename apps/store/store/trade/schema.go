@@ -121,6 +121,9 @@ func (a *Application) alterTables() {
 	ADD COLUMN Enriched BOOLEAN DEFAULT TRUE`)
 	a.client.Client.Exec(`ALTER TABLE Trade
 	ADD COLUMN Inverted BOOLEAN DEFAULT FALSE`)
+	// Add Processed column to Trade table:
+	a.client.Client.Exec(`ALTER TABLE Trade
+	ADD COLUMN Processed BOOLEAN DEFAULT FALSE`)
 }
 
 func (a *Application) index() {

@@ -27,6 +27,7 @@ function createBaseTrade() {
         TXID: undefined,
         BlockHeight: 0,
         Enriched: false,
+        Processed: false,
         USD: undefined,
         Inverted: false,
     };
@@ -71,6 +72,9 @@ export const Trade = {
         }
         if (message.Enriched !== false) {
             writer.uint32(264).bool(message.Enriched);
+        }
+        if (message.Processed !== false) {
+            writer.uint32(272).bool(message.Processed);
         }
         if (message.USD !== undefined) {
             writer.uint32(325).float(message.USD);
@@ -165,6 +169,12 @@ export const Trade = {
                     }
                     message.Enriched = reader.bool();
                     continue;
+                case 34:
+                    if (tag !== 272) {
+                        break;
+                    }
+                    message.Processed = reader.bool();
+                    continue;
                 case 40:
                     if (tag !== 325) {
                         break;
@@ -200,6 +210,7 @@ export const Trade = {
             TXID: isSet(object.TXID) ? globalThis.String(object.TXID) : undefined,
             BlockHeight: isSet(object.BlockHeight) ? globalThis.Number(object.BlockHeight) : 0,
             Enriched: isSet(object.Enriched) ? globalThis.Boolean(object.Enriched) : false,
+            Processed: isSet(object.Processed) ? globalThis.Boolean(object.Processed) : false,
             USD: isSet(object.USD) ? globalThis.Number(object.USD) : undefined,
             Inverted: isSet(object.Inverted) ? globalThis.Boolean(object.Inverted) : false,
         };
@@ -245,6 +256,9 @@ export const Trade = {
         if (message.Enriched !== false) {
             obj.Enriched = message.Enriched;
         }
+        if (message.Processed !== false) {
+            obj.Processed = message.Processed;
+        }
         if (message.USD !== undefined) {
             obj.USD = message.USD;
         }
@@ -257,7 +271,7 @@ export const Trade = {
         return Trade.fromPartial(base !== null && base !== void 0 ? base : {});
     },
     fromPartial(object) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         const message = createBaseTrade();
         message.Account = (_a = object.Account) !== null && _a !== void 0 ? _a : "";
         message.OrderID = (_b = object.OrderID) !== null && _b !== void 0 ? _b : "";
@@ -280,8 +294,9 @@ export const Trade = {
         message.TXID = (_g = object.TXID) !== null && _g !== void 0 ? _g : undefined;
         message.BlockHeight = (_h = object.BlockHeight) !== null && _h !== void 0 ? _h : 0;
         message.Enriched = (_j = object.Enriched) !== null && _j !== void 0 ? _j : false;
-        message.USD = (_k = object.USD) !== null && _k !== void 0 ? _k : undefined;
-        message.Inverted = (_l = object.Inverted) !== null && _l !== void 0 ? _l : false;
+        message.Processed = (_k = object.Processed) !== null && _k !== void 0 ? _k : false;
+        message.USD = (_l = object.USD) !== null && _l !== void 0 ? _l : undefined;
+        message.Inverted = (_m = object.Inverted) !== null && _m !== void 0 ? _m : false;
         return message;
     },
 };

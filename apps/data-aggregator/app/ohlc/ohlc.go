@@ -16,20 +16,23 @@ import (
 	ohlcclient "github.com/CoreumFoundation/CoreDEX-API/domain/ohlc/client"
 	orderproperties "github.com/CoreumFoundation/CoreDEX-API/domain/order-properties"
 	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
+	tradeclient "github.com/CoreumFoundation/CoreDEX-API/domain/trade/client"
 	"github.com/CoreumFoundation/CoreDEX-API/utils/logger"
 )
 
 type Application struct {
 	tradeChan          chan *tradegrpc.Trade
 	ohlcClient         ohlcgrpc.OHLCServiceClient
+	tradeClient        tradegrpc.TradeServiceClient
 	ohlcCache          []*ohlcgrpc.OHLC
 	ohlcCacheResetTime time.Time
 	mutex              *sync.RWMutex
 }
 
-func NewApplication(ctx context.Context, tradeChan chan *tradegrpc.Trade) *Application {
+func NewApplication(ctx context.Context, tradeChan chan *tradegrpc.Trade, tradeClient tradegrpc.TradeServiceClient) *Application {
 	app := &Application{
 		tradeChan:          tradeChan,
+		tradeClient:        tradeClient,
 		ohlcClient:         ohlcclient.Client(),
 		ohlcCache:          make([]*ohlcgrpc.OHLC, 0),
 		ohlcCacheResetTime: time.Now(),
@@ -47,6 +50,20 @@ func (a *Application) StartOHLCProcessor() {
 		case trade := <-a.tradeChan:
 			// Skip trades that are not enriched (e.g. would have borked data)
 			if !trade.Enriched {
+				continue
+			}
+			// Load trade to see if it was already processed before:
+			ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+			trade, err := a.tradeClient.Get(tradeclient.AuthCtx(ctx), &tradegrpc.ID{
+				Network:  trade.MetaData.Network,
+				TXID:     *trade.TXID,
+				Sequence: trade.Sequence,
+			})
+			if err != nil {
+				logger.Errorf("Error getting trade %s-%d: %v", *trade.TXID, trade.Sequence, err)
+				continue
+			}
+			if trade.Processed {
 				continue
 			}
 			symbol := symbol(trade)
@@ -280,6 +297,16 @@ func (a *Application) calculateOHLC(inputTrades []*tradegrpc.Trade, symbol strin
 	})
 	if err != nil {
 		logger.Errorf("Error upserting ohlcs for symbol %s: %v", symbol, err)
+	}
+	// Update the trades to processed
+	for _, trade := range inputTrades {
+		trade.Processed = true
+	}
+	_, err = a.tradeClient.BatchUpsert(context.Background(), &tradegrpc.Trades{
+		Trades: inputTrades,
+	})
+	if err != nil {
+		logger.Errorf("Error updating trades to processed for symbol %s: %v", symbol, err)
 	}
 	logger.Infof("Processed %d trades for symbol %s in %d us", len(inputTrades), symbol, time.Since(tStart).Microseconds())
 	wg.Done()

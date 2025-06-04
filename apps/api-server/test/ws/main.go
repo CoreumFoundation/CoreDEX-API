@@ -18,6 +18,7 @@ import (
 )
 
 const SYMBOL = "nor-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57_alb-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57"
+const NETWORK = metadata.Network_TESTNET
 
 func main() {
 	var c *websocket.Conn
@@ -99,7 +100,7 @@ func testTickerSubscription(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TICKER,
 			ID:      SYMBOL,
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	m := sendToSocket(c, msg)
@@ -156,7 +157,7 @@ func testOrderbookSubscription(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_ORDERBOOK,
 			ID:      SYMBOL,
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	m := sendToSocket(c, msg)
@@ -181,7 +182,7 @@ func testOrderbookForSymbolAndAccountSubscription(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
 			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	m := sendToSocket(c, msg)
@@ -206,7 +207,7 @@ func testOHLCSubscription(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_OHLC,
 			ID:      SYMBOL + "_1m",
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	sendToSocket(c, msg)
@@ -219,7 +220,7 @@ func testTradesForSymbol(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_SYMBOL,
 			ID:      SYMBOL,
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	sendToSocket(c, msg)
@@ -232,7 +233,7 @@ func testTradesForAccount(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT,
 			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	sendToSocket(c, msg)
@@ -245,7 +246,7 @@ func testTradesForAccountAndSymbol(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_TRADES_FOR_ACCOUNT_AND_SYMBOL,
 			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8_nor-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43_alb-devcore19p7572k4pj00szx36ehpnhs8z2gqls8ky3ne43",
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	sendToSocket(c, msg)
@@ -258,7 +259,7 @@ func testWallet(c *websocket.Conn) {
 		Subscription: &updateproto.Subscription{
 			Method:  updateproto.Method_WALLET,
 			ID:      "devcore1fksu90amj2qgydf43dm2qf6m2dl4szjtx6j5q8",
-			Network: metadata.Network_DEVNET,
+			Network: NETWORK,
 		},
 	}
 	sendToSocket(c, msg)

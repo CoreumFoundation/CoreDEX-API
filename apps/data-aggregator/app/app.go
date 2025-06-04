@@ -137,5 +137,5 @@ func (l *Application) scannerCoordinator(ctx context.Context, block *coreum.Scan
 }
 
 func (l *Application) StartOHLCProcessor(ctx context.Context) {
-	ohlc.NewApplication(ctx, l.tradeChan)
+	ohlc.NewApplication(ctx, l.tradeChan, l.tradeClient)
 }

@@ -28,6 +28,7 @@ message Trade {
     optional string TXID = 31;
     int64 BlockHeight = 32;
     bool Enriched = 33; // If the trade has been enriched with precision data
+    bool Processed = 34; // Check if trade is processed into the OHLC
 
     // USD representation of the trade values and trading fee (fixed base for easy data comparisson in reports etc)
     optional float USD = 40; // The USD value of the trade, calculated from the USD value of the currencies and the trading fee.
