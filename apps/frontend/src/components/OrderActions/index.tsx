@@ -258,7 +258,7 @@ const OrderActions = ({
         timeInForce === TimeInForceString.goodTilTime
           ? {
               goodTilBlockTime: expirationTime,
-              goodTilBlockHeight: undefined,
+              goodTilBlockHeight: blockHeight,
             }
           : undefined;
 
@@ -580,7 +580,7 @@ const OrderActions = ({
                                   new Date(dayjs.utc().add(1, "day").format())
                                 }
                               />
-                              {/* <Input
+                              <Input
                                 placeholder="Block Height"
                                 type={InputType.NUMBER}
                                 onValueChange={(val: any) => {
@@ -595,7 +595,7 @@ const OrderActions = ({
                                 }}
                                 inputWrapperClassname="order-input"
                                 decimals={0}
-                              /> */}
+                              />
                             </div>
                           )}
                         </>
