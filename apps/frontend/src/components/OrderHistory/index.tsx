@@ -64,6 +64,7 @@ const OrderHistory = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const listOuterRef = useRef<HTMLDivElement>(null);
+  const currentMarketRef = useRef(market.pair_symbol);
 
   const resolveOrderStatus = (status: OrderStatus) => {
     switch (status) {
@@ -82,6 +83,7 @@ const OrderHistory = () => {
 
   // reset state on market change and init fetch
   useEffect(() => {
+    currentMarketRef.current = market.pair_symbol;
     setOrderHistory([]);
     setOpenOrders(null);
     setHasMore(true);
@@ -194,9 +196,10 @@ const OrderHistory = () => {
   }, [orderHistorySubscription, wallet]);
 
   const orderHistoryHandler = (newTrades: TradeRecord[]) => {
-    setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+    if (currentMarketRef.current === market.pair_symbol) {
+      setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+    }
   };
-
 
   // uses a 1hour window to not overload api with possibly huge requests
   // but this means we will not get new data when large gaps in between trades (eg. multiple days, weeks, etc)
@@ -318,10 +321,12 @@ const OrderHistory = () => {
 
   const handleOpenOrders = useCallback(
     (message: OrderbookResponse) => {
-      const updatedHistory = transformOrderbook(message);
-      setOpenOrders(updatedHistory);
+      if (currentMarketRef.current === market.pair_symbol) {
+        const updatedHistory = transformOrderbook(message);
+        setOpenOrders(updatedHistory);
+      }
     },
-    [setOpenOrders, transformOrderbook]
+    [setOpenOrders, transformOrderbook, market.pair_symbol]
   );
 
   const handleCancelOrder = async (id: string) => {
