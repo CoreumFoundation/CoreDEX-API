@@ -119,7 +119,20 @@ func (a *Application) Get(filter *ohlcgrpc.OHLCFilter) (*ohlcgrpc.OHLCs, error) 
 				return nil, err
 			}
 			if len(backfillOHLCs) > 0 {
-				ohlcs = append(backfillOHLCs, ohlcs...)
+				for _, backfillOHLC := range backfillOHLCs {
+					// Check if timestamp is already in the ohlcs array before appending
+					skip := false
+					for _, ohlc := range ohlcs {
+						if ohlc.Timestamp.AsTime().Unix() == backfillOHLC.Timestamp.AsTime().Unix() {
+							// Timestamp already exists, skip appending
+							skip = true
+							break
+						}
+					}
+					if !skip {
+						ohlcs = append(ohlcs, backfillOHLC)
+					}
+				}
 			}
 		}
 	}
