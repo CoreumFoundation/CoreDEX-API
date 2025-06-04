@@ -6,6 +6,7 @@ import (
 
 	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
 	dmnsymbol "github.com/CoreumFoundation/CoreDEX-API/domain/symbol"
+	tradegrpc "github.com/CoreumFoundation/CoreDEX-API/domain/trade"
 	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
 )
 
@@ -30,8 +31,7 @@ func (s *httpServer) getMarket() handler.Handler {
 		// Query the market data:
 		marketData, err := s.app.Trade.GetMarket(r.Context(), sym, network)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil
+			return json.NewEncoder(w).Encode(&tradegrpc.TradePair{})
 		}
 		return json.NewEncoder(w).Encode(marketData)
 	}

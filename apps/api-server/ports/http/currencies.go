@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	currencygrpc "github.com/CoreumFoundation/CoreDEX-API/domain/currency"
 	networklib "github.com/CoreumFoundation/CoreDEX-API/domain/network"
 	handler "github.com/CoreumFoundation/CoreDEX-API/utils/httplib/httphandler"
 )
@@ -16,7 +17,7 @@ func (s *httpServer) getCurrencies() handler.Handler {
 		}
 		currencies, err := s.app.Currency.GetCurrencies(r.Context(), network)
 		if err != nil {
-			return err
+			return json.NewEncoder(w).Encode(&currencygrpc.Currencies{})
 		}
 		return json.NewEncoder(w).Encode(currencies)
 	}

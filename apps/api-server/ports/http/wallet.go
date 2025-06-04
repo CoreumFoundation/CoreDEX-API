@@ -20,8 +20,7 @@ func (s *httpServer) getAssets() handler.Handler {
 		}
 		res, err := s.app.Order.WalletAssets(network, address)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return err
+			return json.NewEncoder(w).Encode(res)
 		}
 		return json.NewEncoder(w).Encode(res)
 	}

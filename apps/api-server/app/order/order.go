@@ -313,7 +313,7 @@ func (a *Application) WalletAssets(network metadata.Network, address string) ([]
 	for _, coin := range coins {
 		denomCurrency, err := a.currencyClient.GetCurrency(context.Background(), network, coin.Denom)
 		if err != nil {
-			return nil, err
+			return walletAssets, err
 		}
 		precision := int32(0)
 		if denomCurrency.Denom != nil && denomCurrency.Denom.Precision != nil {
