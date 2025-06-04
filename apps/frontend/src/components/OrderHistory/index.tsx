@@ -80,14 +80,22 @@ const OrderHistory = () => {
     }
   };
 
-  // fetch order history
+  // reset state on market change and init fetch
   useEffect(() => {
-    if (!wallet?.address) return;
-    const initFetch = async () => {
-      await fetchOrderHistory();
-    };
+    setOrderHistory([]);
+    setOpenOrders(null);
+    setHasMore(true);
+    setTimeRange({
+      from: dayjs().subtract(1, "hour").unix(),
+      to: dayjs().unix(),
+    });
 
-    initFetch();
+    if (wallet?.address) {
+      const initFetch = async () => {
+        await fetchOrderHistory();
+      };
+      initFetch();
+    }
   }, [market.pair_symbol, wallet]);
 
   const fetchOrderHistory = async (): Promise<boolean> => {
@@ -96,18 +104,21 @@ const OrderHistory = () => {
         symbol: market.pair_symbol,
         account: wallet?.address,
       });
-      if (
-        response.status === 200 &&
-        response.data &&
-        response.data.length > 0
-      ) {
-        setOrderHistory(response.data);
-        wsManager.setInitialState(orderHistorySubscription, response.data);
-        return true;
+
+      if (response.status === 200) {
+        const data = response.data || [];
+        setOrderHistory(data);
+        wsManager.setInitialState(orderHistorySubscription, data);
+        return data.length > 0;
       }
+
+      setOrderHistory([]);
+      wsManager.setInitialState(orderHistorySubscription, []);
       return false;
     } catch (e) {
       console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      setOrderHistory([]);
+      wsManager.setInitialState(orderHistorySubscription, []);
       return false;
     }
   };
@@ -186,6 +197,10 @@ const OrderHistory = () => {
     setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
   };
 
+
+  // uses a 1hour window to not overload api with possibly huge requests
+  // but this means we will not get new data when large gaps in between trades (eg. multiple days, weeks, etc)
+  // should update api to use offset and limit if we want to load more data without setting a retry limit
   const loadOlderHistory = async (): Promise<number> => {
     try {
       const currentWindow = timeRange.to - timeRange.from;
