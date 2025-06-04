@@ -22,9 +22,9 @@ import {
 } from "@/services/api";
 import { mergeUniqueTrades, resolveCoreumExplorer } from "@/utils";
 import "./order-history.scss";
-import { DEX } from "coreum-js-nightly";
-import { TxRaw } from "coreum-js-nightly/dist/main/cosmos";
-import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { DEX } from "coreum-js";
+import { TxRaw } from "coreum-js/dist/main/cosmos";
+import { Side } from "coreum-js/dist/main/coreum/dex/v1/order";
 import { fromByteArray } from "base64-js";
 import { UpdateStrategy, wsManager, NetworkToEnum } from "@/services/websocket";
 import dayjs from "dayjs";
@@ -64,6 +64,7 @@ const OrderHistory = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const listOuterRef = useRef<HTMLDivElement>(null);
+  const currentMarketRef = useRef(market.pair_symbol);
 
   const resolveOrderStatus = (status: OrderStatus) => {
     switch (status) {
@@ -80,14 +81,23 @@ const OrderHistory = () => {
     }
   };
 
-  // fetch order history
+  // reset state on market change and init fetch
   useEffect(() => {
-    if (!wallet?.address) return;
-    const initFetch = async () => {
-      await fetchOrderHistory();
-    };
+    currentMarketRef.current = market.pair_symbol;
+    setOrderHistory([]);
+    setOpenOrders(null);
+    setHasMore(true);
+    setTimeRange({
+      from: dayjs().subtract(1, "hour").unix(),
+      to: dayjs().unix(),
+    });
 
-    initFetch();
+    if (wallet?.address) {
+      const initFetch = async () => {
+        await fetchOrderHistory();
+      };
+      initFetch();
+    }
   }, [market.pair_symbol, wallet]);
 
   const fetchOrderHistory = async (): Promise<boolean> => {
@@ -96,18 +106,21 @@ const OrderHistory = () => {
         symbol: market.pair_symbol,
         account: wallet?.address,
       });
-      if (
-        response.status === 200 &&
-        response.data &&
-        response.data.length > 0
-      ) {
-        setOrderHistory(response.data);
-        wsManager.setInitialState(orderHistorySubscription, response.data);
-        return true;
+
+      if (response.status === 200) {
+        const data = response.data || [];
+        setOrderHistory(data);
+        wsManager.setInitialState(orderHistorySubscription, data);
+        return data.length > 0;
       }
+
+      setOrderHistory([]);
+      wsManager.setInitialState(orderHistorySubscription, []);
       return false;
     } catch (e) {
       console.log("ERROR GETTING ORDER HISTORY DATA >>", e);
+      setOrderHistory([]);
+      wsManager.setInitialState(orderHistorySubscription, []);
       return false;
     }
   };
@@ -183,9 +196,14 @@ const OrderHistory = () => {
   }, [orderHistorySubscription, wallet]);
 
   const orderHistoryHandler = (newTrades: TradeRecord[]) => {
-    setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+    if (currentMarketRef.current === market.pair_symbol) {
+      setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+    }
   };
 
+  // uses a 1hour window to not overload api with possibly huge requests
+  // but this means we will not get new data when large gaps in between trades (eg. multiple days, weeks, etc)
+  // should update api to use offset and limit if we want to load more data without setting a retry limit
   const loadOlderHistory = async (): Promise<number> => {
     try {
       const currentWindow = timeRange.to - timeRange.from;
@@ -303,10 +321,12 @@ const OrderHistory = () => {
 
   const handleOpenOrders = useCallback(
     (message: OrderbookResponse) => {
-      const updatedHistory = transformOrderbook(message);
-      setOpenOrders(updatedHistory);
+      if (currentMarketRef.current === market.pair_symbol) {
+        const updatedHistory = transformOrderbook(message);
+        setOpenOrders(updatedHistory);
+      }
     },
-    [setOpenOrders, transformOrderbook]
+    [setOpenOrders, transformOrderbook, market.pair_symbol]
   );
 
   const handleCancelOrder = async (id: string) => {

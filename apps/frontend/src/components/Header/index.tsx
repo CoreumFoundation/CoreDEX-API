@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import Dropdown, { DropdownVariant } from "../Dropdown";
-import { CoreumNetwork } from "coreum-js-nightly";
+import { CoreumNetwork } from "coreum-js";
 import { useStore } from "@/state/store";
 import Button from "../Button";
 import Wallet from "../Wallet";

@@ -1,8 +1,5 @@
-import { ExtensionWallets } from "coreum-js-nightly";
-import {
-  Side,
-  TimeInForce,
-} from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { ExtensionWallets } from "coreum-js";
+import { Side, TimeInForce } from "coreum-js/dist/main/coreum/dex/v1/order";
 import { Trade } from "coredex-api-types/trade";
 import { OrderStatus } from "coredex-api-types/order";
 import { Denom } from "coredex-api-types/denom";

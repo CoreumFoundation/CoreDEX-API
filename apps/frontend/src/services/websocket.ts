@@ -1,4 +1,4 @@
-import { CoreumNetwork } from "coreum-js-nightly";
+import { CoreumNetwork } from "coreum-js";
 import { Action, Subscription as Sub } from "coredex-api-types/update";
 import { Network } from "coredex-api-types/metadata";
 

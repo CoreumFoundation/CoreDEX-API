@@ -11,7 +11,7 @@ import { APIMethod, request } from "@/utils/api";
 import { AxiosResponse } from "axios";
 import { BASE_API_URL } from "@/config/envs";
 import { Side } from "coredex-api-types/order-properties";
-import { MsgPlaceOrder } from "coreum-js-nightly/dist/main/coreum/dex/v1/tx";
+import { MsgPlaceOrder } from "coreum-js/dist/main/coreum/dex/v1/tx";
 
 export const getOHLC = async (
   symbol: string,

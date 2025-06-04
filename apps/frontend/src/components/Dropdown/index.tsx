@@ -100,7 +100,11 @@ const Dropdown = <T,>({
               />
             )}
             <div className="dropdown-value-selected">
-              {selectedvalue ? selectedvalue : ""}
+              {selectedvalue
+                ? selectedvalue.length > 30
+                  ? selectedvalue.slice(0, 30) + "..."
+                  : selectedvalue
+                : ""}
             </div>
           </div>
 

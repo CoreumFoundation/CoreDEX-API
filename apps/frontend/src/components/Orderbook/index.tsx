@@ -8,7 +8,7 @@ import { OrderbookAction, OrderbookRecord } from "@/types/market";
 import { getOrderbook } from "@/services/api";
 import { wsManager, UpdateStrategy, NetworkToEnum } from "@/services/websocket";
 import "./orderbook.scss";
-import { Side } from "coreum-js-nightly/dist/main/coreum/dex/v1/order";
+import { Side } from "coreum-js/dist/main/coreum/dex/v1/order";
 import { Method } from "coredex-api-types/update";
 import { mirage } from "ldrs";
 mirage.register();
@@ -33,6 +33,7 @@ export default function Orderbook({
   const [totalVolume, setTotalVolume] = useState<number>(0);
   const componentRef = useRef<HTMLDivElement>(null);
   const sellsObRef = useRef<HTMLDivElement>(null);
+  const hasAutoScrolled = useRef(false);
 
   const subscription = useMemo(
     () => ({
@@ -44,7 +45,6 @@ export default function Orderbook({
   );
 
   useEffect(() => {
-    
     wsManager.connected().then(() => {
       wsManager.subscribe(subscription, setOrderbook, UpdateStrategy.REPLACE);
     });
@@ -96,12 +96,17 @@ export default function Orderbook({
 
   // scroll sells to bottom
   useEffect(() => {
-    if (sellsObRef.current && orderbook?.Sell) {
+    if (
+      !hasAutoScrolled.current &&
+      sellsObRef.current &&
+      orderbook?.Sell?.length
+    ) {
       setTimeout(() => {
         sellsObRef.current!.scrollTop = sellsObRef.current!.scrollHeight;
+        hasAutoScrolled.current = true;
       }, 50);
     }
-  }, [orderbook?.Sell, market]);
+  }, [orderbook?.Sell]);
 
   // find the highest volume in the orderbook
   useEffect(() => {
