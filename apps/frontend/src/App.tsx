@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { wsManager } from "./services/websocket";
 import { WS_URL } from "./config/envs";
 import { useStore } from "./state/store";
-import { Client } from "coreum-js-nightly";
+import { Client } from "coreum-js";
 import { ICoreumWallet } from "./types/market";
 
 function App() {

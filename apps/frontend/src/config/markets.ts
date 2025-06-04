@@ -1,5 +1,5 @@
 import { Market } from "@/types/market";
-import { CoreumNetwork } from "coreum-js-nightly";
+import { CoreumNetwork } from "coreum-js";
 import { DEFAULT_MARKET_CONFIGS } from "@/config/envs";
 
 // default markets

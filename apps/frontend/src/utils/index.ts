@@ -1,6 +1,6 @@
 import { OrderbookRecord, TradeRecord } from "@/types/market";
 import BigNumber from "bignumber.js";
-import { CoreumNetwork } from "coreum-js-nightly";
+import { CoreumNetwork } from "coreum-js";
 
 export const toFixedDown = (
   float: number | BigNumber,
