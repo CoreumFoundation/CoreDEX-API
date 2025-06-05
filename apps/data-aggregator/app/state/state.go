@@ -72,10 +72,10 @@ func (s *State) SetState(network metadata.Network, height int64) {
 	s.stateMutex.Unlock()
 }
 
-// Go routine for running the state update to the state store every 15 minutes
+// Go routine for running the state update to the state store every 10 seconds
 func (s *State) updateState() {
 	for {
-		time.Sleep(5 * time.Minute)
+		time.Sleep(10 * time.Second)
 		s.FlushState()
 	}
 }
