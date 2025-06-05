@@ -73,8 +73,7 @@ func (l *Application) StartScanners(ctx context.Context) {
 	readers := coreum.InitReaders()
 	// Get the state for the readers:
 	for _, reader := range readers {
-		reader.BlockHeight = l.state.GetState(ctx, reader.Network)
-		logger.Infof("Start: Last scanned height for network %s is %d", reader.Network, reader.BlockHeight)
+		go reader.Start(l.state.GetState(ctx, reader.Network))
 	}
 	// Add a channel listener for the readers
 	for _, reader := range readers {
@@ -87,8 +86,6 @@ func (l *Application) StartScanners(ctx context.Context) {
 			go l.startBlocksScan(ctx, reader)
 		}()
 	}
-	// Start the readers
-	readers.Start()
 }
 
 func (l *Application) startBlocksScan(ctx context.Context, reader *coreum.Reader) {

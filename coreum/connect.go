@@ -98,46 +98,72 @@ func (*Reader) ReadHistory(startBlockHeight, endBlockHeight int64) {
 	// Since that is the same channel as for real time blocks, we need to make certain our realtime blocks have preference over these historical blocks
 }
 
-// Reads blocks from a certain height and stays up to date with the last block as produced by the chain
-func (r Readers) Start() {
-	for _, reader := range r {
-		go func(reader *Reader) {
-			txClient := txtypes.NewServiceClient(nodeConnections[reader.Network])
-			rpcClient := nodeConnections[reader.Network].RPCClient()
-			reader.currentHeight = reader.BlockHeight
-			if reader.currentHeight < 1 {
-				panic("block height should be at least 1")
-			}
-			go reader.Logger()
-			var err error
-			for {
-				reader.currentHeight, err = reader.processBlock(txClient, rpcClient, reader.currentHeight) // Process the block and increment the height
-				if err != nil {
-					if isTemporaryError(err) {
-						logger.Errorf("error processing block %d. will retry: %v", reader.currentHeight, err)
-						time.Sleep(1 * time.Second)
-						continue
-					}
-					v, err := getValidBlockHeight(err)
-					if err == nil {
-						reader.currentHeight = v
-						logger.Warnf("setting block height to %d", reader.currentHeight, err)
-						continue
-					}
-					// We allow processing to continue (blockchain is responding, this code just has an issue with the data: This leads to dataloss)
-					if isIgnorableError(err) {
-						reader.currentHeight++
-						reader.BlockHeight = reader.currentHeight
-						continue
-					}
-					// panic: error processing block 6840526: rpc error: code = DeadlineExceeded desc = received context error while waiting for new LB policy update: context deadline exceeded
-					panic(errors.Wrapf(err, "error processing block %d", reader.currentHeight))
-				}
-				reader.currentHeight++
-				reader.BlockHeight = reader.currentHeight
-			}
-		}(reader)
+func (r *Reader) Start(blockHeight int64) {
+	r.currentHeight = blockHeight
+	r.BlockHeight = blockHeight
+	txClient := txtypes.NewServiceClient(nodeConnections[r.Network])
+	rpcClient := nodeConnections[r.Network].RPCClient()
+	if r.currentHeight < 1 {
+		panic("block height should be at least 1")
 	}
+	go r.Logger()
+	logger.Infof("Start: Last scanned height for network %s is %d", r.Network, r.BlockHeight)
+	var err error
+	for {
+		r.currentHeight, err = r.processBlock(txClient, rpcClient, r.currentHeight) // Process the block and increment the height
+		if err != nil {
+			if isTemporaryError(err) {
+				logger.Errorf("error processing block %d. will retry: %v", r.currentHeight, err)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			v, err := getValidBlockHeight(err)
+			if err == nil {
+				r.currentHeight = v
+				logger.Warnf("setting block height to %d", r.currentHeight, err)
+				continue
+			}
+			// We allow processing to continue (blockchain is responding, this code just has an issue with the data: This leads to dataloss)
+			if isIgnorableError(err) {
+				r.currentHeight++
+				r.BlockHeight = r.currentHeight
+				continue
+			}
+			// Reconnectable errors:
+			if isReconnectableError(err) {
+				logger.Warnf("reconnectable error: %v, sleeping for 30 seconds", err)
+				// Sleep to give whatever is causing the error to recover
+				time.Sleep(30 * time.Second)
+				NodeConnection(r.Network.String())
+				logger.Infof("reconnected to %s", r.Network.String())
+				continue
+			}
+			// Final panic
+			panic(errors.Wrapf(err, "error processing block %d", r.currentHeight))
+		}
+		r.currentHeight++
+		r.BlockHeight = r.currentHeight
+	}
+}
+
+/*
+Reconnectable errors are errors in which case we know the problem and we can retry. This is compared to the non-reconnectable errors which are errors in which case we do not know the problem and we cannot retry.
+
+Know reconnectable errors:
+* rpc error: code = DeadlineExceeded desc = received context error while waiting for new LB policy update: context deadline exceeded
+* error in json rpc client, with http response metadata: (Status: 200 OK, Protocol HTTP/1.1). Failed to read response body: unexpected EOF
+*/
+func isReconnectableError(err error) bool {
+	if err == nil {
+		return true
+	}
+	switch err.Error() {
+	case "rpc error: code = DeadlineExceeded desc = received context error while waiting for new LB policy update: context deadline exceeded":
+		return true
+	case "error in json rpc client, with http response metadata: (Status: 200 OK, Protocol HTTP/1.1). Failed to read response body: unexpected EOF":
+		return true
+	}
+	return false
 }
 
 /*

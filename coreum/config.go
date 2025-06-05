@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Node []Node `json:"Node"`
+	Node []*Node `json:"Node"`
 }
 
 type Node struct {
@@ -32,7 +32,8 @@ func ParseConfig() *Config {
 	// Validate networks in config:
 	// - Network name should be one of the known networks in the enum metadata.Network
 	for _, node := range v.Node {
-		if metadata.Network_value[strings.ToUpper(node.Network)] == 0 {
+		node.Network = strings.ToUpper(node.Network)
+		if metadata.Network_value[node.Network] == 0 {
 			logger.Fatalf("invalid network name: %s", node.Network)
 		}
 	}
