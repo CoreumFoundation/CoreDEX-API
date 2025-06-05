@@ -329,7 +329,7 @@ func (r *Reader) processBlock(txClient txtypes.ServiceClient, rpcClient sdkclien
 	}(r.mutex)
 	wg.Wait()
 	if goroutineError != nil {
-		logger.Errorf("%s: error processing block %d: %v", r.Network.String(), currentHeight, goroutineError)
+		logger.Errorf("%s: error processing block %d: Error:%v", r.Network.String(), currentHeight, goroutineError)
 		return currentHeight, goroutineError
 	}
 	r.BlockProductionTime = sb.BlockTime.Sub(r.LastBlockTime)
