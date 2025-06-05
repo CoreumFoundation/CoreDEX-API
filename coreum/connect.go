@@ -157,10 +157,10 @@ func isReconnectableError(err error) bool {
 	if err == nil {
 		return true
 	}
-	switch err.Error() {
-	case "rpc error: code = DeadlineExceeded desc = received context error while waiting for new LB policy update: context deadline exceeded":
+	switch {
+	case strings.Contains(err.Error(), "waiting for new LB policy update: context deadline exceeded"):
 		return true
-	case "error in json rpc client, with http response metadata: (Status: 200 OK, Protocol HTTP/1.1). Failed to read response body: unexpected EOF":
+	case strings.Contains(err.Error(), "Failed to read response body: unexpected EOF"):
 		return true
 	}
 	return false
