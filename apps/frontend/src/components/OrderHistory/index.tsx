@@ -83,6 +83,8 @@ const OrderHistory = () => {
 
   // reset state on market change and init fetch
   useEffect(() => {
+    wsManager.clearState();
+
     currentMarketRef.current = market.pair_symbol;
     setOrderHistory([]);
     setOpenOrders(null);
@@ -222,7 +224,17 @@ const OrderHistory = () => {
   const orderHistoryHandler = useCallback(
     (newTrades: TradeRecord[]) => {
       if (currentMarketRef.current === market.pair_symbol) {
-        setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+        const validTrades = newTrades.filter((trade) => {
+          return (
+            !trade ||
+            `${trade.Denom1?.Denom}_${trade.Denom2?.Denom}` ===
+              market.pair_symbol
+          );
+        });
+
+        if (validTrades.length > 0) {
+          setOrderHistory((prev) => mergeUniqueTrades(prev, validTrades));
+        }
       }
     },
     [market.pair_symbol, setOrderHistory]
