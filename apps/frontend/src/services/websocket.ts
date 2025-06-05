@@ -230,6 +230,17 @@ class WebSocketManager {
   public connected(): Promise<void> {
     return this.connectedPromise;
   }
+
+  public clearState() {
+    this.stateStore.clear();
+    this.subscriptions.clear();
+    this.pendingSubscriptions = [];
+    this.pendingUnsubscriptions = [];
+  }
+
+  public getState(): Map<string, any> {
+    return this.stateStore;
+  }
 }
 
 export const wsManager = WebSocketManager.getInstance();

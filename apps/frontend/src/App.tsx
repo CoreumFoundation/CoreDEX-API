@@ -9,9 +9,9 @@ import { Client } from "coreum-js";
 import { ICoreumWallet } from "./types/market";
 
 function App() {
-  const { wallet, network, setWallet, setCoreum, pushNotification } =
+  const { wallet, network, setWallet, setCoreum, pushNotification, market } =
     useStore();
-
+  const prevMarketRef = useRef(market.pair_symbol);
   const lastActiveTime = useRef(Date.now());
   const INACTIVE_THRESHOLD = 10 * 60 * 1000; // 10mins
 
@@ -70,6 +70,15 @@ function App() {
   useEffect(() => {
     wsManager.connect(WS_URL);
   }, []);
+
+  useEffect(() => {
+    const currentMarket = market.pair_symbol;
+    const previousMarket = prevMarketRef.current;
+    if (previousMarket !== currentMarket) {
+      wsManager.clearState();
+      prevMarketRef.current = currentMarket;
+    }
+  }, [market.pair_symbol]);
 
   useEffect(() => {
     const localWallet = getLocalWallet();

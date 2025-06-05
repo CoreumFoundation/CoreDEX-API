@@ -125,6 +125,34 @@ const OrderHistory = () => {
     }
   };
 
+  const transformOrderbook = useCallback(
+    (orderbook: OrderbookResponse): TransformedOrder[] => {
+      const transformSide = (orders: OrderbookRecord[], side: Side) =>
+        orders.map((order) => {
+          return {
+            Side: side,
+            HumanReadablePrice: order.HumanReadablePrice,
+            Price: order.Price,
+            Amount: order.Amount,
+            SymbolAmount: order.SymbolAmount,
+            Total:
+              Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
+            Account: order.Account,
+            Sequence: order.Sequence,
+            OrderID: order.OrderID,
+            RemainingAmount: order.RemainingAmount,
+            RemainingSymbolAmount: order.RemainingSymbolAmount,
+          } as TransformedOrder;
+        });
+
+      return [
+        ...transformSide(orderbook.Buy, Side.SIDE_BUY),
+        ...transformSide(orderbook.Sell, Side.SIDE_SELL),
+      ].sort((a, b) => Number(b.Sequence) - Number(a.Sequence));
+    },
+    []
+  );
+
   // fetch open orders filtered from orderbook. transform to formatted data
   useEffect(() => {
     const fetchOpenOrders = async () => {
@@ -155,7 +183,7 @@ const OrderHistory = () => {
       Method: Method.ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT,
       ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
     }),
-    [market.pair_symbol, wallet?.address, network]
+    [market.pair_symbol, wallet, network]
   );
 
   const orderHistorySubscription = useMemo(
@@ -164,7 +192,17 @@ const OrderHistory = () => {
       Method: Method.TRADES_FOR_ACCOUNT_AND_SYMBOL,
       ID: `${wallet ? wallet.address : ""}_${market.pair_symbol}`,
     }),
-    [market.pair_symbol, wallet]
+    [market.pair_symbol, wallet, network]
+  );
+
+  const handleOpenOrders = useCallback(
+    (message: OrderbookResponse) => {
+      if (currentMarketRef.current === market.pair_symbol) {
+        const updatedHistory = transformOrderbook(message);
+        setOpenOrders(updatedHistory);
+      }
+    },
+    [setOpenOrders, transformOrderbook, market.pair_symbol]
   );
 
   useEffect(() => {
@@ -179,7 +217,16 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(openOrderSubscription, handleOpenOrders);
     };
-  }, [openOrderSubscription, wallet]);
+  }, [openOrderSubscription, wallet, handleOpenOrders, market.pair_symbol]);
+
+  const orderHistoryHandler = useCallback(
+    (newTrades: TradeRecord[]) => {
+      if (currentMarketRef.current === market.pair_symbol) {
+        setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
+      }
+    },
+    [market.pair_symbol, setOrderHistory]
+  );
 
   useEffect(() => {
     if (!wallet) return;
@@ -193,18 +240,17 @@ const OrderHistory = () => {
     return () => {
       wsManager.unsubscribe(orderHistorySubscription, orderHistoryHandler);
     };
-  }, [orderHistorySubscription, wallet]);
-
-  const orderHistoryHandler = (newTrades: TradeRecord[]) => {
-    if (currentMarketRef.current === market.pair_symbol) {
-      setOrderHistory((prev) => mergeUniqueTrades(prev, newTrades));
-    }
-  };
+  }, [
+    orderHistorySubscription,
+    wallet,
+    orderHistoryHandler,
+    market.pair_symbol,
+  ]);
 
   // uses a 1hour window to not overload api with possibly huge requests
   // but this means we will not get new data when large gaps in between trades (eg. multiple days, weeks, etc)
   // should update api to use offset and limit if we want to load more data without setting a retry limit
-  const loadOlderHistory = async (): Promise<number> => {
+  const loadOlderHistory = useCallback(async (): Promise<number> => {
     try {
       const currentWindow = timeRange.to - timeRange.from;
       const oldestTrade = orderHistory[orderHistory.length - 1];
@@ -234,7 +280,16 @@ const OrderHistory = () => {
       console.log("ERROR FETCHING OLDER HISTORY >>", e);
     }
     return 0;
-  };
+  }, [
+    timeRange,
+    orderHistory,
+    market.pair_symbol,
+    wallet?.address,
+    setHasMore,
+    setOrderHistory,
+    setTimeRange,
+    orderHistorySubscription,
+  ]);
 
   useLayoutEffect(() => {
     if (activeTab !== TABS.ORDER_HISTORY) return;
@@ -289,45 +344,8 @@ const OrderHistory = () => {
     isFetchingMore,
     hasMore,
     activeTab,
+    loadOlderHistory,
   ]);
-
-  const transformOrderbook = useCallback(
-    (orderbook: OrderbookResponse): TransformedOrder[] => {
-      const transformSide = (orders: OrderbookRecord[], side: Side) =>
-        orders.map((order) => {
-          return {
-            Side: side,
-            HumanReadablePrice: order.HumanReadablePrice,
-            Price: order.Price,
-            Amount: order.Amount,
-            SymbolAmount: order.SymbolAmount,
-            Total:
-              Number(order.HumanReadablePrice) * Number(order.SymbolAmount),
-            Account: order.Account,
-            Sequence: order.Sequence,
-            OrderID: order.OrderID,
-            RemainingAmount: order.RemainingAmount,
-            RemainingSymbolAmount: order.RemainingSymbolAmount,
-          } as TransformedOrder;
-        });
-
-      return [
-        ...transformSide(orderbook.Buy, Side.SIDE_BUY),
-        ...transformSide(orderbook.Sell, Side.SIDE_SELL),
-      ].sort((a, b) => Number(b.Sequence) - Number(a.Sequence));
-    },
-    []
-  );
-
-  const handleOpenOrders = useCallback(
-    (message: OrderbookResponse) => {
-      if (currentMarketRef.current === market.pair_symbol) {
-        const updatedHistory = transformOrderbook(message);
-        setOpenOrders(updatedHistory);
-      }
-    },
-    [setOpenOrders, transformOrderbook, market.pair_symbol]
-  );
 
   const handleCancelOrder = async (id: string) => {
     if (!wallet?.address) return;
