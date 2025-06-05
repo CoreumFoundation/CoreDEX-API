@@ -191,7 +191,7 @@ const OrderHistory = () => {
       );
     });
     return () => {
-      wsManager.unsubscribe(orderHistorySubscription, setOrderHistory);
+      wsManager.unsubscribe(orderHistorySubscription, orderHistoryHandler);
     };
   }, [orderHistorySubscription, wallet]);
 
