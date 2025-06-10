@@ -57,7 +57,6 @@ const OrderActions = ({
     setIsLoading,
     isLoading,
   } = useStore();
-
   const [orderType, setOrderType] = useState(Side.SIDE_BUY);
   const [totalPrice, setTotalPrice] = useState(0);
   const [limitPrice, setLimitPrice] = useState("");
@@ -689,7 +688,7 @@ const OrderActions = ({
           <>
             <div className="balance-row">
               <p className="balance-label">
-                {market.base.Denom.Currency.toUpperCase()} Balance
+                {market.base.Denom.Name?.toUpperCase()} Balance
               </p>
 
               <FormatNumber number={marketBalances.base} />
@@ -697,7 +696,7 @@ const OrderActions = ({
 
             <div className="balance-row">
               <p className="balance-label">
-                {market.counter.Denom.Currency.toUpperCase()} Balance
+                {market.counter.Denom.Name?.toUpperCase()} Balance
               </p>
 
               <FormatNumber number={marketBalances.counter} />
