@@ -630,7 +630,7 @@ The base coin is configured in a JSON array which depending on usage might requi
 ### Base USDC
 
 Base USDC is used by a path resolving algorithm (non-weighted Dijkstra algorithm) to find the path between two assets and be able to resolve that to the representative USD value using a USDC as base.
-Often devnet and testnet will not have an IBC USDC currency available, resulting in a devnet configuration only. On devnet/testnet the user will most likely not see any USD values in the data.
+Often devnet and testnet will not have an IBC USDC currency available, resulting in a devnet configuration only. On devnet/testnet the user most likely will not see any USD values in the data.
 The base USDC is configured in a JSON array which depending on usage might require escaping. The base USDC configuration is as follows:
 
 ```json
