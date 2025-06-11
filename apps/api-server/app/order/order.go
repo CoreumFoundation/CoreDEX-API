@@ -60,13 +60,6 @@ type OrderBookOrder struct {
 	Side           orderproperties.Side
 }
 
-// Different way of cache expiration since we are updating keys all the time in the orderbook cache (unusual usage pattern)
-// Which in the case a a skipped record can lead to "hanging" orders (never clearing until server restarts)
-var (
-	cacheExpire      = make(map[string]time.Time)
-	cacheExpireMutex = &sync.Mutex{}
-	orderBookMutex   = &sync.Mutex{}
-)
 
 func NewApplication(currencyClient *currency.Application) *Application {
 	orderbookClient := ordergrpcclient.Client()
@@ -344,7 +337,7 @@ func (app *Application) Normalize(ctx context.Context, inputOrder interface{}) (
 
 		return &coreum.OrderBookOrder{
 			Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
-			HumanReadablePrice:    dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String(),
+			HumanReadablePrice:    dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, order.Side).String(),
 			Amount:                quoteAmountSubunit.String(),
 			SymbolAmount:          dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
 			Sequence:              uint64(order.Sequence),
