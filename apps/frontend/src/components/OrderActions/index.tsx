@@ -619,6 +619,13 @@ const OrderActions = ({
                   }}
                   decimals={market.base.Denom.Precision}
                   adornmentRight={market.base.Denom.Name?.toUpperCase()}
+                  sublabel={quantityStep ? `Step: ${quantityStep}` : undefined}
+                  onBlur={() => {
+                    if (quantityStep > 0) {
+                      const formattedValue = formatToStep(volume, quantityStep);
+                      setVolume(formattedValue);
+                    }
+                  }}
                 />
               </div>
             )}
