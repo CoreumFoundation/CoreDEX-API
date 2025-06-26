@@ -43,22 +43,39 @@ func ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision int32, subunitPrice f
 	var humanReadablePrice dec.Decimal
 	switch side {
 	case orderproperties.Side_SIDE_SELL:
-		humanReadablePrice = quoteAmountSubunit.Div(dec.New(1, quoteDenomPrecision)).
-			Div(baseAmountSubunit.Div(dec.New(1, baseDenomPrecision)))
+		// Round the output to the baseDenomPrecision to counter floating point deviations:
+		humanReadablePrice = quoteAmountSubunit.
+			Div(dec.New(1, quoteDenomPrecision)).
+			Div(baseAmountSubunit.Div(dec.New(1, baseDenomPrecision))).
+			Round(int32(baseDenomPrecision))
 	case orderproperties.Side_SIDE_BUY:
-		humanReadablePrice = baseAmountSubunit.Div(dec.New(1, baseDenomPrecision)).
-			Div(quoteAmountSubunit.Div(dec.New(1, quoteDenomPrecision)))
+		humanReadablePrice = price.Round(int32(quoteDenomPrecision))
 	}
 	return humanReadablePrice
 }
 
-func ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision int32, quantity *dec.Decimal, side orderproperties.Side) dec.Decimal {
+// Trade are received ....
+func ToSymbolTradeAmount(baseDenomPrecision, quoteDenomPrecision int32, subunitPrice float64, quantity *dec.Decimal, side orderproperties.Side) dec.Decimal {
 	symbolAmount := *quantity
 	switch side {
 	case orderproperties.Side_SIDE_SELL:
-		symbolAmount = symbolAmount.Div(dec.New(1, int32(baseDenomPrecision)))
+		symbolAmount = symbolAmount.
+			Mul(dec.NewFromFloat(subunitPrice)).
+			Div(dec.New(1, int32(baseDenomPrecision))).
+			Round(int32(baseDenomPrecision))
 	case orderproperties.Side_SIDE_BUY:
-		symbolAmount = symbolAmount.Div(dec.New(1, int32(quoteDenomPrecision)))
+		symbolAmount = symbolAmount.Div(dec.New(1, int32(quoteDenomPrecision))).Round(int32(quoteDenomPrecision))
+	}
+	return symbolAmount
+}
+
+func ToSymbolOrderAmount(baseDenomPrecision, quoteDenomPrecision int32, quantity *dec.Decimal, side orderproperties.Side) dec.Decimal {
+	symbolAmount := *quantity
+	switch side {
+	case orderproperties.Side_SIDE_SELL:
+		symbolAmount = symbolAmount.Div(dec.New(1, int32(baseDenomPrecision))).Round(int32(baseDenomPrecision))
+	case orderproperties.Side_SIDE_BUY:
+		symbolAmount = symbolAmount.Div(dec.New(1, int32(quoteDenomPrecision))).Round(int32(quoteDenomPrecision))
 	}
 	return symbolAmount
 }

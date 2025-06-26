@@ -60,7 +60,6 @@ type OrderBookOrder struct {
 	Side           orderproperties.Side
 }
 
-
 func NewApplication(currencyClient *currency.Application) *Application {
 	orderbookClient := ordergrpcclient.Client()
 	return NewApplicationWithClients(orderbookClient, currencyClient)
@@ -339,12 +338,12 @@ func (app *Application) Normalize(ctx context.Context, inputOrder interface{}) (
 			Price:                 fmt.Sprintf("%f", price.InexactFloat64()),
 			HumanReadablePrice:    dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, order.Side).String(),
 			Amount:                quoteAmountSubunit.String(),
-			SymbolAmount:          dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
+			SymbolAmount:          dmn.ToSymbolOrderAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String(),
 			Sequence:              uint64(order.Sequence),
 			Account:               order.Account,
 			OrderID:               order.OrderID,
 			RemainingAmount:       remainingQuantity.String(),
-			RemainingSymbolAmount: dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
+			RemainingSymbolAmount: dmn.ToSymbolOrderAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String(),
 		}, nil
 	case *OrderBookOrder:
 		baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, order.Network, order.BaseDenom, order.QuoteDenom)
@@ -364,8 +363,8 @@ func (app *Application) Normalize(ctx context.Context, inputOrder interface{}) (
 			return nil, err
 		}
 		order.OrderBookOrder.HumanReadablePrice = dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, price.InexactFloat64(), &quoteAmountSubunit, orderproperties.Side_SIDE_BUY).String()
-		order.OrderBookOrder.SymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String()
-		order.OrderBookOrder.RemainingSymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String()
+		order.OrderBookOrder.SymbolAmount = dmn.ToSymbolOrderAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, order.Side).String()
+		order.OrderBookOrder.RemainingSymbolAmount = dmn.ToSymbolOrderAmount(baseDenomPrecision, quoteDenomPrecision, &remainingQuantity, order.Side).String()
 		return order.OrderBookOrder, nil
 	}
 	return nil, fmt.Errorf("unknown order type")

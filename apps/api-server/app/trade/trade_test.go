@@ -45,6 +45,15 @@ var (
 	baseDenom, quoteDenom *denom.Denom
 )
 
+func init() {
+	// Export the required environment variables:
+	os.Setenv("CURRENCY_STORE", "localhost:50051")
+	os.Setenv("TRADE_STORE", "localhost:50051")
+	os.Setenv("OHLC_STORE", "localhost:50051")
+	os.Setenv("ORDER_STORE", "localhost:50051")
+	os.Setenv("LOG_LEVEL", "info")
+}
+
 func newApplicationMock(t *testing.T) *Application {
 	// Set the environment variable CURRENCY_STORE
 	os.Setenv("CURRENCY_STORE", "localhost:50051")
@@ -113,6 +122,23 @@ func Test_NormalizeTrade(t *testing.T) {
 			},
 		},
 		{
+			name: "Base and quote denom precision are the same (BUY) (2)",
+			Input: normalizedOrderInput{
+				Price:               2.0,
+				Quantity:            1.0,
+				RemainingQuantity:   1.0,
+				Side:                orderproperties.Side_SIDE_BUY,
+				BaseDenomPrecision:  0,
+				QuoteDenomPrecision: 0,
+			},
+			Result: normalizedTradeResult{
+				Price:              2.0,
+				HumanReadablePrice: "2",
+				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
+				SymbolAmount:       "1",
+			},
+		},
+		{
 			name: "Base and quote denom precision are the same (SELL)",
 			Input: normalizedOrderInput{
 				Price:               1.0,
@@ -127,6 +153,23 @@ func Test_NormalizeTrade(t *testing.T) {
 				HumanReadablePrice: "1",
 				Amount:             &decimal.Decimal{Value: 1, Exp: 0},
 				SymbolAmount:       "1",
+			},
+		},
+		{
+			name: "Base and quote denom precision are the same (SELL) (2)",
+			Input: normalizedOrderInput{
+				Price:               .0666667,
+				Quantity:            3000,
+				RemainingQuantity:   3000,
+				Side:                orderproperties.Side_SIDE_SELL,
+				BaseDenomPrecision:  0,
+				QuoteDenomPrecision: 0,
+			},
+			Result: normalizedTradeResult{
+				Price:              0.0666667,
+				HumanReadablePrice: "15",
+				Amount:             &decimal.Decimal{Value: 3, Exp: 3},
+				SymbolAmount:       "200",
 			},
 		},
 		{

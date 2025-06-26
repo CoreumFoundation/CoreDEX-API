@@ -126,6 +126,8 @@ func (app *Application) GetCancelledOrders(ctx context.Context, filter *tradegrp
 }
 
 // Returns human readable price and amount
+// The trade is normalized to the always reflect the buy side values (so SELL is normalized to BUY while being returned as SELL)
+// e.g. BUY 10 assetA at 3 assetB => SELL 10 assetA at 3 assetB
 func (app *Application) Normalize(ctx context.Context, trade *tradegrpc.Trade) (*dmn.Trade, error) {
 	baseDenomPrecision, quoteDenomPrecision, err := app.currencyClient.Precisions(ctx, trade.MetaData.Network, trade.Denom1, trade.Denom2)
 	if err != nil {
@@ -137,6 +139,6 @@ func (app *Application) Normalize(ctx context.Context, trade *tradegrpc.Trade) (
 	quoteAmountSubunit := dec.New(trade.Amount.Value, trade.Amount.Exp)
 	tr.HumanReadablePrice = dmn.ToSymbolPrice(baseDenomPrecision, quoteDenomPrecision, trade.Price,
 		&quoteAmountSubunit, trade.Side).String()
-	tr.SymbolAmount = dmn.ToSymbolAmount(baseDenomPrecision, quoteDenomPrecision, &quoteAmountSubunit, trade.Side).String()
+	tr.SymbolAmount = dmn.ToSymbolTradeAmount(baseDenomPrecision, quoteDenomPrecision, trade.Price, &quoteAmountSubunit, trade.Side).String()
 	return tr, nil
 }
