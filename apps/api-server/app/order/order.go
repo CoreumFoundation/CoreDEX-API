@@ -250,6 +250,24 @@ func aggregateOrders(orders []*coreum.OrderBookOrder) []*coreum.OrderBookOrder {
 				continue
 			}
 			aggregatedOrders[len(aggregatedOrders)-1].SymbolAmount = s.Add(r).String()
+			s, err = dec.NewFromString(orders[i].RemainingAmount)
+			if err != nil {
+				continue
+			}
+			r, err = dec.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].RemainingAmount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].RemainingAmount = r.Add(s).String()
+			s, err = dec.NewFromString(orders[i].RemainingSymbolAmount)
+			if err != nil {
+				continue
+			}
+			r, err = dec.NewFromString(aggregatedOrders[len(aggregatedOrders)-1].RemainingSymbolAmount)
+			if err != nil {
+				continue
+			}
+			aggregatedOrders[len(aggregatedOrders)-1].RemainingSymbolAmount = r.Add(s).String()
 		} else {
 			aggregatedOrders = append(aggregatedOrders, orders[i])
 		}
