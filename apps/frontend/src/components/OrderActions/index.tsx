@@ -82,6 +82,7 @@ const OrderActions = ({
   const [blockHeight, setBlockHeight] = useState<number>(0);
   const [quantityStep, setQuantityStep] = useState<number>(0);
   const [priceTick, setPriceTick] = useState<number>(0);
+  const [priceTickExp, setPriceTickExp] = useState<number>(0);
 
   useEffect(() => {
     if (!wallet) return;
@@ -103,6 +104,7 @@ const OrderActions = ({
           const calculatedQuantityStep =
             marketData.QuantityStep / Math.pow(10, marketData.Denom1.Precision);
           setQuantityStep(calculatedQuantityStep);
+          setPriceTickExp(Math.abs(marketData.PriceTick.Exp));
         }
       } catch (e) {
         console.log("ERROR GETTING MARKET DATA >>", e);
@@ -203,7 +205,8 @@ const OrderActions = ({
         const avgPrice = Number(
           getAvgPriceFromOBbyVolume(
             orderType === Side.SIDE_BUY ? orderbook.Sell : orderbook.Buy,
-            volume
+            volume,
+            orderType === Side.SIDE_BUY ? "sell" : "buy"
           )
         );
 
@@ -438,7 +441,7 @@ const OrderActions = ({
                     fontSize: 14,
                   }}
                   inputWrapperClassname="order-input"
-                  decimals={market.counter.Denom.Precision}
+                  decimals={priceTickExp}
                   adornmentRight={market.counter.Denom.Name?.toUpperCase()}
                   sublabel={priceTick ? `Step: ${priceTick}` : undefined}
                   onBlur={() => {

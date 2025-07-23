@@ -1,6 +1,6 @@
 module github.com/CoreumFoundation/CoreDEX-API/apps/api-server
 
-go 1.24.3
+go 1.24.4
 
 require (
 	cosmossdk.io/log v1.5.0
