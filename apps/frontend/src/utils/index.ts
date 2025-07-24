@@ -87,7 +87,8 @@ export const resolveAndFixPrecision = (num: string | number): string => {
 // calculates the volume weighted average price from the orderbook
 export const getAvgPriceFromOBbyVolume = (
   ob: OrderbookRecord[],
-  targetVolume: string
+  targetVolume: string,
+  side?: 'buy' | 'sell' 
 ): number => {
   if (!Array.isArray(ob) || ob.length === 0) return 0;
 
@@ -96,13 +97,24 @@ export const getAvgPriceFromOBbyVolume = (
     Number.EPSILON
   );
 
+  if (parsedTargetVolume <= Number.EPSILON) return 0;
+
+  const sortedOB = [...ob].sort((a, b) => {
+    const priceA = Number.parseFloat(a.HumanReadablePrice) || 0;
+    const priceB = Number.parseFloat(b.HumanReadablePrice) || 0;
+    
+    if (side === 'sell') {
+      return priceA - priceB;
+    } else {
+      return priceB - priceA;
+    }
+  });
+
   let remainingVolume = parsedTargetVolume;
   let totalVolumeUsed = 0;
   let totalPriceVolumeProduct = 0;
 
-  if (parsedTargetVolume <= Number.EPSILON) return 0;
-
-  for (const order of ob) {
+  for (const order of sortedOB) {
     if (remainingVolume <= 0) break;
 
     const orderPrice = Number.parseFloat(order.HumanReadablePrice) || 0;

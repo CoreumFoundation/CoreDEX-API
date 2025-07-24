@@ -1,6 +1,6 @@
 module github.com/CoreumFoundation/CoreDEX-API/apps/data-aggregator
 
-go 1.24.3
+go 1.24.4
 
 // Permanent replacements due to coreum requirements
 replace (
