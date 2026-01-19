@@ -45,24 +45,45 @@ A subscription consists of sending a message on the websocket with the following
 
 ```json
 {
-    "Action": "subscribe",
+    "Action": 0,
     "Subscription": {
-        "Network": "mainnet",
-        "Method": "ORDERBOOK",
+        "Network": 2,
+        "Method": 5,
         "ID": "denom1_denom2"
     }
 }
 ```
 
-This would represent a subscription to a specific trade pair and getting a signal if there is a change in that trade pair.
+This example represents a subscription to a ticker for a specific trade pair on testnet.
 
-***Important:*** The actual messages use enums (integers). The package for this is provided in `domain/update`.
+**Action Enum Values:**
+- `0` - SUBSCRIBE
+- `1` - UNSUBSCRIBE
+- `2` - CLOSE
+- `3` - RESPONSE
+
+**Network Enum Values:**
+- `1` - MAINNET
+- `2` - TESTNET
+- `3` - DEVNET
+
+**Method Enum Values:**
+- `1` - TRADES_FOR_SYMBOL (ID format: `{denom1}_{denom2}`)
+- `2` - TRADES_FOR_ACCOUNT (ID format: `{account}`)
+- `3` - TRADES_FOR_ACCOUNT_AND_SYMBOL (ID format: `{account}_{denom1}_{denom2}`)
+- `4` - OHLC (ID format: `{denom1}_{denom2}_{interval}`)
+- `5` - TICKER (ID format: `{denom1}_{denom2}`)
+- `6` - ORDERBOOK (ID format: `{denom1}_{denom2}`)
+- `7` - ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT (ID format: `{account}_{denom1}_{denom2}`)
+- `8` - WALLET (ID format: `{account}`)
+
+***Important:*** The actual messages use enums (integers), not strings. The package for this is provided in `domain/update`.
 
 ***Important:*** For the different ID encoding/decoding, see the Method in the `domain/update` package.
 
 ### Unsubscribe from a message
 
-The unsubscribing works the same as the subscribing, however replace the action with `unsubscribe`.
+The unsubscribing works the same as the subscribing, however use `Action: 1` (UNSUBSCRIBE) instead of `Action: 0` (SUBSCRIBE).
 
 ### Close the connection
 
@@ -70,28 +91,28 @@ The close is the following JSON:
 
 ```json
 {
-    "Action": "close"
+    "Action": 2
 }
 ```
 
-which will close the websocket on the server side.
+which will close the websocket on the server side. `Action: 2` corresponds to CLOSE.
 
 ## Messages sent to the client
 
 The messages sent to the client are in structure the same as the messages sent to the server.
 The differences are:
 
-* `Action`: `response` (Enum value)
+* `Action`: `3` (RESPONSE enum value)
 * `ID`: Always present since now the BE has to tell which ID should be used for a refresh (or if there is more FE logic: Which ID the potential refresh is related to)
 
 A sample response:
 
 ```json
 {
-    "Action": "response",
+    "Action": 3,
     "Subscription": {
-        "Network": "mainnet",
-        "Method": "ORDERBOOK",
+        "Network": 1,
+        "Method": 6,
         "ID": "core1abcdef",
         "Content": "{\"Buy\":[{\"Price\":\"50000/91\",\"Amount\":\"4\",\"Sequence\":1630},{\"Price\":\"50000/11\",\"Amount\":\"1\",\"Sequence\":4304},{\"Price\":\"45e-7\",\"Amount\":\"3944\",\"Sequence\":6017},{\"Price\":\"4000/9\",\"Amount\":\"7\",\"Sequence\":3386},{\"Price\":\"387e-5\",\"Amount\":\"4124\",\"Sequence\":6093},{\"Price\":\"382e-8\",\"Amount\":\"3090\",\"Sequence\":5627},{\"Price\":\"2500000/7\",\"Amount\":\"1\",\"Sequence\":2871},{\"Price\":\"20000000/73\",\"Amount\":\"1\",\"Sequence\":3337},{\"Price\":\"10000000/187\",\"Amount\":\"1\",\"Sequence\":3881},{\"Price\":\"1000000/9\",\"Amount\":\"1\",\"Sequence\":1179}],\"Sell\":[{\"Price\":\"1/1850000000\",\"Amount\":\"756650000000\",\"Sequence\":4968},{\"Price\":\"1/37500000000\",\"Amount\":\"58687500000000\",\"Sequence\":4234},{\"Price\":\"1/4060000000\",\"Amount\":\"7413560000000\",\"Sequence\":4170},{\"Price\":\"1/4820000000\",\"Amount\":\"15028760000000\",\"Sequence\":1432},{\"Price\":\"1/6140000000\",\"Amount\":\"12998380000000\",\"Sequence\":1173},{\"Price\":\"1/65100000\",\"Amount\":\"209231400000\",\"Sequence\":5362},{\"Price\":\"1/759000\",\"Amount\":\"1022373000\",\"Sequence\":4871},{\"Price\":\"1/76600000000\",\"Amount\":\"294756800000000\",\"Sequence\":5315},{\"Price\":\"1/77300000000\",\"Amount\":\"86034900000000\",\"Sequence\":4354},{\"Price\":\"1/88400000\",\"Amount\":\"424938800000\",\"Sequence\":3393}]}"
     }
@@ -102,34 +123,38 @@ A sample response:
 
 There are several subscriptions possible, and all have their respective key format:
 
-* `OHLC`: `denom-issuer_denom2-issuer2_period`
-* `TRADES`: See trades paragraph
-* `TICKER`: `denom-issuer_denom2-issuer2`
-* `ORDERBOOK`: See order book paragraph
-* `WALLET`: `account`
+* `OHLC` (Method: 4): `{denom1}_{denom2}_{interval}`
+* `TRADES_FOR_SYMBOL` (Method: 1): `{denom1}_{denom2}`
+* `TRADES_FOR_ACCOUNT` (Method: 2): `{account}`
+* `TRADES_FOR_ACCOUNT_AND_SYMBOL` (Method: 3): `{account}_{denom1}_{denom2}`
+* `TICKER` (Method: 5): `{denom1}_{denom2}`
+* `ORDERBOOK` (Method: 6): `{denom1}_{denom2}`
+* `ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT` (Method: 7): `{account}_{denom1}_{denom2}`
+* `WALLET` (Method: 8): `{account}`
 
 Where:
 
-* `denom-issuer` is the denomination and issuer of the first currency
-* `denom2-issuer2` is the denomination and issuer of the second currency
-* `period` is the period for the OHLC data (1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M)
+* `denom1` and `denom2` are the denominations (e.g., `nor-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57` and `alb-testcore1eyhq55grezrggrxs9eweml7nw7alkd8hv9vt57`)
+* `interval` is the period for the OHLC data (1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M)
 * `account` is the account address
 
 #### OHLC
 
-The OHLC call is the most complex call of the set since it requires the period. Other timestamps and parameters are determined or defaulted by the backend (compared to the RESTFUL call where more retrieval manipulation is possible).
+The OHLC call (Method: 4) is the most complex call of the set since it requires the period. Other timestamps and parameters are determined or defaulted by the backend (compared to the RESTFUL call where more retrieval manipulation is possible).
 
 The OHLC subscription will (re)produce the data for the last interval and flows over into the next interval when that interval is reached. The interval is defined by the period.
 
 The OHLC call contains the last 10 minutes. The data needs to be merged into the existing OHLC and replace the previous records if present.
 
+The ID format is: `{denom1}_{denom2}_{interval}`
+
 #### TRADES
 
 There are few different retrievals possible for trades, depending on the required information. The filters are:
 
-* `TRADES_FOR_ACCOUNT`: `account`
-* `TRADES_FOR_SYMBOL`: `denom-issuer_denom2-issuer2`
-* `TRADES_FOR_ACCOUNT_AND_SYMBOL`: `account_denom-issuer_denom2-issuer2`
+* `TRADES_FOR_ACCOUNT` (Method: 2): `{account}`
+* `TRADES_FOR_SYMBOL` (Method: 1): `{denom1}_{denom2}`
+* `TRADES_FOR_ACCOUNT_AND_SYMBOL` (Method: 3): `{account}_{denom1}_{denom2}`
 
 The trades are produced in the same way as the restful API, however now wrapped in the update service response object.
 Trades are read from the last 10 minutes, and need to be deduplicated by the receiver against their base set.
@@ -138,8 +163,8 @@ Trades are read from the last 10 minutes, and need to be deduplicated by the rec
 
 There are 2 orderbook filters:
 
-* `ORDERBOOK`: `denom-issuer_denom2-issuer2`
-* `ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT`: `account_denom-issuer_denom2-issuer2`
+* `ORDERBOOK` (Method: 6): `{denom1}_{denom2}`
+* `ORDERBOOK_FOR_SYMBOL_AND_ACCOUNT` (Method: 7): `{account}_{denom1}_{denom2}`
 
 The response of both is the same.
 

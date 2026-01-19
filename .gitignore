@@ -5,6 +5,7 @@ go.work.sum
 log.txt
 node_modules
 __debug_bin*
+.DS_Store
 
 !apps/api-server/test
 !apps/api-server/test/**
